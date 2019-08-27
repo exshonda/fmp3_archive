@@ -35,7 +35,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: target_kernel_impl.c 148 2019-03-29 16:36:07Z ertl-honda $
+ *  $Id: target_kernel_impl.c 157 2019-07-01 07:45:50Z ertl-honda $
  */
 
 /*
@@ -221,9 +221,11 @@ target_exit(void)
 	/*
 	 *  QEMUを終了させる．
 	 */
-	Asm("ldr r1, =#0x20026\n\t"		/* ADP_Stopped_ApplicationExit */ 
-		"mov r0, #0x18\n\t"			/* angel_SWIreason_ReportException */
-		"svc 0x00123456");
+	if (ID_PRC(get_my_prcidx()) == TOPPERS_TMASTER_PRCID) {
+		Asm("ldr r1, =#0x20026\n\t"		/* ADP_Stopped_ApplicationExit */ 
+			"mov r0, #0x18\n\t"			/* angel_SWIreason_ReportException */
+			"svc 0x00123456");
+	}
 #endif
 	while (true) ;
 }
@@ -275,3 +277,96 @@ target_fput_log(char c)
 }
 
 #endif /* TOPPERS_OMIT_TECS */
+
+#ifdef TOPPERS_ENABLE_GCOV
+
+#include <errno.h>
+
+/* defined by the linker script (zynq_gcov.ld). */
+extern void (*_ctor_list[])();
+extern void (*_dtor_list[])();
+
+static void
+toppers_ctors()
+{
+	int i = 0;
+	void (*fnc)();
+
+	for (fnc = _ctor_list[i]; fnc; fnc = _ctor_list[++i]) {
+		if (!fnc) break;
+		fnc();
+	}
+}
+
+static void
+toppers_dtors()
+{
+	int i = 0;
+	void (*fnc)();
+
+	/* call destractors in reverse order */
+	while (_dtor_list[i]) {
+		i++;
+	}
+	while (--i >= 0) {
+		fnc = _dtor_list[i];
+		if (!fnc) break;
+		fnc();
+	}
+}
+
+/* the newlib libgloss */
+void initialise_monitor_handles(void);
+
+/* overwrite the newlib libgloss's _sbrk. */
+void
+*_sbrk (int incr)
+{
+	extern char _heap[]; /* defined by the linker script. */
+	extern char _heap_limit[]; /* defined by the linker script. */
+	static char *heap_end;
+	char *prev_heap_end;
+
+	if (heap_end == 0) {
+		heap_end = _heap;
+	}
+	if (heap_end + incr < _heap_limit) {
+		prev_heap_end = heap_end;
+		heap_end += incr;
+		return (void *) prev_heap_end;
+	} else {
+		errno = ENOMEM;
+		return (void *)-1;
+	}
+}
+
+void
+toppers_gcov_start(void)
+{
+	/* GCC generate the gcov initialize routine to the ctor vector. */
+	toppers_ctors();
+	/* init stdio/stdout/stderr. */
+	initialise_monitor_handles();
+}
+
+void
+toppers_gcov_end(void)
+{
+	/* GCC generate the GCOV finalize routine to the dtor vector. */
+	toppers_dtors();
+}
+
+void
+software_init_hook(void) {
+	if (ID_PRC(get_my_prcidx()) == TOPPERS_TMASTER_PRCID) {
+		toppers_gcov_start();
+	}
+}
+
+void
+software_term_hook(void) {
+	if (ID_PRC(get_my_prcidx()) == TOPPERS_TMASTER_PRCID) {
+		toppers_gcov_end();
+	}
+}
+#endif /* TOPPERS_ENABLE_GCOV */

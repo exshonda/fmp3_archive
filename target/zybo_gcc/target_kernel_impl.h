@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: target_kernel_impl.h 145 2019-03-10 15:27:01Z ertl-honda $
+ *  $Id: target_kernel_impl.h 157 2019-07-01 07:45:50Z ertl-honda $
  */
 
 /*
@@ -65,6 +65,13 @@
  */
 #define SIL_DLY_TIM1	70
 #define SIL_DLY_TIM2	44
+
+#ifdef TOPPERS_ENABLE_GCOV
+/*
+ *  デフォルトの非タスクコンテキスト用のスタック領域の定義
+ */
+#define DEFAULT_ISTKSZ  0x8000U			/* 32KB */
+#endif /* TOPPERS_ENABLE_GCOV */
 
 /*
  *  チップ依存部（Zynq7000用）

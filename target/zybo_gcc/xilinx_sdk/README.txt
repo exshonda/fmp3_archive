@@ -1,7 +1,7 @@
                         README
            Xilnx SDK用プロジェクト（ZYBO)
 
-        2017-2018 (C) Shinya Honda honda@ertl.jp
+        2017-2019 (C) Shinya Honda honda@ertl.jp
 
 ----------------
 About
@@ -19,7 +19,7 @@ Host environment
   
 動作確認したXilinx SDKのバージョンは次の通りである．  
 
-  - Xilinx SDK 2018.2
+  - Xilinx SDK 2019.1
 
 ----------------
 Board Settig

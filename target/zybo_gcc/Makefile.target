@@ -1,7 +1,7 @@
 #
 #		Makefileのターゲット依存部（ZYBO用）
 #
-#  $Id: Makefile.target 145 2019-03-10 15:27:01Z ertl-honda $
+#  $Id: Makefile.target 164 2019-08-22 05:58:25Z ertl-honda $
 # 
 
 #
@@ -43,6 +43,11 @@ LDFLAGS := $(LDFLAGS) -mlittle-endian
 CDEFS := $(CDEFS)
 
 #
+#  ディスパッチ要求のバイパス処理
+#
+CDEFS := $(CDEFS) -DUSE_BYPASS_IPI_DISPATCH_HANDER
+
+#
 #  カーネルに関する定義
 #
 KERNEL_DIRS := $(KERNEL_DIRS) $(TARGETDIR)
@@ -52,6 +57,23 @@ KERNEL_COBJS := $(KERNEL_COBJS) target_kernel_impl.o
 #  リンカスクリプトの定義
 #
 LDSCRIPT = $(TARGETDIR)/zybo.ld
+
+#
+#  GCOVに関する設定
+#
+ifeq ($(ENABLE_GCOV),true)
+	GCC_TARGET = arm-eabi
+	COPTS := $(COPTS) --coverage
+	CDEFS := $(CDEFS) -DTOPPERS_ENABLE_GCOV
+	LDFLAGS := $(LDFLAGS) -specs=rdimon.specs -Wl,--start-group -Wl,--end-group
+	LIBS := $(LIBS) -lgcov -lc -lgcc
+	LDSCRIPT = $(TARGETDIR)/zybo_gcov.ld
+
+	CLEAN_FILES := $(CLEAN_FILES) $(OBJDIR)/*.gcno $(OBJDIR)/*.gcda
+
+	#For QEMU
+	COPTS := $(COPTS) -DTOPPERS_USE_QEMU
+endif
 
 #
 #  チップ依存部

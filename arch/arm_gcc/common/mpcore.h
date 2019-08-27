@@ -34,7 +34,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: mpcore.h 117 2018-12-21 08:59:55Z ertl-honda $
+ *  $Id: mpcore.h 162 2019-07-31 22:59:15Z ertl-honda $
  */
 
 /*
@@ -54,6 +54,7 @@
 #define CP15_ACTLR_SMP			UINT_C(0x00000020)
 #else /* __TARGET_ARCH_ARM == 6 */
 #define CP15_ACTLR_SMP			UINT_C(0x00000040)
+#define CP15_ACTLR_FW			UINT_C(0x00000001)
 #endif /* __TARGET_ARCH_ARM == 6 */
 
 /*
@@ -200,6 +201,9 @@ mpcore_enable_smp(void)
 
 	CP15_READ_ACTLR(reg);
 	reg |= CP15_ACTLR_SMP;
+#if __TARGET_ARCH_ARM == 7
+	reg |= CP15_ACTLR_FW;
+#endif /* __TARGET_ARCH_ARM == 7 */
 	CP15_WRITE_ACTLR(reg);
 }
 

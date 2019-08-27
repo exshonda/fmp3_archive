@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: core_kernel_impl.h 148 2019-03-29 16:36:07Z ertl-honda $
+ *  $Id: core_kernel_impl.h 163 2019-08-22 05:11:00Z ertl-honda $
  */
 
 /*
@@ -534,15 +534,15 @@ acquire_lock(LOCK *p_lock)
 {
 	while (test_and_set_uint32(p_lock)) {
 		unlock_cpu();
-			#ifndef TOPPERS_OMIT_USE_WFE
+#ifndef TOPPERS_OMIT_USE_WFE
 		data_sync_barrier();
 		arm_wait_for_event();
 #else /* TOPPERS_OMIT_USE_WFE */
 		delay_for_interrupt();
-			#endif /* TOPPERS_OMIT_USE_WFE */
+#endif /* TOPPERS_OMIT_USE_WFE */
 		lock_cpu();
-		}
-			/* ロック取得成功 */
+	}
+	/* ロック取得成功 */
 	data_memory_barrier();
 	ARM_MEMORY_CHANGED;
 }

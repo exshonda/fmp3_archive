@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: core_support.S 145 2019-03-10 15:27:01Z ertl-honda $
+ *  $Id: core_support.S 164 2019-08-22 05:58:25Z ertl-honda $
  */
 
 /*
@@ -52,6 +52,7 @@
 #include "kernel_impl.h"
 #include "offset.h"
 #include "core_asm.inc"
+#include "target_ipi.h"
 
 /*
  *  使用する命令セットの定義
@@ -409,6 +410,11 @@ ALABEL(irq_handler_1)
 	 *  いる情報を保存する．
 	 */
 	bl		irc_begin_int
+#ifdef USE_BYPASS_IPI_DISPATCH_HANDER
+	cmp		r4, #IPINO_DISPATCH
+	beq		irq_handler_2	/* ディスパッチ要求なら */
+							/*  irq_handler_2に分岐 */
+#endif /* USE_BYPASS_IPI_DISPATCH_HANDER */
 #if TNUM_INHNO <= 256 || __TARGET_ARCH_ARM <= 6
 	cmp		r4, #TNUM_INHNO			/* TNUM_INHNOの値によってはエラーになる */
 #else /* TNUM_INHNO <= 256 || __TARGET_ARCH_ARM <= 6 */

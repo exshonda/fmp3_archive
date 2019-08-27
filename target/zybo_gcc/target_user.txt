@@ -66,6 +66,7 @@
 ４．システム構築手順と実行手順
 	4.1 システム構築
 	4.2 デバッガの使用方法
+	4.3 GCOVによるカバレッジ取得
 ５．リファレンス
 	5.1 ディレクトリ構成・ファイル構成
 	5.2 バージョン履歴
@@ -153,7 +154,7 @@ ZYBOターゲット依存部（バージョン 3.0.0）の個別パッケージ�
 
 動作確認を行ったバージョンは次の通り．
 
-	Xilinx SDK 2018.2
+	Xilinx SDK 2019.1
 
 1.5 メモリマップ
 
@@ -242,6 +243,28 @@ $cmd.exe /mnt/c/Xilinx/SDK/2018.2/bin/xsct.bat -interactive ./jtag.tcl
 
 ダウロードするファイルの指定はjtag.tcl内で行う．
 
+4.3 GCOVによるカバレッジ取得
+
+GCOVによるカバレッジ取得をサポートしている．GCOVを取得をサポートしてい
+る環境は次の通りです．
+
+ホスト     : Ubuntu 16.04
+・ネイティブもしくはWSL環境で確認．
+
+コンパイラ : gcc-linaro-7.4.1-2019.02-x86_64_arm-eabi
+・https://releases.linaro.org/components/toolchain/binaries/7.4-2019.02/arm-eabi/
+
+実行環境 : QEMU
+・実機による取得はサポートしていない．
+
+GCOVによるカバレッジ取得を有効にするには，Makefileで以下を定義して再ビ
+ルドすればよい．
+
+ENABLE_GCOV = true
+
+再ビルド後，QEMUで実行し，ext_ker()を呼び出すと，.oと同じフォルダに 
+*.gcda が出力される．
+
 ５．リファレンス
 
 5.1 ディレクトリ構成・ファイル構成
@@ -276,6 +299,10 @@ $cmd.exe /mnt/c/Xilinx/SDK/2018.2/bin/xsct.bat -interactive ./jtag.tcl
 		xilinx_sdk				ZYBO用のXilinx SDKプロジェクト
 
 5.2 バージョン履歴
+
+2019/7/1
+	GCOVサポートの追加．
+
 2019/03/31
 	Release	3.0.0対応版のリリース
  

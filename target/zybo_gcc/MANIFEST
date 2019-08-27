@@ -29,6 +29,7 @@ target_unrename.h
 target_user.txt
 zybo.h
 zybo.ld
+zybo_gcov.ld
 xilinx_sdk/README.txt
 xilinx_sdk/jtag.tcl
 xilinx_sdk/zybo_hw/ps7_init.c
