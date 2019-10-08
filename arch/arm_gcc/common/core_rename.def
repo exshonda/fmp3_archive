@@ -2,7 +2,6 @@
 p_inh_table
 p_intcfg_table
 p_exc_table
-idstkpt_table
 
 # core_support.S
 dispatch

@@ -37,7 +37,7 @@
 #   アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
 #   の責任を負わない．
 # 
-#   $Id: core_kernel.trb 135 2019-01-28 14:31:50Z ertl-honda $
+#   $Id: core_kernel.trb 178 2019-10-08 13:55:00Z ertl-honda $
 # 
 
 #
@@ -48,7 +48,7 @@
 #  有効なCPU例外ハンドラ番号
 #
 $EXCNO_VALID = {}
-excno_list = [ 0, 1, 2, 3, 4, 5 ]
+excno_list = [ 0, 1, 2, 3, 4, 5, 6 ]
 1.upto($TNUM_PRCID) do |prcid|
   $EXCNO_VALID[prcid] = []
   excno_list.each do |excno|
@@ -60,11 +60,44 @@ end
 #  DEF_EXCで使用できるCPU例外ハンドラ番号
 #
 $EXCNO_DEFEXC_VALID = {}
-excno_list = [ 0, 1, 2, 3, 5 ]
+excno_list = [ 0, 1, 2, 3, 5, 6 ]
 1.upto($TNUM_PRCID) do |prcid|
   $EXCNO_DEFEXC_VALID[prcid] = []
   excno_list.each do |excno|
     $EXCNO_DEFEXC_VALID[prcid].push((prcid << 16) | excno)
+  end
+end
+
+#
+#  配置するセクションを指定した変数定義の生成
+#
+def DefineVariableSection(genFile, defvar, secname)
+  if secname != ""
+    genFile.add("#{defvar} __attribute__((section(\"#{secname}\"),nocommon));")
+  else
+    genFile.add("#{defvar};")
+  end
+end
+
+#
+#  カーネルのデータ領域のセクション名
+#
+def SecnameKernelData(cls)
+  if cls != $TCLS_NONE
+    return(".kernel_data_#{$clsData[cls][:clsid]}")
+  else
+    return("")
+  end
+end
+
+#
+#  スタック領域のセクション名
+#
+def SecnameStack(cls)
+  if cls != $TCLS_NONE
+    return(".stack_#{$clsData[cls][:clsid]}")
+  else
+    return("")
   end
 end
 

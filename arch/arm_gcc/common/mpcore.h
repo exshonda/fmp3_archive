@@ -34,7 +34,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: mpcore.h 162 2019-07-31 22:59:15Z ertl-honda $
+ *  $Id: mpcore.h 160 2019-07-29 04:47:26Z ertl-honda $
  */
 
 /*
@@ -52,10 +52,18 @@
  */
 #if __TARGET_ARCH_ARM == 6
 #define CP15_ACTLR_SMP			UINT_C(0x00000020)
-#else /* __TARGET_ARCH_ARM == 6 */
+#elif (__TARGET_ARCH_ARM == 7)
 #define CP15_ACTLR_SMP			UINT_C(0x00000040)
+#define CP15_ACTLR_EX			UINT_C(0x00000080)
 #define CP15_ACTLR_FW			UINT_C(0x00000001)
 #endif /* __TARGET_ARCH_ARM == 6 */
+
+/*
+ *  CP15のCPU拡張制御レジスタ（CPUECTLR）の設定値
+ */
+#if __TARGET_ARCH_ARM >= 8
+#define CPUECTLR_SMPEN  UINT_C(0x00000040)
+#endif /* __TARGET_ARCH_ARM >= 8 */
 
 /*
  *  SCU（スヌープ制御ユニット）関連の定義
@@ -197,14 +205,22 @@
 Inline void
 mpcore_enable_smp(void)
 {
+#if (__TARGET_ARCH_ARM == 6) || (__TARGET_ARCH_ARM == 7)
 	uint32_t	reg;
 
 	CP15_READ_ACTLR(reg);
 	reg |= CP15_ACTLR_SMP;
 #if __TARGET_ARCH_ARM == 7
 	reg |= CP15_ACTLR_FW;
-#endif /* __TARGET_ARCH_ARM == 7 */
+#endif /* __TARGET_ARCH_ARM == 7 */	
 	CP15_WRITE_ACTLR(reg);
+#elif (__TARGET_ARCH_ARM == 8)
+	uint32_t cpuectlr_l, cpuectlr_h;
+
+	CP15_CPUECTLR_READ(cpuectlr_l, cpuectlr_h);
+	cpuectlr_l |= CPUECTLR_SMPEN;
+	CP15_CPUECTLR_WRITE(cpuectlr_l, cpuectlr_h);
+#endif /* (__TARGET_ARCH_ARM == 6) || (__TARGET_ARCH_ARM == 7) */
 }
 
 /*

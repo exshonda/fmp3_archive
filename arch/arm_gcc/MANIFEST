@@ -1,5 +1,5 @@
 PACKAGE fmp3_arch_arm_gcc
-VERSION 3.0.0
+VERSION 3.1.0
 
 E_PACKAGE
 MANIFEST
@@ -40,5 +40,8 @@ common/mpcore_timer.cfg
 common/mpcore_timer.h
 common/pl310.c
 common/pl310.h
-common/sp804.h
 common/start.S
+
+test/arm_cpuexc.c
+test/arm_cpuexc.cfg
+test/arm_cpuexc.h

@@ -36,7 +36,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: arm_insn.h 148 2019-03-29 16:36:07Z ertl-honda $
+ *  $Id: arm_insn.h 178 2019-10-08 13:55:00Z ertl-honda $
  */
 
 /*
@@ -192,7 +192,6 @@ test_and_set_uint32(uint32_t *p_var)
 	"	cmp		%0, #0				\n"
 	"	strexeq	%0, %2, [%1]		\n"
 	: "=&r"(failed) : "r"(p_var),"r"(1) : "cc");
-
 	return(failed);
 }
 
@@ -313,10 +312,10 @@ arm_send_event(void)
 #define CP15_WRITE_TTBR0(reg)	Asm("mcr p15, 0, %0, c2, c0, 0"::"r"(reg))
 
 /* ドメインアクセス制御レジスタ */
-#define CP15_WRITE_DACR(reg)	Asm("mcr p15, 0, %0, c3, c0, 0":: "r"(reg))
+#define CP15_WRITE_DACR(reg)	Asm("mcr p15, 0, %0, c3, c0, 0"::"r"(reg))
 
 /* コンテキストIDレジスタ（ARMv6以降）*/
-#define CP15_WRITE_CONTEXTIDR(reg) Asm("mcr p15, 0, %0, c13, c0, 1" ::"r"(reg))
+#define CP15_WRITE_CONTEXTIDR(reg) Asm("mcr p15, 0, %0, c13, c0, 1"::"r"(reg))
 
 /*
  *  CP15によるTLB操作マクロ（VMSA）

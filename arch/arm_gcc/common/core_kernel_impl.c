@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: core_kernel_impl.c 148 2019-03-29 16:36:07Z ertl-honda $
+ *  $Id: core_kernel_impl.c 178 2019-10-08 13:55:00Z ertl-honda $
  */
 
 /*
@@ -214,7 +214,7 @@ core_initialize(PCB *p_my_pcb)
 
 #ifdef USE_THREAD_ID_PCB
 	/*
-	 *  Thread ID レジスタへのPCBへのポインタの設定
+	 *  Thread IDレジスタへのPCBへのポインタの設定
 	 */
 	CP15_WRITE_TPIDRPRW((uint32_t) p_my_pcb);
 #endif /* USE_THREAD_ID_PCB */
@@ -379,10 +379,14 @@ default_exc_handler(void *p_excinf, EXCNO excno)
 	case EXCNO_FIQ:
 		syslog_1(LOG_EMERG, "PRC%d: FIQ exception occurs.", prcid);
 		break;
+	case EXCNO_FATAL:
+		syslog_0(LOG_EMERG, "Fatal Data Abort exception occurs.");
+		break;
 	}
 	xlog_sys(p_excinf);
 
-	if (excno == EXCNO_PABORT || excno == EXCNO_DABORT) {
+	if (excno == EXCNO_PABORT || excno == EXCNO_DABORT
+										|| excno == EXCNO_FATAL) {
 		uint32_t	fsr, far;
 
 		if (excno == EXCNO_PABORT) {

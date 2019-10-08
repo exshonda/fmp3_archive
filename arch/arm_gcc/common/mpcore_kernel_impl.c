@@ -5,7 +5,7 @@
  * 
  *  Copyright (C) 2000-2003 by Embedded and Real-Time Systems Laboratory
  *                              Toyohashi Univ. of Technology, JAPAN
- *  Copyright (C) 2006-2018 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2006-2019 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  * 
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: mpcore_kernel_impl.c 145 2019-03-10 15:27:01Z ertl-honda $
+ *  $Id: mpcore_kernel_impl.c 178 2019-10-08 13:55:00Z ertl-honda $
  */
 
 /*
@@ -119,18 +119,6 @@ mpcore_initialize(PCB *p_my_pcb)
 void
 mpcore_terminate(void)
 {
-	extern void    software_term_hook(void);
-	void (*volatile fp)(void) = software_term_hook;
-
-	/*
-	 *  software_term_hookへのポインタを，一旦volatile指定のあるfpに代
-	 *  入してから使うのは，0との比較が最適化で削除されないようにするた
-	 *  めである．
-	 */
-	if (fp != 0) {
-		(*fp)();
-	}
-
 	/*
 	 *  GICのCPUインタフェースの終了処理
 	 */

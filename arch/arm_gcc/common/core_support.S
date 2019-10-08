@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: core_support.S 164 2019-08-22 05:58:25Z ertl-honda $
+ *  $Id: core_support.S 178 2019-10-08 13:55:00Z ertl-honda $
  */
 
 /*
@@ -694,13 +694,13 @@ ALABEL(dabort_handler)
 	 *
 	 *  データアボートが，CPU例外の入口（start_exc_entryとend_exc_entry
 	 *  の間）で発生した場合には，fatal_dabort_handlerに分岐する．アボー
-	 *  トモードのspを汎用レジスタの代わりに使用する．
+	 *  トモードのspを汎用レジスタの代わりに使用する（r13と記述している）．
 	 */
-	ldr		sp, =start_exc_entry+8
-	cmp		lr, sp
+	adr		r13, start_exc_entry+8
+	cmp		lr, r13
 	bcc		dabort_handler_1
-	ldr		sp, =end_exc_entry+8
-	cmp		lr, sp
+	adr		r13, end_exc_entry+8
+	cmp		lr, r13
 	bcc		fatal_dabort_handler
 
 ALABEL(dabort_handler_1)
@@ -717,7 +717,6 @@ ALABEL(dabort_handler_1)
 	push	{r0-r5,r12,lr}
 	mov		r4, #EXCNO_DABORT
 	b		exc_handler_1
-#endif /* OMIT_DABORT_HANDLER */
 
 /*
  *  CPU例外の入口で発生したデータアボート
@@ -745,15 +744,16 @@ ALABEL(fatal_dabort_handler)
 	push	{r0-r5,r12,lr}
 
 	/*
-	 *  例外ネストカウントの最上位ビットを1にする．
+	 *  例外ネストカウントをインクリメントする．
 	 */
 	my_pcb	r2, r1
 	ldr		r3, [r2,#PCB_excpt_nest_count]
-	orr		r3, r3, #0x80000000
+	add		r3, r3, #1
 	str		r3, [r2,#PCB_excpt_nest_count]
 
-	mov		r4, #EXCNO_DABORT
+	mov		r4, #EXCNO_FATAL
 	b		exc_handler_1
+#endif /* OMIT_DABORT_HANDLER */
 
 /*
  *  FIQ

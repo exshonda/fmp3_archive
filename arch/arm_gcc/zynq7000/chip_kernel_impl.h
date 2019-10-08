@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: chip_kernel_impl.h 145 2019-03-10 15:27:01Z ertl-honda $
+ *  $Id: chip_kernel_impl.h 178 2019-10-08 13:55:00Z ertl-honda $
  */
 
 /*
@@ -55,18 +55,6 @@
  *  Zynq7000のハードウェア資源の定義
  */
 #include "zynq7000.h"
-
-/*
- *  Use the dispatch_handler bypass processing
- *
- *  Note: After one core (e.g. core0) changes the status of a task
- *  in another core (e.g., act_tsk(CORE1TASK)) usually an interrupt is
- *  sent to that core (e.g., core1) for dispatching. If we use the
- *  USE_IPI_DIS_HANDER_BYPASS macro, instead of going to an interrupt
- *  handler the dispatcher will be called automatically for reducing
- *  overhead.
- */
-//#define USE_DISPATCH_HANDER_BYPASS
 
 /*
  *  デフォルトの非タスクコンテキスト用のスタック領域の定義

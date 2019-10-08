@@ -83,6 +83,8 @@ SECTIONS {
 		__start_bss = .;
 		*(.bss)
 		*(.bss.*)
+		*(.kernel_data_*)
+		*(.stack*)
 		*(COMMON)
 		__end_bss = .;
 	} > RAM

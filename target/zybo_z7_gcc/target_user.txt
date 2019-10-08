@@ -230,7 +230,6 @@ ZYBO_Z7用のFMP3カーネルを構築する手順は，「TOPPERS/FMP3カーネ
 
 configure.rb -T zybo_z7_gcc -w -S "syslog.o banner.o serial.o chip_serial.o logtask.o xuartps.o"
                          
-
 Xilinx SDKでビルドする場合は，ワークスペースを作成し，zybo_z7_sdkフォルダ
 にあるプロジェクトをインポートすることで，サンプルプログラムがビルド可
 能である．
@@ -284,6 +283,8 @@ ENABLE_GCOV = true
 		Makefile.target			Makefileのターゲット依存部
 		target_cfg1_out.h		cfg1_out.cのリンクに必要なスタブの定義
 		target_check.trb		kernel_check.trbのターゲット依存部
+		target_ipi.cfg			プロセッサ間割込みのコンフィギュレーションファイル
+		target_ipi.h			プロセッサ間割込みのターゲット依存部
 		target_kernel.cfg		カーネル実装のコンフィギュレーションファイル
 		target_kernel.h			kernel.hのターゲット依存部
 		target_kernel.trb		kernel.trbのターゲット依存部
@@ -308,6 +309,8 @@ ENABLE_GCOV = true
 		xilinx_sdk				ZYBO_Z7用のXilinx SDKプロジェクト
 
 5.2 バージョン履歴
+2019/09/30
+・ZYBO Z7 対応．
 
 2019/08/28
 	新規作成．

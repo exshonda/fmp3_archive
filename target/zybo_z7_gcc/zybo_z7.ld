@@ -1,5 +1,5 @@
 /*
- *  $Id: zybo_z7.ld 166 2019-08-28 07:54:41Z ertl-honda $
+ *  $Id: zybo_z7.ld 178 2019-10-08 13:55:00Z ertl-honda $
  */
 
 OUTPUT_FORMAT("elf32-littlearm", "elf32-bigarm", "elf32-littlearm") 
@@ -83,6 +83,8 @@ SECTIONS {
 		__start_bss = .;
 		*(.bss)
 		*(.bss.*)
+		*(.kernel_data_*)
+		*(.stack*)
 		*(COMMON)
 		__end_bss = .;
 	} > RAM

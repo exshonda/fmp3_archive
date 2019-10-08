@@ -35,7 +35,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  *
- *  @(#) $Id: core_pcb.h 135 2019-01-28 14:31:50Z ertl-honda $
+ *  @(#) $Id: core_pcb.h 178 2019-10-08 13:55:00Z ertl-honda $
  */
 
 /*
@@ -63,34 +63,34 @@ typedef struct target_processor_control_block {
 	 *  ストカウントが0の時にタスクコンテキスト，0より大きい場合に非タ
 	 *  スクコンテキストであると判断する．
 	 */
-	uint32_t excpt_nest_count;		/* 例外ネストカウント */
+	uint32_t	excpt_nest_count;		/* 例外ネストカウント */
 
 	/*
 	 *  非タスクコンテキスト用のスタックの初期値
 	 */
-	STK_T* istkpt;
+	STK_T		*istkpt;
 
 	/*
 	 *  アイドル処理用のスタックの初期値
 	 */
-	STK_T* idstkpt;
+	STK_T		*idstkpt;
 
 	/*
 	 *  CPU例外ハンドラテーブルへのポインタ
 	 */
-	const FP* p_exc_tbl;
+	const FP	*p_exc_tbl;
 
 	/*
 	 *  割込みハンドラテーブルへのポインタ
 	 */
-	const FP* p_inh_tbl;
+	const FP	*p_inh_tbl;
 } TPCB;
 
 #ifdef USE_THREAD_ID_PCB
 /*
  *  スレッドIDレジスタから自プロセッサのPCBへのポインタを取り出す
  */
-Inline PCB*
+Inline PCB *
 core_get_my_pcb(void)
 {
 	uint32_t reg;

@@ -5,7 +5,7 @@
  *  から直接インクルードすることはない．このファイルをインクルードする
  *  前に，t_stddef.hがインクルードされるので，それに依存してもよい．
  * 
- *  $Id: target_kernel.h 166 2019-08-28 07:54:41Z ertl-honda $
+ *  $Id: target_kernel.h 178 2019-10-08 13:55:00Z ertl-honda $
  */
 
 #ifndef TOPPERS_TARGET_KERNEL_H
@@ -50,7 +50,9 @@
 /*
  *  高分解能タイマのタイマ周期
  */
+#ifndef USE_64BIT_HRTCNT
 /* TCYC_HRTCNTは定義しない．*/
+#endif /* USE_64BIT_HRTCNT */
 
 /*
  *  高分解能タイマのカウント値の進み幅

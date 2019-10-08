@@ -36,7 +36,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  *
- *  $Id: xuartps.c 135 2019-01-28 14:31:50Z ertl-honda $
+ *  $Id: xuartps.c 178 2019-10-08 13:55:00Z ertl-honda $
  */
 
 /*
@@ -123,10 +123,10 @@ xuartps_terminate(void)
 			while ((sil_rew_mem(XUARTPS_SR(p_siopcb->p_siopinib->base))
 											& XUARTPS_SR_TXEMPTY) == 0U);
 
-	/*
-	 *  オープンされているSIOポートのクローズ
-	 */
-		xuartps_cls_por(&(siopcb_table[i]));
+			/*
+			 *  オープンされているSIOポートのクローズ
+			 */
+			xuartps_cls_por(&(siopcb_table[i]));
 		}
 	}
 }

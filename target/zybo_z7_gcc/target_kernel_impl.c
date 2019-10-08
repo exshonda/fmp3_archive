@@ -35,7 +35,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: target_kernel_impl.c 166 2019-08-28 07:54:41Z ertl-honda $
+ *  $Id: target_kernel_impl.c 178 2019-10-08 13:55:00Z ertl-honda $
  */
 
 /*
@@ -209,6 +209,18 @@ target_initialize(PCB *p_my_pcb)
 void
 target_exit(void)
 {
+	extern void	software_term_hook(void);
+	void (*volatile fp)(void) = software_term_hook;
+
+	/*
+	 *  software_term_hookへのポインタを，一旦volatile指定のあるfpに代
+	 *  入してから使うのは，0との比較が最適化で削除されないようにするた
+	 *  めである．
+	 */
+	if (fp != 0) {
+		(*fp)();
+	}
+
 	/*
 	 *  チップ依存の終了処理
 	 */

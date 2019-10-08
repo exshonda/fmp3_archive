@@ -34,7 +34,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: gic_kernel_impl.h 147 2019-03-19 06:24:49Z ertl-honda $
+ *  $Id: gic_kernel_impl.h 178 2019-10-08 13:55:00Z ertl-honda $
  */
 
 /*
@@ -188,7 +188,7 @@
 /*
  *  ソフトウェア生成割込みのレジスタ（GICD_SGIR）の設定値
  */
-#define GICD_SGIR_CPUTARGET_OFFSET UINT_C(16)
+#define GICD_SGIR_CPUTARGET_OFFSET	UINT_C(16)
 
 #ifndef TOPPERS_MACRO_ONLY
 

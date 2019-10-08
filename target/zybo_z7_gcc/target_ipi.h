@@ -35,7 +35,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  *
- *  $Id: target_ipi.h 166 2019-08-28 07:54:41Z ertl-honda $
+ *  $Id: target_ipi.h 178 2019-10-08 13:55:00Z ertl-honda $
  */
 
 /*  
@@ -49,23 +49,43 @@
  *  プロセッサ間割込みの割込み優先度
  */
 #ifdef TOPPERS_SAFEG_SECURE
+
 #define INTPRI_IPI_DISPATCH_PRC1		(-16)
 #define INTPRI_IPI_DISPATCH_PRC2		(-16)
+#define INTPRI_IPI_DISPATCH_PRC3		(-16)
+#define INTPRI_IPI_DISPATCH_PRC4		(-16)
 #define INTPRI_IPI_EXT_KER_PRC1			(-31)
 #define INTPRI_IPI_EXT_KER_PRC2			(-31)
+#define INTPRI_IPI_EXT_KER_PRC3			(-31)
+#define INTPRI_IPI_EXT_KER_PRC4			(-31)
 #define INTPRI_IPI_SET_HRT_EVT_PRC1		(-16)
 #define INTPRI_IPI_SET_HRT_EVT_PRC2		(-16)
+#define INTPRI_IPI_SET_HRT_EVT_PRC3		(-16)
+#define INTPRI_IPI_SET_HRT_EVT_PRC4		(-16)
 #define INTPRI_IPI_START_SCYC_PRC1		(-16)
 #define INTPRI_IPI_START_SCYC_PRC2		(-16)
+#define INTPRI_IPI_START_SCYC_PRC3		(-16)
+#define INTPRI_IPI_START_SCYC_PRC4		(-16)
+
 #else /* TOPPERS_SAFEG_SECURE */
+
 #define INTPRI_IPI_DISPATCH_PRC1		(-2)
 #define INTPRI_IPI_DISPATCH_PRC2		(-2)
+#define INTPRI_IPI_DISPATCH_PRC3		(-2)
+#define INTPRI_IPI_DISPATCH_PRC4		(-2)
 #define INTPRI_IPI_EXT_KER_PRC1			(-15)
 #define INTPRI_IPI_EXT_KER_PRC2			(-15)
+#define INTPRI_IPI_EXT_KER_PRC3			(-15)
+#define INTPRI_IPI_EXT_KER_PRC4			(-15)
 #define INTPRI_IPI_SET_HRT_EVT_PRC1		(-2)
 #define INTPRI_IPI_SET_HRT_EVT_PRC2		(-2)
+#define INTPRI_IPI_SET_HRT_EVT_PRC3		(-2)
+#define INTPRI_IPI_SET_HRT_EVT_PRC4		(-2)
 #define INTPRI_IPI_START_SCYC_PRC1		(-2)
 #define INTPRI_IPI_START_SCYC_PRC2		(-2)
+#define INTPRI_IPI_START_SCYC_PRC3		(-2)
+#define INTPRI_IPI_START_SCYC_PRC4		(-2)
+
 #endif /* TOPPERS_SAFEG_SECURE */
 
 /*

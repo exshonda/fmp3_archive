@@ -36,7 +36,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: core_sil.h 148 2019-03-29 16:36:07Z ertl-honda $
+ *  $Id: core_sil.h 178 2019-10-08 13:55:00Z ertl-honda $
  */
 
 /*
@@ -197,7 +197,7 @@ TOPPERS_sil_loc_spn(void)
 {
 	uint32_t	cpsr;
 	uint32_t	fiq_irq_mask;
-	ID       prcid;
+	ID			prcid;
 
 	/* 全割込みロック状態に */
 	cpsr = TOPPERS_current_cpsr();
@@ -214,10 +214,10 @@ TOPPERS_sil_loc_spn(void)
 		/* スピンロックの取得 */
 		while (TOPPERS_test_and_assign(&TOPPERS_sil_spn_var, prcid)) {
 			TOPPERS_set_cpsr(cpsr);
-			#ifndef TOPPERS_OMIT_USE_WFE
+#ifndef TOPPERS_OMIT_USE_WFE
 			TOPPERS_DSB();
 			Asm("wfe");
-			#endif /* TOPPERS_OMIT_USE_WFE */
+#endif /* TOPPERS_OMIT_USE_WFE */
 			Asm("cpsid fi" ::: "memory");
 		}
 		/* ロック取得成功 */
@@ -243,7 +243,7 @@ TOPPERS_sil_unl_spn(uint32_t fiq_irq_mask)
 		TOPPERS_sil_spn_var = 0U;
 #ifndef TOPPERS_OMIT_USE_WFE
 		TOPPERS_DSB();
-	Asm("sev");
+		Asm("sev");
 #endif /* TOPPERS_OMIT_USE_WFE */
 	}
 	TOPPERS_set_fiq_irq(fiq_irq_mask);
@@ -263,7 +263,7 @@ TOPPERS_sil_unl_spn(uint32_t fiq_irq_mask)
 Inline void
 TOPPERS_sil_force_unl_spn(void)
 {
-	ID prcid;
+	ID	prcid;
 
 	sil_get_pid(&prcid);
 	if (TOPPERS_sil_spn_var == prcid) {

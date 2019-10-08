@@ -5,7 +5,7 @@
  * 
  *  Copyright (C) 2000-2003 by Embedded and Real-Time Systems Laboratory
  *                              Toyohashi Univ. of Technology, JAPAN
- *  Copyright (C) 2005-2018 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2005-2019 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  * 
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: mpcore_timer.h 135 2019-01-28 14:31:50Z ertl-honda $
+ *  $Id: mpcore_timer.h 178 2019-10-08 13:55:00Z ertl-honda $
  */
 
 /*
@@ -73,14 +73,18 @@
  */
 
 /*
- *  タイマ割込みハンドラ登録のための定数
+ *  高分解能タイマ割込みハンドラ登録のための定数
  */
 #define INHNO_TIMER_PRC1	(0x10000U | MPCORE_IRQNO_GTC)	/* ハンドラ番号 */
 #define INHNO_TIMER_PRC2	(0x20000U | MPCORE_IRQNO_GTC)	/* ハンドラ番号 */
+#define INHNO_TIMER_PRC3	(0x30000U | MPCORE_IRQNO_GTC)	/* ハンドラ番号 */
+#define INHNO_TIMER_PRC4	(0x40000U | MPCORE_IRQNO_GTC)	/* ハンドラ番号 */
 #define INTNO_TIMER_PRC1	(0x10000U | MPCORE_IRQNO_GTC)	/* 割込み番号 */
 #define INTNO_TIMER_PRC2	(0x20000U | MPCORE_IRQNO_GTC)	/* 割込み番号 */
-#define INTPRI_TIMER	(TMAX_INTPRI - 1)					/* 割込み優先度 */
-#define INTATR_TIMER	TA_NULL								/* 割込み属性 */
+#define INTNO_TIMER_PRC3	(0x30000U | MPCORE_IRQNO_GTC)	/* 割込み番号 */
+#define INTNO_TIMER_PRC4	(0x40000U | MPCORE_IRQNO_GTC)	/* 割込み番号 */
+#define INTPRI_TIMER		(TMAX_INTPRI - 1)				/* 割込み優先度 */
+#define INTATR_TIMER		TA_NULL							/* 割込み属性 */
 
 /*
  *  タイマの設定値のデフォルト値の定義
@@ -208,11 +212,15 @@ target_hrt_raise_event(ID prcid)
 /*
  *  割込みタイミングに指定する最大値
  */
+#ifndef USE_64BIT_HRTCNT
+
 #if !defined(TCYC_HRTCNT) || (TCYC_HRTCNT > 4002000002U)
 #define HRTCNT_BOUND		4000000002U
 #else
 #define HRTCNT_BOUND		(TCYC_HRTCNT - 2000000U)
 #endif
+ 
+#endif /* USE_64BIT_HRTCNT */
 
 /*
  *  高分解能タイマ割込みハンドラ
@@ -220,104 +228,6 @@ target_hrt_raise_event(ID prcid)
 extern void	target_hrt_handler(void);
 
 #endif /* TOPPERS_MACRO_ONLY */
-
-#ifdef USE_MPCORE_TMR_TWDTIMER
-/*
- *		プライベートタイマを用いてタイムウィンドウタイマを実現
- */
-
-/*
- *  タイムウィンドウタイマ割込みハンドラ登録のための定数
- *
- *  タイムウィンドウタイマ割込みの優先度は，高分解能タイマ割込みと同じ
- *  にしなければならない．
- */
-#define INHNO_TWDTIMER_PRC1	(0x10000 | MPCORE_IRQNO_TMR)	/* ハンドラ番号 */
-#define INHNO_TWDTIMER_PRC2	(0x20000 | MPCORE_IRQNO_TMR)	/* ハンドラ番号 */
-#define INTNO_TWDTIMER_PRC1	(0x10000 | MPCORE_IRQNO_TMR)	/* 割込み番号 */
-#define INTNO_TWDTIMER_PRC2	(0x20000 | MPCORE_IRQNO_TMR)	/* 割込み番号 */
-#define INTPRI_TWDTIMER		INTPRI_TIMER					/* 割込み優先度 */
-#define INTATR_TWDTIMER		TA_NULL							/* 割込み属性 */
-
-/*
- *  タイマの設定値のデフォルト値の定義
- */
-#ifndef MPCORE_TMR_FREQ
-#define MPCORE_TMR_FREQ			1		/* プライベートタイマの駆動周波数 */
-#endif /* MPCORE_TMR_FREQ */
-
-#ifndef TOPPERS_MACRO_ONLY
-
-/*
- *  タイムウィンドウタイマの初期化処理
- */
-extern void target_twdtimer_initialize(intptr_t exinf);
-
-/*
- *  タイムウィンドウタイマの停止処理
- */
-extern void target_twdtimer_terminate(intptr_t exinf);
-
-/*
- *  タイムウィンドウタイマの動作開始
- */
-Inline void
-target_twdtimer_start(PRCTIM twdtim)
-{
-	/*
-	 *  タイマのカウント値を(twdtim * MPCORE_TMR_FREQ)に設定する．
-	 */
-	sil_wrw_mem(MPCORE_TMR_CNT, twdtim * MPCORE_TMR_FREQ);
-
-	/*
-	 *  タイマの動作を開始する．
-	 */
-	sil_wrw_mem(MPCORE_TMR_CTRL,
-					sil_rew_mem(MPCORE_TMR_CTRL) | MPCORE_TMR_CTRL_ENABLE);
-}
-
-/*
- *  タイムウィンドウタイマの停止
- */
-Inline PRCTIM
-target_twdtimer_stop(void)
-{
-	PRCTIM	twdtim;
-
-	/*
-	 *  タイムウィンドウタイマの現在値の読出し
-	 */
-	twdtim = (PRCTIM)(sil_rew_mem(MPCORE_TMR_CNT) / MPCORE_TMR_FREQ);
-
-	/*
-	 *  タイマを停止する．
-	 */
-	sil_wrw_mem(MPCORE_TMR_CTRL,
-				sil_rew_mem(MPCORE_TMR_CTRL) & ~(MPCORE_TMR_CTRL_ENABLE));
-
-	return(twdtim);
-}
-
-/*
- *  タイムウィンドウタイマの現在値の読出し
- */
-Inline PRCTIM
-target_twdtimer_get_current(void)
-{
-	/*
-	 *  プライベートタイマのカウント値を読み出し，MPCORE_TMR_FREQで除
-	 *  した値を返す．
-	 */
-	return((PRCTIM)(sil_rew_mem(MPCORE_TMR_CNT) / MPCORE_TMR_FREQ));
-}
-
-/*
- *  タイムウィンドウ割込みハンドラ
- */
-extern void target_twdtimer_handler(void);
-
-#endif /* TOPPERS_MACRO_ONLY */
-#endif /* USE_MPCORE_TMR_TWDTIMER */
 
 #ifdef USE_MPCORE_WDG_OVRTIMER
 /*
@@ -328,10 +238,14 @@ extern void target_twdtimer_handler(void);
 /*
  *  オーバランタイマ割込みハンドラ登録のための定数
  */
-#define INHNO_OVRTIMER_PRC1	(0x10000 | MPCORE_IRQNO_WDG)	/* ハンドラ番号 */
-#define INHNO_OVRTIMER_PRC2	(0x20000 | MPCORE_IRQNO_WDG)	/* ハンドラ番号 */
-#define INTNO_OVRTIMER_PRC1	(0x10000 | MPCORE_IRQNO_WDG)	/* 割込み番号 */
-#define INTNO_OVRTIMER_PRC2	(0x20000 | MPCORE_IRQNO_WDG)	/* 割込み番号 */
+#define INHNO_OVRTIMER_PRC1	(0x10000U | MPCORE_IRQNO_WDG)	/* ハンドラ番号 */
+#define INHNO_OVRTIMER_PRC2	(0x20000U | MPCORE_IRQNO_WDG)	/* ハンドラ番号 */
+#define INHNO_OVRTIMER_PRC3	(0x30000U | MPCORE_IRQNO_WDG)	/* ハンドラ番号 */
+#define INHNO_OVRTIMER_PRC4	(0x40000U | MPCORE_IRQNO_WDG)	/* ハンドラ番号 */
+#define INTNO_OVRTIMER_PRC1	(0x10000U | MPCORE_IRQNO_WDG)	/* 割込み番号 */
+#define INTNO_OVRTIMER_PRC2	(0x20000U | MPCORE_IRQNO_WDG)	/* 割込み番号 */
+#define INTNO_OVRTIMER_PRC3	(0x30000U | MPCORE_IRQNO_WDG)	/* 割込み番号 */
+#define INTNO_OVRTIMER_PRC4	(0x40000U | MPCORE_IRQNO_WDG)	/* 割込み番号 */
 #define INTPRI_OVRTIMER		TMAX_INTPRI						/* 割込み優先度 */
 #define INTATR_OVRTIMER		TA_NULL							/* 割込み属性 */
 

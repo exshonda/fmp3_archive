@@ -34,7 +34,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: gic_kernel_impl.c 147 2019-03-19 06:24:49Z ertl-honda $
+ *  $Id: gic_kernel_impl.c 178 2019-10-08 13:55:00Z ertl-honda $
  */
 
 /*
@@ -249,7 +249,7 @@ initialize_interrupt(PCB *p_my_pcb)
 		p_intinib = &(intinib_table[i]);
 		if (p_intinib->iprcid == p_my_pcb->prcid) {
 			config_int(p_my_pcb, p_intinib->intno, p_intinib->intatr,
-							p_intinib->intpri, p_intinib->affinity);
+								p_intinib->intpri, p_intinib->affinity);
 		}
 	}
 }

@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: core_kernel_impl.h 163 2019-08-22 05:11:00Z ertl-honda $
+ *  $Id: core_kernel_impl.h 178 2019-10-08 13:55:00Z ertl-honda $
  */
 
 /*
@@ -556,11 +556,11 @@ try_lock(LOCK *p_lock)
 	if (test_and_set_uint32(p_lock)) {
 		return(true);
 	}
-		/* ロック取得成功 */
+	/* ロック取得成功 */
 	data_memory_barrier();
 	ARM_MEMORY_CHANGED;
-		return(false);
-	}
+	return(false);
+}
 
 /*
  *  ロックの解放

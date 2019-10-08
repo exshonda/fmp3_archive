@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: chip_timer.h 117 2018-12-21 08:59:55Z ertl-honda $
+ *  $Id: chip_timer.h 178 2019-10-08 13:55:00Z ertl-honda $
  */
 
 /*
@@ -54,12 +54,10 @@
 /*
  *  タイマドライバ
  *
- *  MPCoreのグローバルタイマを用いて高分解能タイマを，プライベートタイ
- *  マを用いてタイムウィンドウタイマを，ウォッチドッグを用いてオーバラ
- *  ンタイマを実現する．
+ *  MPCoreのグローバルタイマを用いて高分解能タイマを，ウォッチドッグを
+ *  用いてオーバランタイマを実現する．
  */
 #define USE_MPCORE_GTC_HRT
-#define USE_MPCORE_TMR_TWDTIMER
 #define USE_MPCORE_WDG_OVRTIMER
 #include "mpcore_timer.h"
 
