@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: time_event.c 145 2019-03-10 15:27:01Z ertl-honda $
+ *  $Id: time_event.c 178 2019-10-08 13:55:00Z ertl-honda $
  */
 
 /*
@@ -50,6 +50,13 @@
 #include "target_ipi.h"
 
 /*
+ *  TCYC_HRTCNTの定義のチェック
+ */
+#if defined(USE_64BIT_HRTCNT) && defined(TCYC_HRTCNT)
+#error TCYC_HRTCNT must not be defined when USE_64BIT_HRTCNT.
+#endif
+
+/*
  *  TSTEP_HRTCNTの範囲チェック
  */
 #if TSTEP_HRTCNT > 4000U
@@ -57,8 +64,10 @@
 #endif /* TSTEP_HRTCNT > 4000U */
 
 /*
- *  HRTCNT_BOUNDの範囲チェック
+ *  HRTCNT_BOUNDの定義のチェック
  */
+#ifndef USE_64BIT_HRTCNT
+
 #if HRTCNT_BOUND >= 4294000000U
 #error HRTCNT_BOUND is too large.
 #endif /* HRTCNT_BOUND >= 4294000000U */
@@ -68,6 +77,14 @@
 #error HRTCNT_BOUND is too large.
 #endif /* HRTCNT_BOUND >= TCYC_HRTCNT */
 #endif /* TCYC_HRTCNT */
+
+#else /* USE_64BIT_HRTCNT */
+
+#ifdef HRTCNT_BOUND
+#error USE_64BIT_HRTCNT is not supported on this target.
+#endif /* HRTCNT_BOUND */
+
+#endif /* USE_64BIT_HRTCNT */
 
 /*
  *  タイムイベントヒープ操作マクロ
@@ -135,7 +152,7 @@ initialize_tmevt(PCB *p_my_pcb)
 	if (TOPPERS_TEPP_PRC & (1 << get_my_prcidx())) {
 		p_my_pcb->p_tevtcb = p_tevtcb_table[get_my_prcidx()];
 		p_my_pcb->p_tevtcb->p_tmevt_heap = p_tmevt_heap_table[get_my_prcidx()];
-		
+
 		/*
 		 *  タイムマスタプロセッサであればグローバル変数を初期化
 		 */
@@ -381,10 +398,10 @@ update_current_evttim(void)
 		hrtcnt_advance += TCYC_HRTCNT;
 	}
 #endif /* TCYC_HRTCNT */
+	current_hrtcnt = new_hrtcnt;					/*［ASPD1016］*/
 
 	previous_evttim = current_evttim;
 	current_evttim += (EVTTIM) hrtcnt_advance;		/*［ASPD1015］*/
-	current_hrtcnt = new_hrtcnt;					/*［ASPD1016］*/
 	boundary_evttim = current_evttim - BOUNDARY_MARGIN;	/*［ASPD1011］*/
 
 	if (monotonic_evttim - previous_evttim < (EVTTIM) hrtcnt_advance) {
@@ -425,7 +442,10 @@ set_hrt_event(PCB *p_pcb)
 		/* 
 		 *  タイムイベントがない場合
 		 */
-		if (p_pcb->prcid == TOPPERS_TMASTER_PRCID) {		
+#ifdef USE_64BIT_HRTCNT
+		target_hrt_clear_event(p_pcb->prcid);
+#else /* USE_64BIT_HRTCNT */
+		if (p_pcb->prcid == TOPPERS_TMASTER_PRCID) {
 			/*
 			 *  タイムマスタプロセッサでは，HRTCNT_BOUND後に割込みを発
 			 *  生させる．［ASPD1007］
@@ -438,6 +458,7 @@ set_hrt_event(PCB *p_pcb)
 			 */
 			target_hrt_clear_event(p_pcb->prcid);
 		}
+#endif /* USE_64BIT_HRTCNT */
 	}
 	else if (EVTTIM_LE(top_evttim(p_pcb->p_tevtcb->p_tmevt_heap), current_evttim)) {
 		/*
@@ -447,6 +468,9 @@ set_hrt_event(PCB *p_pcb)
 	}
 	else {
 		hrtcnt = (HRTCNT)(top_evttim(p_pcb->p_tevtcb->p_tmevt_heap) - current_evttim);
+#ifdef USE_64BIT_HRTCNT
+		target_hrt_set_event(hrtcnt);
+#else /* USE_64BIT_HRTCNT */
 		if (hrtcnt > HRTCNT_BOUND) {
 			/*
 			 *  イベントがHRTCNT_BOUNDより先の場合なので，タイムマスタ
@@ -455,8 +479,9 @@ set_hrt_event(PCB *p_pcb)
 			target_hrt_set_event(p_pcb->prcid, HRTCNT_BOUND);
 		}
 		else {
-			target_hrt_set_event(p_pcb->prcid, hrtcnt);			/*［ASPD1002］*/
+			target_hrt_set_event(p_pcb->prcid, hrtcnt);	/*［ASPD1002］*/
 		}
+#endif /* USE_64BIT_HRTCNT */
 	}
 }
 
@@ -620,11 +645,11 @@ tmevtb_dequeue(TMEVTB *p_tmevtb, PCB *p_pcb)
 #ifdef TOPPERS_tmechk
 
 bool_t
-check_adjtim(int_t adjtim, PCB *p_pcb)
+check_adjtim(int32_t adjtim, PCB *p_pcb)
 {
 	if (adjtim > 0) {							/*［NGKI3588］*/
 		return(p_last_tmevtn(p_pcb->p_tevtcb->p_tmevt_heap) >= p_top_tmevtn(p_pcb->p_tevtcb->p_tmevt_heap)	/*［NGKI3588］*/
-					&& EVTTIM_LE(top_evttim(p_pcb->p_tevtcb->p_tmevt_heap), current_evttim - TMAX_ADJTIM));
+					&& EVTTIM_LE(top_evttim(p_pcb->p_tevtcb->p_tmevt_heap) + TMAX_ADJTIM, current_evttim));
 	}
 	else if (adjtim < 0) {						/*［NGKI3589］*/
 		return(monotonic_evttim - current_evttim >= -TMIN_ADJTIM);
@@ -687,7 +712,7 @@ signal_time(void)
 
 	lock_cpu();
 	acquire_glock();
-	p_my_pcb->p_tevtcb->in_signal_time = true;							/*［ASPD1033］*/
+	p_my_pcb->p_tevtcb->in_signal_time = true;						/*［ASPD1033］*/
 
 	do {
 		/*
@@ -731,7 +756,7 @@ signal_time(void)
 	 */
 	set_hrt_event(p_my_pcb);
 
-	p_my_pcb->p_tevtcb->in_signal_time = false;							/*［ASPD1033］*/
+	p_my_pcb->p_tevtcb->in_signal_time = false;				/*［ASPD1033］*/
 	release_glock();
 	unlock_cpu();
 }

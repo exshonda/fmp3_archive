@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: check.h 135 2019-01-28 14:31:50Z ertl-honda $
+ *  $Id: check.h 178 2019-10-08 13:55:00Z ertl-honda $
  */
 
 /*
@@ -76,8 +76,7 @@
 /*
  *  タイムアウト指定値の範囲の判定
  */
-#define VALID_TMOUT(tmout)	((tmout) <= TMAX_RELTIM || (tmout) == TMO_FEVR \
-													|| (tmout) == TMO_POL)
+#define VALID_TMOUT(tmout)	((tmout) <= TMAX_RELTIM || (tmout) == TMO_FEVR)
 
 /*
  *  呼出しコンテキストのチェック（E_CTX）
@@ -280,7 +279,7 @@ check_dispatch(void)
 		ercd = E_ID;										\
 		goto error_exit;									\
 	}														\
-} while(false)
+} while (false)
 
 /*
  *  マイグレーション可能の判定
@@ -291,11 +290,11 @@ check_dispatch(void)
 /*
  *  マイグレーション可能チェック・ロック解除（E_PAR）
  */
-#define CHECK_MIG(affinity, prcid) do {				\
-	if (!VALID_MIG(affinity, prcid)) {					\
+#define CHECK_MIG(affinity, prcid) do {						\
+	if (!VALID_MIG(affinity, prcid)) {						\
 		ercd = E_PAR;										\
 		goto error_exit;									\
 	}														\
-} while(false)
+} while (false)
 
 #endif /* TOPPERS_CHECK_H */

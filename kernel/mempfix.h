@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: mempfix.h 145 2019-03-10 15:27:01Z ertl-honda $
+ *  $Id: mempfix.h 178 2019-10-08 13:55:00Z ertl-honda $
  */
 
 /*
@@ -111,7 +111,8 @@ extern MPFCB *const		p_mpfcb_table[];
  *  固定長メモリプール管理ブロックから固定長メモリプールIDを取り出すた
  *  めのマクロ
  */
-#define	MPFID(p_mpfcb)	((ID)(((p_mpfcb->p_mpfinib) - mpfinib_table) + TMIN_MPFID))
+#define	MPFID(p_mpfcb)	((ID)(((p_mpfcb)->p_mpfinib - mpfinib_table) \
+															+ TMIN_MPFID))
 
 /*
  *  固定長メモリプール機能の初期化

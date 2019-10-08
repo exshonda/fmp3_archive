@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: time_manage.c 145 2019-03-10 15:27:01Z ertl-honda $
+ *  $Id: time_manage.c 178 2019-10-08 13:55:00Z ertl-honda $
  */
 
 /*
@@ -161,9 +161,9 @@ adj_tim(int32_t adjtim)
 
 	lock_cpu();
 	acquire_glock();
-	p_my_pcb = get_my_pcb();	
+	p_my_pcb = get_my_pcb();
 	update_current_evttim();					/*［ASPD1051］*/
-	if (check_adjtim(adjtim, p_my_pcb)) {				/*［ASPD1052］*/
+	if (check_adjtim(adjtim, p_my_pcb)) {		/*［ASPD1052］*/
 		ercd = E_OBJ;
 	}
 	else {
@@ -204,6 +204,10 @@ adj_tim(int32_t adjtim)
  *
  *  任意の状態から呼び出せるようにするために，SILの全割込みロック状態の
  *  制御機能を用いて，排他制御を実現している［NGKI3572］．
+ *
+ *  ここでは，グローバルロックを取得せずにtarget_hrt_get_currentを呼び
+ *  出している．そのため，target_hrt_get_currentは，複数のプロセッサで
+ *  同時に呼び出されても動作するように実装しなければならない．
  */
 #ifdef TOPPERS_fch_hrt
 

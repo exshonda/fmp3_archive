@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: time_event.h 145 2019-03-10 15:27:01Z ertl-honda $
+ *  $Id: time_event.h 178 2019-10-08 13:55:00Z ertl-honda $
  */
 
 /*
@@ -177,13 +177,6 @@ calc_current_evttim_ub(void)
 }
 
 /*
- *  高分解能タイマ割込みの発生タイミングの設定（タイムイベント処理プロセッサ用）
- *
- *  現在のイベント時刻を取得した後に呼び出すことを想定している．
- */
-extern void		set_my_hrt_event(PCB *p_my_pcb);
-
-/*
  *  高分解能タイマ割込みの発生タイミングの設定
  *
  *  現在のイベント時刻を取得した後に呼び出すことを想定している．
@@ -242,7 +235,7 @@ extern void		tmevtb_dequeue(TMEVTB *p_tmevtb, PCB *p_pcb);
  *  調整してはならない場合にtrue，そうでない場合にfalseを返す．現在のイ
  *  ベント時刻を取得した後に呼び出すことを想定している．
  */
-extern bool_t	check_adjtim(int_t adjtim, PCB *p_pcb);
+extern bool_t	check_adjtim(int32_t adjtim, PCB *p_pcb);
 
 /*
  *  タイムイベントが発生するまでの時間の計算
@@ -252,6 +245,6 @@ extern RELTIM	tmevt_lefttim(TMEVTB *p_tmevtb);
 /*
  *  高分解能タイマ割込みの処理
  */
-extern void	signal_time(void);
+extern void		signal_time(void);
 
 #endif /* TOPPERS_TIME_EVENT_H */

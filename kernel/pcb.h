@@ -35,7 +35,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  @(#) $Id: pcb.h 145 2019-03-10 15:27:01Z ertl-honda $
+ *  @(#) $Id: pcb.h 178 2019-10-08 13:55:00Z ertl-honda $
  */
 
 /*
@@ -184,7 +184,7 @@ struct processor_control_block {
 /*
  *  PCBへのアクセステーブル（kernel_cfg.c）
  */
-extern PCB *const p_pcb_table[];
+extern PCB *const	p_pcb_table[];
 
 /*
  *  プロセッサIDからPCBを取り出すためのマクロ

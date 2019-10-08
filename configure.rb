@@ -38,7 +38,7 @@
 #  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
 #  の責任を負わない．
 # 
-#  $Id: configure.rb 135 2019-01-28 14:31:50Z ertl-honda $
+#  $Id: configure.rb 178 2019-10-08 13:55:00Z ertl-honda $
 # 
 
 Encoding.default_external = 'utf-8'
@@ -81,7 +81,8 @@ require "shell"
 #  -G <tecsgen>			TECSジェネレータ（tecsgen）のパス名
 #  -o <options>			コンパイルオプション（COPTSに追加）
 #  -O <options>			シンボル定義オプション（CDEFSに追加）
-#  -k <options>			リンカオプション（LDFLAGS等に追加）
+#  -k <options>			リンカオプション（LDFLAGSに追加）
+#  -b <options>			リンカオプション（LIBSに追加）
 
 #  使用例(1)
 #
@@ -131,6 +132,7 @@ $tecsgen = nil
 $copts = []
 $cdefs = []
 $ldflags = []
+$libs = []
 
 #
 #  オプションの処理
@@ -210,6 +212,9 @@ OptionParser.new(nil, 22) do |opt|
   end
   opt.on("-k options",		"linker options") do |val|
     $ldflags += val.split(/\s+/)
+  end
+  opt.on("-b options",		"linker options for linking libraries") do |val|
+    $libs += val.split(/\s+/)
   end
   opt.parse!(ARGV)
 end
@@ -301,6 +306,7 @@ $vartable["TECSGEN"] = $tecsgen
 $vartable["COPTS"] = $copts.join(" ")
 $vartable["CDEFS"] = $cdefs.join(" ")
 $vartable["LDFLAGS"] = $ldflags.join(" ")
+$vartable["LIBS"] = $libs.join(" ")
 $vartable["OBJEXT"] = GetObjectExtension()
 ARGV.each do |arg|
   if /^([A-Za-z0-9_]+)\s*\=\s*(.*)$/ =~ arg

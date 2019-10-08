@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: pridataq.c 145 2019-03-10 15:27:01Z ertl-honda $
+ *  $Id: pridataq.c 178 2019-10-08 13:55:00Z ertl-honda $
  */
 
 /*
@@ -361,11 +361,11 @@ psnd_pdq(ID pdqid, intptr_t data, PRI datapri)
 	if (send_pridata(p_my_pcb, p_pdqcb, data, datapri)) {
 		if (p_my_pcb->p_runtsk != p_my_pcb->p_schedtsk) {
 			if (!sense_context(p_my_pcb)) {
-			release_glock();
-			dispatch();
-			ercd = E_OK;
-			goto unlock_and_exit;
-		}
+				release_glock();
+				dispatch();
+				ercd = E_OK;
+				goto unlock_and_exit;
+			}
 			else {
 				request_dispatch_retint();
 			}
@@ -483,7 +483,7 @@ rcv_pdq(ID pdqid, intptr_t *p_data, PRI *p_datapri)
 	else {
 		make_wait(p_my_pcb, TS_WAITING_RPDQ, p_selftsk);
 		queue_insert_prev(&(p_pdqcb->rwait_queue), &(p_selftsk->task_queue));
-		p_selftsk->p_wobjcb = (WOBJCB*)p_pdqcb;
+		p_selftsk->p_wobjcb = (WOBJCB *) p_pdqcb;
 		LOG_TSKSTAT(p_selftsk);
 		release_glock();
 		dispatch();
@@ -589,7 +589,7 @@ trcv_pdq(ID pdqid, intptr_t *p_data, PRI *p_datapri, TMO tmout)
 	else {
 		make_wait_tmout(p_my_pcb, TS_WAITING_RPDQ, p_selftsk, tmout);
 		queue_insert_prev(&(p_pdqcb->rwait_queue), &(p_selftsk->task_queue));
-		p_selftsk->p_wobjcb = (WOBJCB*)p_pdqcb;
+		p_selftsk->p_wobjcb = (WOBJCB *) p_pdqcb;
 		LOG_TSKSTAT(p_selftsk);
 		release_glock();
 		dispatch();
@@ -598,6 +598,7 @@ trcv_pdq(ID pdqid, intptr_t *p_data, PRI *p_datapri, TMO tmout)
 			*p_data = p_selftsk->winfo_obj.rpdq.data;
 			*p_datapri = p_selftsk->winfo_obj.rpdq.datapri;
 		}
+		goto unlock_and_exit;
 	}
 	release_glock();
   unlock_and_exit:

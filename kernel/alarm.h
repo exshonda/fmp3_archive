@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: alarm.h 145 2019-03-10 15:27:01Z ertl-honda $
+ *  $Id: alarm.h 178 2019-10-08 13:55:00Z ertl-honda $
  */
 
 /*
@@ -54,11 +54,11 @@
  *  アラーム通知初期化ブロック
  */
 typedef struct alarm_handler_initialization_block {
-	ATR			almatr;		/* アラーム通知属性 */
-	intptr_t	exinf;		/* 通知ハンドラの拡張情報 */
-	NFYHDR		nfyhdr;		/* 通知ハンドラの起動番地 */
-	ID			iprcid;		/* 通知ハンドラの初期割付けプロセッサ */
-	uint_t		affinity;	/* 通知ハンドラの割付け可能プロセッサ */
+	ATR			almatr;			/* アラーム通知属性 */
+	intptr_t	exinf;			/* 通知ハンドラの拡張情報 */
+	NFYHDR		nfyhdr;			/* 通知ハンドラの起動番地 */
+	ID			iprcid;			/* 通知ハンドラの初期割付けプロセッサ */
+	uint_t		affinity;		/* 通知ハンドラの割付け可能プロセッサ */
 } ALMINIB;
 
 /*

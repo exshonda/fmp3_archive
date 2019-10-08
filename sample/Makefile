@@ -37,7 +37,7 @@
 #  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
 #  の責任を負わない．
 # 
-#  $Id: Makefile 148 2019-03-29 16:36:07Z ertl-honda $
+#  $Id: Makefile 178 2019-10-08 13:55:00Z ertl-honda $
 # 
 
 #
@@ -179,7 +179,7 @@ endif
 CDEFS := $(CDEFS) @(CDEFS)
 INCLUDES := -I. -I$(SRCDIR)/include $(INCLUDES) -I$(SRCDIR)
 LDFLAGS := $(LDFLAGS) @(LDFLAGS)
-LIBS := $(LIBS) $(CXXLIBS)
+LIBS := @(LIBS) $(LIBS) $(CXXLIBS)
 CFLAGS = $(COPTS) $(CDEFS) $(INCLUDES)
 
 #

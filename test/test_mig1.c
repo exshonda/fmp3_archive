@@ -34,7 +34,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  @(#) $Id: test_mig1.c 38 2018-07-31 06:36:28Z ertl-honda $
+ *  @(#) $Id: test_mig1.c 176 2019-09-05 05:21:03Z ertl-honda $
  */
 
 /* 
@@ -113,7 +113,7 @@ task1_3(intptr_t exinf)
 	ER		ercd;
 	FLGPTN flgptn;
 
-	check_point(1);
+	check_point_prc(1, PRC2);
 
 	//1-1に移動を通知
 	ercd = set_flg(FLG1,8);
@@ -123,15 +123,15 @@ task1_3(intptr_t exinf)
 		ercd = pol_flg(FLG1,1,TWF_ANDW,&flgptn);
 	}while(ercd != E_OK);
   
-	check_point(2);
+	check_point_prc(2, PRC2);
 	ercd = act_tsk(TASK1_5);
 	check_ercd(ercd, E_OK);
 
-	check_point(3);
+	check_point_prc(3, PRC2);
 	ercd = slp_tsk();
 	check_ercd(ercd, E_OK);
 
-	check_point(0);
+	check_point_prc(0, PRC2);
 }
 
 void
@@ -139,7 +139,7 @@ task1_4(intptr_t exinf)
 {
 	ER		ercd;
 
-	check_point(4);
+	check_point_prc(4, PRC2);
 	ercd = slp_tsk();
 	check_ercd(ercd, E_OK);
 
@@ -151,11 +151,11 @@ task1_5(intptr_t exinf)
 {
 	ER		ercd;
 
-	check_point(5);
+	check_point_prc(5, PRC2);
 	ercd = slp_tsk();
 	check_ercd(ercd, E_OK);
 
-	check_point(0);
+	check_point_prc(0, PRC2);
 }
 
 void
@@ -163,15 +163,15 @@ task1_6(intptr_t exinf)
 {
 	ER		ercd;
 
-	check_point(7);
+	check_point_prc(7, PRC2);
 	ercd = set_flg(FLG1,4);
 	check_ercd(ercd, E_OK);
 
-	check_point(8);
+	check_point_prc(8, PRC2);
 	ercd = slp_tsk();
 	check_ercd(ercd, E_OK);
 
-	check_point(0);
+	check_point_prc(0, PRC2);
 }
 
 void
@@ -180,7 +180,7 @@ task1_7(intptr_t exinf)
 	ER		ercd;
 	FLGPTN  flgptn;
 
-	check_point(6);
+	check_point_prc(6, PRC2);
 	//同期フラグセット 1_1に起動通知
 	ercd = set_flg(FLG1,2);
 	check_ercd(ercd, E_OK);
@@ -190,12 +190,12 @@ task1_7(intptr_t exinf)
 		ercd = pol_flg(FLG1,4,TWF_ANDW,&flgptn);
 	}while(ercd != E_OK);
   
-	check_point(9);
+	check_point_prc(9, PRC2);
 	//同期フラグセット
 	ercd = set_flg(FLG1,0x10);
 	check_ercd(ercd, E_OK);
 
-	check_point(10);
+	check_point_prc(10, PRC2);
 	//同期フラグセット
 	ercd = slp_tsk();
 	check_ercd(ercd, E_OK);
@@ -233,5 +233,5 @@ task1_9(intptr_t exinf)
 	/*
 	 *  テスト終了
 	 */
-    check_finish(11);//CPU2
+    check_finish_prc(11, PRC2);//CPU2
 }

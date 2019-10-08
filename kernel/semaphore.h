@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: semaphore.h 145 2019-03-10 15:27:01Z ertl-honda $
+ *  $Id: semaphore.h 178 2019-10-08 13:55:00Z ertl-honda $
  */
 
 /*
@@ -95,7 +95,8 @@ extern SEMCB *const	p_semcb_table[];
 /*
  *  セマフォ管理ブロックからセマフォIDを取り出すためのマクロ
  */
-#define	SEMID(p_semcb)	((ID)((((p_semcb)->p_seminib) - seminib_table) + TMIN_SEMID))
+#define	SEMID(p_semcb)	((ID)(((p_semcb)->p_seminib - seminib_table) \
+															+ TMIN_SEMID))
 
 /*
  *  セマフォ機能の初期化

@@ -37,7 +37,7 @@
 #   アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
 #   の責任を負わない．
 # 
-#   $Id: task.trb 145 2019-03-10 15:27:01Z ertl-honda $
+#   $Id: task.trb 178 2019-10-08 13:55:00Z ertl-honda $
 # 
 
 #
@@ -53,7 +53,7 @@ class TaskObject < KernelObject
     # パラメータが省略された時のデフォルト値の設定
     params[:stk] ||= "NULL"
 
-    # tskatrが無効の場合（E_RSATR）［NGKI1028］［NGKI3526］［HRMPS0007］
+    # tskatrが無効の場合（E_RSATR）［NGKI1028］［NGKI3526］［FMPS0101］
     # ［NGKI1016］
     #（TA_ACT，TA_NOACTQUE，TARGET_TSKATR以外のビットがセットされている場合）
     if (params[:tskatr] & ~($TA_ACT|$TA_NOACTQUE|$TARGET_TSKATR)) != 0
@@ -67,7 +67,7 @@ class TaskObject < KernelObject
     end
 
     # stkszがターゲット定義の最小値（TARGET_MIN_STKSZ，未定義の場合は1）
-    # よりも小さい場合［NGKI1042］
+    # よりも小さい場合（E_PAR）［NGKI1042］
     if params[:stksz] < $TARGET_MIN_STKSZ
       error_wrong_id("E_PAR", params, :stksz, :tskid, "too small")
     end
@@ -76,11 +76,8 @@ class TaskObject < KernelObject
     if params[:stk] == "NULL"
       # スタック領域の生成［NGKI1049］
       stkName = "_kernel_stack_#{params[:tskid]}"
-      if defined? TargetGenTSKSTK()
-        params[:tinib_stksz] = TargetGenTSKSTK(stkName, params[:stksz])
-      else
-        params[:tinib_stksz] = AllocStack(stkName, params[:stksz])
-      end
+      stkSecname = SecnameStack(params[:class])
+      params[:tinib_stksz] = AllocStack(stkName, params[:stksz], stkSecname)
       params[:tinib_stk] = stkName
     else
       #

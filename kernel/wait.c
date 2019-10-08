@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: wait.c 135 2019-01-28 14:31:50Z ertl-honda $
+ *  $Id: wait.c 178 2019-10-08 13:55:00Z ertl-honda $
  */
 
 /*
@@ -119,8 +119,8 @@ wait_tmout(TCB *p_tcb)
 	p_tcb->winfo.wercd = E_TMOUT;
 	make_non_wait(p_my_pcb, p_tcb, p_pcb);
 	if (p_my_pcb->p_runtsk != p_my_pcb->p_schedtsk) {
-			request_dispatch_retint();
-		}
+		request_dispatch_retint();
+	}
 
 	/*
 	 *  ここで優先度の高い割込みを受け付ける．
@@ -139,13 +139,13 @@ wait_tmout(TCB *p_tcb)
 void
 wait_tmout_ok(TCB *p_tcb)
 {
-	PCB *p_my_pcb = get_my_pcb();
-	PCB *p_pcb = p_tcb->p_pcb;
+	PCB		*p_my_pcb = get_my_pcb();
+	PCB 	*p_pcb = p_tcb->p_pcb;
 
 	p_tcb->winfo.wercd = E_OK;
 	make_non_wait(p_my_pcb, p_tcb, p_pcb);
 	if (p_my_pcb->p_runtsk != p_my_pcb->p_schedtsk) {
-			request_dispatch_retint();
+		request_dispatch_retint();
 	}
 
 	/*

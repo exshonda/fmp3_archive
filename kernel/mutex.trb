@@ -37,7 +37,7 @@
 #   アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
 #   の責任を負わない．
 # 
-#   $Id: mutex.trb 145 2019-03-10 15:27:01Z ertl-honda $
+#   $Id: mutex.trb 178 2019-10-08 13:55:00Z ertl-honda $
 # 
 
 #
@@ -51,7 +51,7 @@ class MutexObject < KernelObject
 
   def prepare(key, params)
     # mtxatrが無効の場合（E_RSATR）［NGKI2025］［NGKI2010］
-    # （TA_NULL，TA_TPRI，TA_CEILINGのいずれでもない場合）
+    #（TA_NULL，TA_TPRI，TA_CEILINGのいずれでもない場合）
     if !(params[:mtxatr] == $TA_NULL || params[:mtxatr] == $TA_TPRI \
 										|| params[:mtxatr] == $TA_CEILING)
       error_illegal_id("E_RSATR", params, :mtxatr, :mtxid)

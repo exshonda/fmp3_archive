@@ -36,7 +36,7 @@
 #  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
 #  の責任を負わない．
 # 
-#  $Id: testexec.rb 50 2018-08-16 08:59:06Z ertl-honda $
+#  $Id: testexec.rb 176 2019-09-05 05:21:03Z ertl-honda $
 # 
 
 Encoding.default_external = 'utf-8'
@@ -115,7 +115,7 @@ def BuildKernel
     configCommand += " -f"
     puts(configCommand)
     system(configCommand)
-    system("make libkernel.a")
+    system("make -j4 libkernel.a")
     if File.exist?("Makefile.bak")
       File.delete("Makefile.bak")
     end
@@ -174,7 +174,7 @@ def BuildTest(test, testSpec, mkdirFlag=false)
     end
     puts(configCommand)
     system(configCommand)
-    system("make")
+    system("make -j4")
     if File.exist?("Makefile.bak")
       File.delete("Makefile.bak")
     end

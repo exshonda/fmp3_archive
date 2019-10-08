@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: sample1.c 147 2019-03-19 06:24:49Z ertl-honda $
+ *  $Id: sample1.c 184 2019-10-09 06:05:15Z ertl-honda $
  */
 
 /* 
@@ -68,9 +68,14 @@
  *  文字に対応した処理を実行する．入力された文字と処理の関係は次の通り．
  *  Control-Cまたは'Q'が入力されると，プログラムを終了する．
  *
- *  '1' : 対象タスクをTASK1に切り換える（初期設定）．
- *  '2' : 対象タスクをTASK2に切り換える．
- *  '3' : 対象タスクをTASK3に切り換える．
+ *  '1' : 対象タスクをTASK1_1/TASK2_1に切り換える（初期設定はTASK1_1）．
+ *  '2' : 対象タスクをTASK1_2/TASK2_2に切り換える．
+ *  '3' : 対象タスクをTASK1_3/TASK2_3に切り換える．
+ *  '4' : 対象タスクからTASK1_1をact_tskにより起動する．
+ *  '5' : 対象タスクからTASK1_2をact_tskにより起動する．
+ *  '6' : 対象タスクからTASK1_3をact_tskにより起動する．
+ *  '8' : 対象プロセッサをPRC1とする（初期設定）
+ *  '9' : 対象プロセッサをPRC2とする
  *  'a' : 対象タスクをact_tskにより起動する．
  *  'A' : 対象タスクに対する起動要求をcan_actによりキャンセルする．
  *  'e' : 対象タスクにext_tskを呼び出させ，終了させる．
@@ -212,15 +217,15 @@ uint_t const exctsk_tskid[TNUM_PRCID] = {
  *  周期ハンドラIDのテーブル
  */
 uint_t const sample_cycid[TNUM_PRCID] = {
-    CYCHDR1,
+    CYCHDR1_1,
 #if TNUM_PRCID >= 2
-    CYCHDR2,
+    CYCHDR2_1,
 #endif /* TNUM_PRCID >= 2 */
 #if TNUM_PRCID >= 3
-    CYCHDR3,
+    CYCHDR3_1,
 #endif /* TNUM_PRCID >= 3 */
 #if TNUM_PRCID >= 4
-    CYCHDR4,
+    CYCHDR4_1,
 #endif /* TNUM_PRCID >= 4 */
 };
 
@@ -228,15 +233,15 @@ uint_t const sample_cycid[TNUM_PRCID] = {
  *  アラームIDのテーブル
  */
 uint_t const sample_almid[TNUM_PRCID] = {
-    ALMHDR1,
+    ALMHDR1_1,
 #if TNUM_PRCID >= 2
-    ALMHDR2,
+    ALMHDR2_1,
 #endif /* TNUM_PRCID >= 2 */
 #if TNUM_PRCID >= 3
-    ALMHDR3,
+    ALMHDR3_1,
 #endif /* TNUM_PRCID >= 3 */
 #if TNUM_PRCID >= 4
-    ALMHDR4,
+    ALMHDR4_1,
 #endif /* TNUM_PRCID >= 4 */
 };
 
@@ -451,12 +456,18 @@ intno4_isr(intptr_t exinf)
 /*
  *  CPU例外ハンドラ
  */
-ID	cpuexc_tskid;		/* CPU例外を起こしたタスクのID */
+ID	cpuexc_tskid_PRC1;		/* CPU例外を起こしたタスクのID */
+ID	cpuexc_tskid_PRC2;
+ID	cpuexc_tskid_PRC3;
+ID	cpuexc_tskid_PRC4;
 
+#if defined(CPUEXC1_PRC1) || defined(CPUEXC1_PRC2) || defined(CPUEXC1_PRC3) || defined(CPUEXC1_PRC4)
 
 void
-cpuexc_handler(void *p_excinf, ID prcid)
+cpuexc_handler(void *p_excinf)
 {
+	ID	prcid;
+
 	syslog(LOG_NOTICE, "CPU exception handler (p_excinf = %08p).", p_excinf);
 	if (sns_ctx() != true) {
 		syslog(LOG_WARNING,
@@ -475,50 +486,32 @@ cpuexc_handler(void *p_excinf, ID prcid)
 		assert(0);
 	}
 
-#ifdef PREPARE_RETURN_CPUEXC
-	PREPARE_RETURN_CPUEXC;
-	SVC_PERROR(get_tid(&cpuexc_tskid));
-	SVC_PERROR(act_tsk(exctsk_tskid[prcid-1]));
-#else /* PREPARE_RETURN_CPUEXC */
-	syslog(LOG_NOTICE, "Sample program ends with exception.");
-	SVC_PERROR(ext_ker());
-	assert(0);
-#endif /* PREPARE_RETURN_CPUEXC */
+	SVC_PERROR(get_pid(&prcid));
+	if (prcid == PRC1) {
+		SVC_PERROR(get_tid(&cpuexc_tskid_PRC1));
+		SVC_PERROR(act_tsk(EXC_TASK1));
+	}
+#if TNUM_PRCID >= 2
+	else if (prcid == PRC2) {
+		SVC_PERROR(get_tid(&cpuexc_tskid_PRC2));
+		SVC_PERROR(act_tsk(EXC_TASK2));
+	}
+#endif /* TNUM_PRCID >= 2 */
+#if TNUM_PRCID >= 3
+	else if (prcid == PRC3) {
+		SVC_PERROR(get_tid(&cpuexc_tskid_PRC3));
+		SVC_PERROR(act_tsk(EXC_TASK3));
+	}
+#endif /* TNUM_PRCID >= 3 */
+#if TNUM_PRCID >= 4
+	else if (prcid == PRC4) {
+		SVC_PERROR(get_tid(&cpuexc_tskid_PRC4));
+		SVC_PERROR(act_tsk(EXC_TASK4));
+	}
+#endif /* TNUM_PRCID >= 4 */
 }
 
-
-
-#ifdef CPUEXC1
-void
-cpuexc1_handler(void *p_excinf)
-{
-	cpuexc_handler(p_excinf, 1);
-}
-#endif /* CPUEXC1 */
-
-#ifdef CPUEXC2
-void
-cpuexc2_handler(void *p_excinf)
-{
-	cpuexc_handler(p_excinf, 2);
-}
-#endif /* CPUEXC2 */
-
-#ifdef CPUEXC3
-void
-cpuexc3_handler(void *p_excinf)
-{
-	cpuexc_handler(p_excinf, 3);
-}
-#endif /* CPUEXC3 */
-
-#ifdef CPUEXC4
-void
-cpuexc4_handler(void *p_excinf)
-{
-	cpuexc_handler(p_excinf, 4);
-}
-#endif /* CPUEXC4 */
+#endif /* defined(CPUEXC1_PRC1) || defined(CPUEXC1_PRC2) || defined(CPUEXC1_PRC3) || defined(CPUEXC1_PRC4) */
 
 /*
  *  周期ハンドラ
@@ -529,13 +522,12 @@ cpuexc4_handler(void *p_excinf)
 void 
 cyclic_handler(intptr_t exinf)
 {
-	ID		prcid;
-	SVC_PERROR(get_pid(&prcid));
+	ID	prcid = (ID) exinf;
 
 	syslog(LOG_NOTICE, "cyclic_handler %d on prc%d start!", exinf, prcid);
-	SVC_PERROR(rot_rdq(HIGH_PRIORITY));
-	SVC_PERROR(rot_rdq(MID_PRIORITY));
-	SVC_PERROR(rot_rdq(LOW_PRIORITY));
+	SVC_PERROR(mrot_rdq(prcid, HIGH_PRIORITY));
+	SVC_PERROR(mrot_rdq(prcid, MID_PRIORITY));
+	SVC_PERROR(mrot_rdq(prcid, LOW_PRIORITY));
 }
 
 /*
@@ -547,13 +539,12 @@ cyclic_handler(intptr_t exinf)
 void
 alarm_handler(intptr_t exinf)
 {
-	ID		prcid;
-	SVC_PERROR(get_pid(&prcid));
+	ID	prcid = (ID) exinf;
 
 	syslog(LOG_NOTICE, "alarm_handler %d on prc%d start!", exinf, prcid);
-	SVC_PERROR(rot_rdq(HIGH_PRIORITY));
-	SVC_PERROR(rot_rdq(MID_PRIORITY));
-	SVC_PERROR(rot_rdq(LOW_PRIORITY));
+	SVC_PERROR(mrot_rdq(prcid, HIGH_PRIORITY));
+	SVC_PERROR(mrot_rdq(prcid, MID_PRIORITY));
+	SVC_PERROR(mrot_rdq(prcid, LOW_PRIORITY));
 }
 
 /*
@@ -562,8 +553,29 @@ alarm_handler(intptr_t exinf)
 void 
 exc_task(intptr_t exinf)
 {
-	SVC_PERROR(ras_ter(cpuexc_tskid));
+	ID	prcid;
+
+	SVC_PERROR(get_pid(&prcid));
+	if (prcid == PRC1) {
+		SVC_PERROR(ras_ter(cpuexc_tskid_PRC1));
+	}
+#if TNUM_PRCID >= 2
+	else if (prcid == PRC2) {
+		SVC_PERROR(ras_ter(cpuexc_tskid_PRC2));
+	}
+#endif /* TNUM_PRCID >= 2 */
+#if TNUM_PRCID >= 3
+	else if (prcid == PRC3) {
+		SVC_PERROR(ras_ter(cpuexc_tskid_PRC3));
+	}
+#endif /* TNUM_PRCID >= 3 */
+#if TNUM_PRCID >= 4
+	else if (prcid == PRC4) {
+		SVC_PERROR(ras_ter(cpuexc_tskid_PRC4));
+	}
+#endif /* TNUM_PRCID >= 4 */
 }
+
 
 /*
  *  初期化ルーチンの確認のためのカウンタ
@@ -658,7 +670,7 @@ main_task(intptr_t exinf)
  	 *  ループ回数の設定
 	 *
 	 *  並行実行されるタスク内でのループの回数（task_loop）は，ループ
-	 *  の実行時間が約0.2秒になるように設定する．この設定のために，
+	 *  の実行時間が約0.4秒になるように設定する．この設定のために，
 	 *  LOOP_REF回のループの実行時間を，その前後でget_timを呼ぶことで
 	 *  測定し，その測定結果から空ループの実行時間が0.2秒になるループ
 	 *  回数を求め，task_loopに設定する．
@@ -693,7 +705,7 @@ main_task(intptr_t exinf)
 	SVC_PERROR(get_tim(&stime1));
 	consume_time(LOOP_REF);
 	SVC_PERROR(get_tim(&stime2));
-	task_loop = LOOP_REF * 200LU / (ulong_t)(stime2 - stime1) * 1000LU;
+	task_loop = LOOP_REF * 400LU / (ulong_t)(stime2 - stime1) * 1000LU;
 
 #endif /* TASK_LOOP */
 
@@ -909,15 +921,15 @@ main_task(intptr_t exinf)
 			break;
 		case 'b':
 			syslog(LOG_INFO, "#sta_alm(ALMHDR1, 5000000)");
-			SVC_PERROR(sta_alm(ALMHDR1, 5000000));
+			SVC_PERROR(sta_alm(almid, 5000000));
 			break;
 		case 'B':
 			syslog(LOG_INFO, "#stp_alm(ALMHDR1)");
-			SVC_PERROR(stp_alm(ALMHDR1));
+			SVC_PERROR(stp_alm(almid));
 			break;
 		case 'E':
 			syslog(LOG_INFO, "#msta_alm(%d, 5000000, %d)", almid, prcid);
-			SVC_PERROR(msta_alm(ALMHDR1, 5000000, prcid));
+			SVC_PERROR(msta_alm(almid, 5000000, prcid));
 			break;
 		  case 'j':
 			syslog(LOG_INFO, "#ras_int(0x%x)", intno);
@@ -928,7 +940,7 @@ main_task(intptr_t exinf)
 			consume_time(1000LU);
 			hrtcnt2 = fch_hrt();
 			syslog(LOG_NOTICE, "hrtcnt1 = %tu, hrtcnt2 = %tu",
-										hrtcnt1, hrtcnt2);
+								(uint32_t) hrtcnt1, (uint32_t) hrtcnt2);
 			break;
 		case 'v':
 			SVC_PERROR(syslog_msk_log(LOG_UPTO(LOG_INFO),

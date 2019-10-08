@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: task_term.c 145 2019-03-10 15:27:01Z ertl-honda $
+ *  $Id: task_term.c 178 2019-10-08 13:55:00Z ertl-honda $
  */
 
 /*
@@ -161,7 +161,7 @@ ext_tsk(void)
 		release_glock();
 		exit_and_dispatch();
 	}
-	ercd = E_SYS;							/* ［NGKI1163］*/
+	ercd = E_SYS;									/*［NGKI1163］*/
   error_exit:
 	LOG_EXT_TSK_LEAVE(ercd);
 	return(ercd);
@@ -192,11 +192,11 @@ ras_ter(ID tskid)
 	acquire_glock();
 	p_my_pcb = get_my_pcb();
 	if (p_tcb->p_pcb != p_my_pcb) {
-	/* 異なるプロセッサに割り付けられているタスクならエラーとする */
+		/* 異なるプロセッサに割り付けられているタスクならエラーとする */
 		ercd = E_OBJ;
 	}
 	else if (TSTAT_DORMANT(p_tcb->tstat)) {
-		ercd = E_OBJ;							/*［NGKI3476］*/
+		ercd = E_OBJ;								/*［NGKI3476］*/
 	}
 	else if (p_tcb->enater) {
 		(void) task_terminate(p_my_pcb, p_tcb);		/*［NGKI3477］*/
@@ -251,7 +251,7 @@ dis_ter(void)
 	TCB		*p_selftsk;
 
 	LOG_DIS_TER_ENTER();
-	CHECK_TSKCTX_UNL();									/*［NGKI3483］［NGKI3484］*/
+	CHECK_TSKCTX_UNL();							/*［NGKI3483］［NGKI3484］*/
 
 	lock_cpu();
 	acquire_glock();
@@ -366,11 +366,11 @@ ter_tsk(ID tskid)
 	acquire_glock();
 	p_my_pcb = get_my_pcb();
 	if (p_tcb->p_pcb != p_my_pcb) {
-	/* 異なるプロセッサに割り付けられているタスクならエラーとする */
+		/* 異なるプロセッサに割り付けられているタスクならエラーとする */
 		ercd = E_OBJ;
 	}
 	else if (TSTAT_DORMANT(p_tcb->tstat)) {
-		ercd = E_OBJ;							/*［NGKI1177］*/
+		ercd = E_OBJ;								/*［NGKI1177］*/
 	}
 	else {
 		(void) task_terminate(p_my_pcb, p_tcb);		/*［NGKI3450］*/

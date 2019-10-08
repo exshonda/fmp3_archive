@@ -5,7 +5,7 @@
  *
  *  Copyright (C) 2000-2003 by Embedded and Real-Time Systems Laboratory
  *                              Toyohashi Univ. of Technology, JAPAN
- *  Copyright (C) 2004-2016 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2004-2019 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  *
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  *
- *  $Id: sample1.h 145 2019-03-10 15:27:01Z ertl-honda $
+ *  $Id: sample1.h 178 2019-10-08 13:55:00Z ertl-honda $
  */
 
 /*
@@ -107,17 +107,8 @@ extern void intno3_isr(intptr_t exinf);
 extern void intno4_isr(intptr_t exinf);
 #endif /* INTNO4 */
 #ifdef CPUEXC1
-extern void	cpuexc1_handler(void *p_excinf);
+extern void	cpuexc_handler(void *p_excinf);
 #endif /* CPUEXC1 */
-#ifdef CPUEXC2
-extern void	cpuexc2_handler(void *p_excinf);
-#endif /* CPUEXC2 */
-#ifdef CPUEXC3
-extern void	cpuexc3_handler(void *p_excinf);
-#endif /* CPUEXC3 */
-#ifdef CPUEXC4
-extern void	cpuexc4_handler(void *p_excinf);
-#endif /* CPUEXC4 */
 extern void	cyclic_handler(intptr_t exinf);
 extern void	alarm_handler(intptr_t exinf);
 

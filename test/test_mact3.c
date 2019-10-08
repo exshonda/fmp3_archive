@@ -34,7 +34,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  @(#) $Id: test_mact3.c 38 2018-07-31 06:36:28Z ertl-honda $
+ *  @(#) $Id: test_mact3.c 176 2019-09-05 05:21:03Z ertl-honda $
  */
 
 /* 
@@ -119,11 +119,11 @@ task1_5(intptr_t exinf)
 
 	actno++;
 	if(actno==1){
-		check_point(1);
+		check_point_prc(1, PRC2);
 		ercd = set_flg(FLG1,1);
 		check_ercd(ercd, E_OK);    
 	}else if(actno ==2){
-		check_point(3);
+		check_point_prc(3, PRC2);
 		ercd = set_flg(FLG1,2);
 		check_ercd(ercd, E_OK);    
 	}
@@ -132,14 +132,14 @@ task1_5(intptr_t exinf)
 	check_ercd(ercd, E_OK);
 
 	if(actno==1){
-		check_point(2);
+		check_point_prc(2, PRC2);
 	}else if(actno ==2){
-		check_point(4);
+		check_point_prc(4, PRC2);
 
 	/*
 	 * テスト終了
 	 */
-		check_finish(5);
+		check_finish_prc(5, PRC2);
 	}
   
 }

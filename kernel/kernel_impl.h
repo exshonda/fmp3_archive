@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: kernel_impl.h 145 2019-03-10 15:27:01Z ertl-honda $
+ *  $Id: kernel_impl.h 178 2019-10-08 13:55:00Z ertl-honda $
  */
 
 /*
@@ -233,7 +233,7 @@ extern const ACVCT	sysstat_acvct;
 /*
  *  非タスクコンテキスト用のスタック領域（kernel_cfg.c）
  */
-extern const size_t istksz_table[];		/* スタック領域のサイズ（丸めた値） */
+extern const size_t istksz_table[];		/* スタック領域のサイズ（丸めた値）*/
 extern STK_T *const istk_table[];		/* スタック領域の先頭番地 */
 #ifdef TOPPERS_ISTKPT
 extern STK_T *const istkpt_table[];		/* スタックポインタの初期値 */

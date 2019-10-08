@@ -17,6 +17,7 @@ change_subprio
 rotate_ready_queue
 task_terminate
 migrate_self
+migrate_activate_self
 
 # taskhook.c
 mtxhook_check_ceilpri
@@ -44,7 +45,6 @@ tmevt_up
 tmevt_down
 update_current_evttim
 set_hrt_event
-set_my_hrt_event
 set_hrt_event_handler
 tmevtb_register
 tmevtb_enqueue
@@ -156,5 +156,7 @@ p_tmevt_heap_table
 istksz_table
 istk_table
 istkpt_table
+idstk_table
+idstkpt_table
 
 INCLUDE "target"

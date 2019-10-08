@@ -36,7 +36,7 @@
 #  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
 #  の責任を負わない．
 #
-#  $Id: cfg.rb 170 2019-02-13 07:45:58Z ertl-hiro $
+#  $Id: cfg.rb 180 2019-10-02 23:32:02Z ertl-hiro $
 #
 
 if $0 == __FILE__
@@ -55,7 +55,7 @@ require "SRecord.rb"
 #  定数定義
 #
 # 共通
-VERSION = "1.4.0"
+VERSION = "1.5.0"
 
 # cfg1_out関係
 CFG1_PREFIX         = "TOPPERS_cfg_"
@@ -106,7 +106,7 @@ end
 # システムコンフィギュレーションファイルの構文解析時のエラー
 $noParseError = 0
 def parse_error(cfgFile, message)
-  error(message, "#{cfgFile.getFileName()}:#{cfgFile.getLineNo}:")
+  error(message, "#{cfgFile.getFileName}:#{cfgFile.getLineNo}:")
   if ($noParseError += 1) >= 10
     abort("too many errors emitted, stopping now")
   end
@@ -114,7 +114,7 @@ end
 
 # システムコンフィギュレーションファイルの構文解析時の警告
 def parse_warning(cfgFile, message)
-  warning(message, "#{cfgFile.getFileName()}:#{cfgFile.getLineNo}:")
+  warning(message, "#{cfgFile.getFileName}:#{cfgFile.getLineNo}:")
 end
 
 #

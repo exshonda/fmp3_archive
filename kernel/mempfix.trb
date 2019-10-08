@@ -37,7 +37,7 @@
 #   アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
 #   の責任を負わない．
 # 
-#   $Id: mempfix.trb 145 2019-03-10 15:27:01Z ertl-honda $
+#   $Id: mempfix.trb 178 2019-10-08 13:55:00Z ertl-honda $
 # 
 
 #
@@ -73,29 +73,25 @@ class MempfixObject < KernelObject
     # 固定長メモリプール領域
     if params[:mpf] == "NULL"
       mpfName = "_kernel_mpf_#{params[:mpfid]}"
-      if defined? TargetGenMPF_T()
-        TargetGenMPF_T(mpfName, params[:blkcnt], params[:blksz])
-      else
-        $kernelCfgC.add("static MPF_T #{mpfName}" \
-				"[#{params[:blkcnt]} * COUNT_MPF_T(#{params[:blksz]})];")
-      end
+      DefineVariableSection($kernelCfgC, \
+				"static MPF_T #{mpfName}" \
+				"[#{params[:blkcnt]} * COUNT_MPF_T(#{params[:blksz]})]", \
+				SecnameKernelData(params[:class]))
       params[:mpfinib_mpf] = mpfName
     else
       params[:mpfinib_mpf] = "(void *)(#{params[:mpf]})"
     end
 
-    # mpfmbがNULLでない場合（E_NOSPT）［ASPS0166］
+    # mpfmbがNULLでない場合（E_NOSPT）［FMPS0144］
     if params[:mpfmb] != "NULL"
       error_illegal_id("E_NOSPT", params, :mpfmb, :mpfid)
     end
 
     # 固定長メモリプール管理領域
     mpfmbName = "_kernel_mpfmb_#{params[:mpfid]}"
-    if defined? TargetGenMPFMB()
-      TargetGenMPFMB(mpfmbName, params[:blkcnt])
-    else
-      $kernelCfgC.add("static MPFMB #{mpfmbName}[#{params[:blkcnt]}];")
-    end
+    DefineVariableSection($kernelCfgC, \
+				"static MPFMB #{mpfmbName}[#{params[:blkcnt]}]", \
+				SecnameKernelData(params[:class]))
     params[:mpfinib_mpfmb] = mpfmbName
   end
 

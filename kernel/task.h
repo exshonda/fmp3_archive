@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: task.h 145 2019-03-10 15:27:01Z ertl-honda $
+ *  $Id: task.h 178 2019-10-08 13:55:00Z ertl-honda $
  */
 
 /*
@@ -200,7 +200,7 @@ struct task_control_block {
 #else /* UINT8_MAX */
 	BIT_FIELD_UINT	tstat : 8;		/* タスク状態（内部表現）*/
 	BIT_FIELD_UINT	bpriority : 8;	/* ベース優先度（内部表現）*/
-	BIT_FIELD_UINT	priority : 8	/* 現在の優先度（内部表現）*/;
+	BIT_FIELD_UINT	priority : 8;	/* 現在の優先度（内部表現）*/;
 #endif /* UINT8_MAX */
 	BIT_FIELD_BOOL	actque : 1;		/* 起動要求キューイング */
 	BIT_FIELD_BOOL	wupque : 1;		/* 起床要求キューイング */
@@ -254,8 +254,8 @@ struct task_control_block {
 		ER		wercd;				/* 待ち解除時のエラーコード */
 		TMEVTB	tmevtb;				/* タイムイベントブロック */
 	} winfo;
-	WOBJCB	*p_wobjcb;				/* 待ちオブジェクトの管理ブロック */
-	WINFO_OBJ winfo_obj;			/* オブジェクト毎の待ち情報ブロック */
+	WOBJCB		*p_wobjcb;			/* 待ちオブジェクトの管理ブロック */
+	WINFO_OBJ	winfo_obj;			/* オブジェクト毎の待ち情報ブロック */
 };
 
 /*
@@ -290,7 +290,7 @@ extern const ID	torder_table[];
 /*
  *  TCBのエリアへのポインタ（kernel_cfg.c）
  */
-extern TCB* const	p_tcb_table[];
+extern TCB *const	p_tcb_table[];
 
 /*
  *  タスクの数
@@ -306,7 +306,7 @@ extern TCB* const	p_tcb_table[];
 /*
  *  TCBからタスクIDを取り出すためのマクロ
  */
-#define	TSKID(p_tcb)	((ID)((((p_tcb)->p_tinib) - tinib_table) + TMIN_TSKID))
+#define	TSKID(p_tcb)	((ID)(((p_tcb)->p_tinib - tinib_table) + TMIN_TSKID))
 
 /*
  *  タスク管理モジュールの初期化

@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: task_sync.c 135 2019-01-28 14:31:50Z ertl-honda $
+ *  $Id: task_sync.c 178 2019-10-08 13:55:00Z ertl-honda $
  */
 
 /*
@@ -230,7 +230,7 @@ wup_tsk(ID tskid)
 		p_tcb = p_selftsk;							/*［NGKI1275］*/
 	}
 	else {
-		CHECK_ID(VALID_TSKID(tskid));				/*［NGKI1267］*/
+		CHECK_ID(VALID_TSKID(tskid));			/*［NGKI1267］*/
 		p_tcb = get_tcb(tskid);
 	}
 

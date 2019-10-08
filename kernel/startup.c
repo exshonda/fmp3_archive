@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: startup.c 145 2019-03-10 15:27:01Z ertl-honda $
+ *  $Id: startup.c 178 2019-10-08 13:55:00Z ertl-honda $
  */
 
 /*
@@ -96,8 +96,8 @@ barrier_sync(uint_t phase)
 		do {
 			sil_dly_nse(100);
 			count = 0;
-			for(i = 0; i < TNUM_PRCID; i++) {
-				if(prc_phase[i] == phase) {
+			for (i = 0; i < TNUM_PRCID; i++) {
+				if (prc_phase[i] == phase) {
 					count++;
 				}
 			}
@@ -139,7 +139,7 @@ void
 sta_ker(void)
 {
 	uint_t	my_prcidx;
-	PCB *p_my_pcb;
+	PCB		*p_my_pcb;
 
 	/*
 	 *  TECSの初期化
@@ -226,8 +226,8 @@ sta_ker(void)
 ER
 ext_ker(void)
 {
-	PCB	*p_my_pcb;
-	ID	prcid;
+	PCB		*p_my_pcb;
+	ID		prcid;
 	ER		ercd;
 	SIL_PRE_LOC;
 

@@ -37,16 +37,16 @@
 #   アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
 #   の責任を負わない．
 # 
-#   $Id: kernel_check.trb 148 2019-03-29 16:36:07Z ertl-honda $
+#   $Id: kernel_check.trb 178 2019-10-08 13:55:00Z ertl-honda $
 #  
 
 #
 #		コンフィギュレータのチェックパスの生成スクリプト
 #
 
-# 
+#
 #  タイムスタンプファイルの指定
-# 
+#
 $timeStampFileName = "check.timestamp"
 
 #
@@ -112,7 +112,7 @@ def checkNotifyHandler(key, params, objid, exinf, nfyhdr)
     end
   end
 
-  #	イベント通知処理の変数の番地とオブジェクトIDのチェック
+  # イベント通知処理の変数の番地とオブジェクトIDのチェック
   if nfymode1 == $TNFY_SETVAR || nfymode1 == $TNFY_INCVAR
     # 変数の設定／インクリメントによるタイムイベントの通知
     p_var = exinf
@@ -227,9 +227,9 @@ def checkNotifyHandler(key, params, objid, exinf, nfyhdr)
   end
 end
 
-# 
+#
 #  タスクに関するチェック
-# 
+#
 tinib = SYMBOL("_kernel_tinib_table")
 $cfgData[:CRE_TSK].sort.each do |key, params|
   # taskがプログラムの先頭番地として正しくない場合（E_PAR）［NGKI1033］
@@ -258,9 +258,9 @@ $cfgData[:CRE_TSK].sort.each do |key, params|
   tinib += $sizeof_TINIB
 end
 
-# 
+#
 #  固定長メモリプールに関するチェック
-# 
+#
 mpfinib = SYMBOL("_kernel_mpfinib_table")
 $cfgData[:CRE_MPF].sort.each do |_, params|
   mpf = PEEK(mpfinib + $offsetof_MPFINIB_mpf, $sizeof_void_ptr)
@@ -276,35 +276,35 @@ $cfgData[:CRE_MPF].sort.each do |_, params|
   mpfinib += $sizeof_MPFINIB
 end
 
-# 
+#
 #  周期通知に関するチェック
-# 
+#
 cycinib = SYMBOL("_kernel_cycinib_table")
 $cfgData[:CRE_CYC].sort.each do |key, params|
   exinf = PEEK(cycinib + $offsetof_CYCINIB_exinf, $sizeof_intptr_t)
   nfyhdr = PEEK(cycinib + $offsetof_CYCINIB_nfyhdr, $sizeof_NFYHDR)
 
-  #	通知情報のチェック
+  # 通知情報のチェック
   checkNotifyHandler(key, params, :cycid, exinf, nfyhdr)
 
   cycinib += $sizeof_CYCINIB
 end
 
-# 
+#
 #  アラーム通知に関するチェック
-# 
+#
 alminib = SYMBOL("_kernel_alminib_table")
 $cfgData[:CRE_ALM].sort.each do |key, params|
   exinf = PEEK(alminib + $offsetof_ALMINIB_exinf, $sizeof_intptr_t)
   nfyhdr = PEEK(alminib + $offsetof_ALMINIB_nfyhdr, $sizeof_NFYHDR)
 
-  #	通知情報のチェック
+  # 通知情報のチェック
   checkNotifyHandler(key, params, :almid, exinf, nfyhdr)
 
   alminib += $sizeof_ALMINIB
 end
 
-# 
+#
 #  非タスクコンテキスト用のスタック領域に関するチェック
 # 
 istkTable = SYMBOL("_kernel_istk_table")
@@ -346,7 +346,7 @@ end
 #
 0.upto($TNUM_PRCID) do |prcid|
   terrtnb = SYMBOL("_kernel_terrtnb_table_#{$prcStr[prcid]}")
-  $terData[prcid].each do |_, params|
+  $terData[prcid].reverse_each do |_, params|
     terrtn = PEEK(terrtnb + $offsetof_TERRTNB_terrtn, $sizeof_TERRTN)
 
   # terrtnがプログラムの先頭番地として正しくない場合（E_PAR）［NGKI3250］

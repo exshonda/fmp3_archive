@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: sys_manage.c 135 2019-01-28 14:31:50Z ertl-honda $
+ *  $Id: sys_manage.c 178 2019-10-08 13:55:00Z ertl-honda $
  */
 
 /*
@@ -253,12 +253,12 @@ mrot_rdq(ID schedno, PRI tskpri)
 	bool_t	context;
 	ID		prcid = schedno;
 	PCB				*p_my_pcb;
-	
+
 	LOG_MROT_RDQ_ENTER(schedno, tskpri);
 	CHECK_UNL_MYSTATE(&p_selftsk, &context);							/*［NGKI2695］*/
 	CHECK_PRCID(prcid);
 	if (tskpri == TPRI_SELF && !context) {
-		pri = p_selftsk->bpriority;
+		pri = p_selftsk->bpriority;				/*［NGKI2701］*/
 	}
 	else {
 		CHECK_PAR(VALID_TPRI(tskpri));			/*［NGKI2697］*/

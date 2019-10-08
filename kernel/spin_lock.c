@@ -35,7 +35,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  @(#) $Id: spin_lock.c 145 2019-03-10 15:27:01Z ertl-honda $
+ *  @(#) $Id: spin_lock.c 178 2019-10-08 13:55:00Z ertl-honda $
  */
 
 /*
@@ -135,7 +135,7 @@
 void
 initialize_spin_lock(PCB *p_my_pcb)
 {
-	uint_t	i;
+	uint_t			i;
 	const SPNINIB	*p_spninib;
 
 	/*
@@ -209,7 +209,7 @@ loc_spn(ID spnid)
 		lock_native_spn(p_spninib);
 	}
 	else {
-  retry:
+	  retry:
 		acquire_glock();
 		if (LOCKFLAG(p_spninib)) {
 			/* 取得されていた場合 */
@@ -362,7 +362,7 @@ unl_spn(ID spnid)
 ER
 ref_spn(ID spnid, T_RSPN *pk_rspn)
 {
-	ER		ercd;
+	ER				ercd;
 	const SPNINIB	*p_spninib;
 	TCB				*p_selftsk;
 	bool_t			spnlocked;

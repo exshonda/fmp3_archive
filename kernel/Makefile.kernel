@@ -37,7 +37,7 @@
 #  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
 #  の責任を負わない．
 # 
-#  $Id: Makefile.kernel 145 2019-03-10 15:27:01Z ertl-honda $
+#  $Id: Makefile.kernel 178 2019-10-08 13:55:00Z ertl-honda $
 # 
 
 #
@@ -74,7 +74,7 @@ time_event = tmeini.o tmeup.o tmedown.o tmecur.o tmeset.o tmereg.o \
 		tmeenq.o tmeenqrel.o tmedeq.o tmechk.o tmeltim.o tmeproc.o sigtim.o
 
 task_manage = act_tsk.o mact_tsk.o can_act.o mig_tsk.o get_tst.o \
-			chg_pri.o get_pri.o get_inf.o
+		chg_pri.o get_pri.o get_inf.o
 
 task_refer = ref_tsk.o
 

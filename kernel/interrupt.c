@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: interrupt.c 145 2019-03-10 15:27:01Z ertl-honda $
+ *  $Id: interrupt.c 174 2019-09-02 06:50:50Z ertl-honda $
  */
 
 /*
@@ -157,7 +157,7 @@ initialize_interrupt(PCB *p_my_pcb)
 	}
 	for (i = 0; i < tnum_cfg_intno; i++) {
 		p_intinib = &(intinib_table[i]);
-		if (p_inhinib->iprcid == p_my_pcb->prcid) {
+		if (p_intinib->iprcid == p_my_pcb->prcid) {
 			config_int(p_intinib->intno, p_intinib->intatr,
 							p_intinib->intpri, p_intinib->affinity);
 		}

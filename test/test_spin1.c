@@ -34,7 +34,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  @(#) $Id: test_spin1.c 38 2018-07-31 06:36:28Z ertl-honda $
+ *  @(#) $Id: test_spin1.c 176 2019-09-05 05:21:03Z ertl-honda $
  */
 
 /* 
@@ -139,7 +139,7 @@ task1_1(intptr_t exinf)
 	ercd = act_tsk(TASK2_1);
 	check_ercd(ercd, E_OK);
 
-	barrier_sync(1);
+	test_barrier(1);
 
 	for(i = 0; i < LOOP_REF; i++) {
 		ercd = loc_spn(SPN1);
@@ -163,7 +163,7 @@ task1_1(intptr_t exinf)
 	ercd = act_tsk(TASK2_2);
 	check_ercd(ercd, E_OK);
 
-	barrier_sync(2);
+	test_barrier(2);
 
 	for(i = 0; i < LOOP_REF; i++) {
 		do {
@@ -219,7 +219,7 @@ task1_1(intptr_t exinf)
 	ercd = sta_alm(ALMHDR2_3, 1);
 	check_ercd(ercd, E_OK);
 
-	barrier_sync(5);
+	test_barrier(5);
 
 	for(i = 0; i < LOOP_REF; i++) {
 		ercd = loc_spn(SPN1);
@@ -243,7 +243,7 @@ task1_1(intptr_t exinf)
 	ercd = sta_alm(ALMHDR2_4, 11);
 	check_ercd(ercd, E_OK);
 
-	barrier_sync(6);
+	test_barrier(6);
 
 	for(i = 0; i < LOOP_REF; i++) {
 		do {
@@ -257,6 +257,7 @@ task1_1(intptr_t exinf)
 
 	check_assert((global_data & 0xffff0000) == (LOOP_REF << 16));
 
+	set_wait();
 	wait_test();
 
 	check_finish(13);
@@ -273,8 +274,8 @@ task2_1(intptr_t exinf)
 	ER	ercd;
 	uint_t i;
 
-	check_point(1);
-	barrier_sync(1);
+	check_point_prc(1, PRC2);
+	test_barrier(1);
 
 	for(i = 0; i < LOOP_REF; i++) {
 		ercd = loc_spn(SPN1);
@@ -288,7 +289,7 @@ task2_1(intptr_t exinf)
 
 	set_wait();
 
-	check_point(2);
+	check_point_prc(2, PRC2);
 }
 
 /*
@@ -300,8 +301,8 @@ task2_2(intptr_t exinf)
 	ER	ercd;
 	uint_t i;
 
-	check_point(3);
-	barrier_sync(2);
+	check_point_prc(3, PRC2);
+	test_barrier(2);
 
 	for(i = 0; i < LOOP_REF; i++) {
 		do {
@@ -317,7 +318,7 @@ task2_2(intptr_t exinf)
 
 	set_wait();
 
-	check_point(4);
+	check_point_prc(4, PRC2);
 }
 
 /*
@@ -330,7 +331,7 @@ alarm_handler1_1(intptr_t exinf)
 	uint_t i;
 
 	check_point(5);
-	barrier_sync(3);
+	test_barrier(3);
 
 	for(i = 0; i < LOOP_REF; i++) {
 		ercd = loc_spn(SPN2);
@@ -353,9 +354,9 @@ alarm_handler2_1(intptr_t exinf)
 	ER	ercd;
 	uint_t i;
 
-	check_point(5);
+	check_point_prc(5, PRC2);
 
-	barrier_sync(3);
+	test_barrier(3);
 
 	for(i = 0; i < LOOP_REF; i++) {
 		ercd = loc_spn(SPN2);
@@ -369,7 +370,7 @@ alarm_handler2_1(intptr_t exinf)
 
 	set_wait();
 
-	check_point(6);
+	check_point_prc(6, PRC2);
 }
 
 /*
@@ -382,7 +383,7 @@ alarm_handler1_2(intptr_t exinf)
 	uint_t i;
 
 	check_point(9);
-	barrier_sync(4);
+	test_barrier(4);
 
 	for(i = 0; i < LOOP_REF; i++) {
 		do {
@@ -407,9 +408,9 @@ alarm_handler2_2(intptr_t exinf)
 	ER	ercd;
 	uint_t i;
 
-	check_point(7);
+	check_point_prc(7, PRC2);
 
-	barrier_sync(4);
+	test_barrier(4);
 
 	for(i = 0; i < LOOP_REF; i++) {
 		do {
@@ -425,7 +426,7 @@ alarm_handler2_2(intptr_t exinf)
 
 	set_wait();
 
-	check_point(8);
+	check_point_prc(8, PRC2);
 }
 
 /*
@@ -437,8 +438,8 @@ alarm_handler2_3(intptr_t exinf)
 	ER	ercd;
 	uint_t i;
 
-	check_point(9);
-	barrier_sync(5);
+	check_point_prc(9, PRC2);
+	test_barrier(5);
 
 	for(i = 0; i < LOOP_REF; i++) {
 		ercd = loc_spn(SPN1);
@@ -452,7 +453,7 @@ alarm_handler2_3(intptr_t exinf)
 
 	set_wait();
 
-	check_point(10);
+	check_point_prc(10, PRC2);
 }
 
 /*
@@ -464,8 +465,8 @@ alarm_handler2_4(intptr_t exinf)
 	ER	ercd;
 	uint_t i;
 
-	check_point(11);
-	barrier_sync(6);
+	check_point_prc(11, PRC2);
+	test_barrier(6);
 
 	for(i = 0; i < LOOP_REF; i++) {
 		do {
@@ -481,5 +482,5 @@ alarm_handler2_4(intptr_t exinf)
 
 	set_wait();
 
-	check_finish(12);
+	check_finish_prc(12, PRC2);
 }

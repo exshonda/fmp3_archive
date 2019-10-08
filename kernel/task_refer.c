@@ -35,7 +35,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: task_refer.c 135 2019-01-28 14:31:50Z ertl-honda $
+ *  $Id: task_refer.c 178 2019-10-08 13:55:00Z ertl-honda $
  */
 
 /*
@@ -200,7 +200,7 @@ ref_tsk(ID tskid, T_RTSK *pk_rtsk)
 
 		/*
 		 *  サブ優先度の取出し
-	 	*/
+		 */
 		pk_rtsk->subpri = p_tcb->subpri;
 	}
 

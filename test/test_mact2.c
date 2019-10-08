@@ -34,7 +34,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  @(#) $Id: test_mact2.c 38 2018-07-31 06:36:28Z ertl-honda $
+ *  @(#) $Id: test_mact2.c 176 2019-09-05 05:21:03Z ertl-honda $
  */
 
 /* 
@@ -128,5 +128,5 @@ task2_7(intptr_t exinf)
 void
 task2_finish(intptr_t exinf)
 {
-	check_finish(1);//CPU2
+	check_finish_prc(1, PRC2);//CPU2
 }

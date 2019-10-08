@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: kernel.h 151 2019-03-30 15:37:36Z ertl-honda $
+ *  $Id: kernel.h 178 2019-10-08 13:55:00Z ertl-honda $
  */
 
 /*
@@ -516,8 +516,8 @@ extern bool_t	xsns_dpn(void *p_excinf) throw();
  */
 #define TKERNEL_MAKER	UINT_C(0x0118)	/* カーネルのメーカーコード */
 #define TKERNEL_PRID	UINT_C(0x0008)	/* カーネルの識別番号 */
-#define TKERNEL_SPVER	UINT_C(0xf633)	/* カーネル仕様のバージョン番号 */
-#define TKERNEL_PRVER	UINT_C(0x3000)	/* カーネルのバージョン番号 */
+#define TKERNEL_SPVER	UINT_C(0xf634)	/* カーネル仕様のバージョン番号 */
+#define TKERNEL_PRVER	UINT_C(0x3010)	/* カーネルのバージョン番号 */
 
 /*
  *  キューイング回数の最大値

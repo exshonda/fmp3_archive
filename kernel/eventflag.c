@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: eventflag.c 145 2019-03-10 15:27:01Z ertl-honda $
+ *  $Id: eventflag.c 178 2019-10-08 13:55:00Z ertl-honda $
  */
 
 /*
@@ -204,11 +204,11 @@ set_flg(ID flgid, FLGPTN setptn)
 	}
 	if (p_my_pcb->p_runtsk != p_my_pcb->p_schedtsk) {
 		if (!sense_context(p_my_pcb)) {
-		release_glock();
-		dispatch();
-		ercd = E_OK;
-		goto unlock_and_exit;
-	}
+			release_glock();
+			dispatch();
+			ercd = E_OK;
+			goto unlock_and_exit;
+		}
 		else {
 			request_dispatch_retint();
 		}

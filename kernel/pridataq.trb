@@ -37,7 +37,7 @@
 #   アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
 #   の責任を負わない．
 # 
-#   $Id: pridataq.trb 145 2019-03-10 15:27:01Z ertl-honda $
+#   $Id: pridataq.trb 178 2019-10-08 13:55:00Z ertl-honda $
 # 
 
 #
@@ -65,7 +65,7 @@ class PridataqObject < KernelObject
       error_illegal_id("E_PAR", params, :maxdpri, :pdqid)
     end
 
-    # pdqmbがNULLでない場合（E_NOSPT）［HRMPS0108］
+    # pdqmbがNULLでない場合（E_NOSPT）［FMPS0127］
     if params[:pdqmb] != "NULL"
       error_illegal_id("E_NOSPT", params, :pdqmb, :pdqid)
     end
@@ -73,11 +73,9 @@ class PridataqObject < KernelObject
     # 優先度データキュー管理領域
     if params[:pdqcnt] > 0
       pdqmbName = "_kernel_pdqmb_#{params[:pdqid]}"
-      if defined? TargetGenPDTQMB()
-        TargetGenPDTQMB(pdqmbName, params[:pdqcnt])
-      else
-        $kernelCfgC.add("static PDQMB #{pdqmbName}[#{params[:pdqcnt]}];")
-      end
+      DefineVariableSection($kernelCfgC, \
+				"static PDQMB #{pdqmbName}[#{params[:pdqcnt]}]", \
+				SecnameKernelData(params[:class]))
       params[:pdqinib_pdqmb] = pdqmbName
     else
       params[:pdqinib_pdqmb] = "NULL"

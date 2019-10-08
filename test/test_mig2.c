@@ -34,7 +34,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  @(#) $Id: test_mig2.c 38 2018-07-31 06:36:28Z ertl-honda $
+ *  @(#) $Id: test_mig2.c 176 2019-09-05 05:21:03Z ertl-honda $
  */
 
 /* 
@@ -73,19 +73,19 @@ task1_1(intptr_t exinf)
 		get_pid(&cpuno);
 	}while(cpuno==1);
 
-	check_point(1);//2
+	check_point_prc(1, PRC2);//2
 	ercd = act_tsk(TASK2_2);
 	check_ercd(ercd, E_OK);
 
-	check_point(2);//2
+	check_point_prc(2, PRC2);//2
 	ercd = act_tsk(TASK2_3);
 	check_ercd(ercd, E_OK);
 
-	check_point(3);//2
+	check_point_prc(3, PRC2);//2
 	ercd = slp_tsk();
 	check_ercd(ercd, E_OK);
 
-	check_point(0);
+	check_point_prc(0, PRC2);
 }
   
 void
@@ -109,11 +109,11 @@ task1_4(intptr_t exinf)
 	ercd = mig_tsk(TASK1_4,2);
 	check_ercd(ercd, E_OK);
 
-	check_point(8);//2
+	check_point_prc(8, PRC2);//2
 	ercd = slp_tsk();
 	check_ercd(ercd, E_OK);
 
-	check_point(0);
+	check_point_prc(0, PRC2);
 }
 
 void
@@ -135,15 +135,15 @@ task1_6(intptr_t exinf)
 	check_ercd(ercd, E_OK);
 
 	//同期フラグセット 1-7に移動を通知
-	check_point(10);//2
+	check_point_prc(10, PRC2);//2
 	ercd = set_flg(FLG1,8);
 	check_ercd(ercd, E_OK);
 
-	check_point(11);//2
+	check_point_prc(11, PRC2);//2
 	ercd = slp_tsk();
 	check_ercd(ercd, E_OK);
 
-	check_point(0);
+	check_point_prc(0, PRC2);
 }
 
 void
@@ -162,7 +162,7 @@ task1_7(intptr_t exinf)
 	check_ercd(ercd, E_OK);
 
 	//同期フラグセット 1-6に移動を通知
-	check_point(9);//2
+	check_point_prc(9, PRC2);//2
 	ercd = set_flg(FLG1,1);
 	check_ercd(ercd, E_OK);
 
@@ -173,7 +173,7 @@ task1_7(intptr_t exinf)
 
 
 	/*テスト終了*/
-	check_finish(12);//CPU2
+	check_finish_prc(12, PRC2);//CPU2
 }
 
 void
@@ -195,18 +195,18 @@ task2_2(intptr_t exinf)
 	ER		ercd;
 	FLGPTN  flgptn;
 
-	check_point(4);
+	check_point_prc(4, PRC2);
 
 	//同期フラグ待ち 1_4の起動待ち
 	do {
 		ercd = pol_flg(FLG1,2,TWF_ANDW,&flgptn);
 	}while(ercd != E_OK);
 
-	check_point(5);//2
+	check_point_prc(5, PRC2);//2
 	ercd = slp_tsk();
 	check_ercd(ercd, E_OK);
 
-	check_point(0);
+	check_point_prc(0, PRC2);
 }
 
 void
@@ -215,7 +215,7 @@ task2_3(intptr_t exinf)
 	ER		ercd;
 	FLGPTN flgptn;
 
-	check_point(6);//2
+	check_point_prc(6, PRC2);//2
 
 	ercd = set_flg(FLG1,0x10); 
 
@@ -224,9 +224,9 @@ task2_3(intptr_t exinf)
 		ercd = pol_flg(FLG1,4,TWF_ANDW,&flgptn);
 	}while(ercd != E_OK);
 
-	check_point(7);//2
+	check_point_prc(7, PRC2);//2
 	ercd = slp_tsk();
 	check_ercd(ercd, E_OK);
 
-	check_point(0);
+	check_point_prc(0, PRC2);
 }

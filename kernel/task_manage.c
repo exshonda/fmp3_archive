@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: task_manage.c 135 2019-01-28 14:31:50Z ertl-honda $
+ *  $Id: task_manage.c 178 2019-10-08 13:55:00Z ertl-honda $
  */
 
 /*
@@ -168,7 +168,7 @@ act_tsk(ID tskid)
 		ercd = E_OK;
 	}
 	else if ((p_tcb->p_tinib->tskatr & TA_NOACTQUE) != 0U || p_tcb->actque) {
-		ercd = E_QOVR;							/*［NGKI3528］*/
+		ercd = E_QOVR;			   				/*［NGKI3528］*/
 	}
 	else {
 		p_tcb->actque = true;					/*［NGKI3527］*/
@@ -223,7 +223,7 @@ mact_tsk(ID tskid, ID prcid)
 	if (TSTAT_DORMANT(p_tcb->tstat)) {
 		p_new_pcb = get_pcb(prcid);
 		p_tcb->p_pcb = p_new_pcb;				/*［NGKI1132］*/
-		make_active(p_my_pcb, p_tcb, p_new_pcb);	/*［NGKI1132］*/
+		make_active(p_my_pcb, p_tcb, p_new_pcb);		/*［NGKI1132］*/
 		if (p_my_pcb->p_runtsk != p_my_pcb->p_schedtsk) {
 			if (!context) {
 				release_glock();
@@ -342,7 +342,7 @@ mig_tsk(ID tskid, ID prcid)
 		 */
 		ercd = E_CTX;								/*［NGKI1159］*/
 	}
-	else if (TSTAT_RUNNABLE(p_tcb->tstat)){
+	else if (TSTAT_RUNNABLE(p_tcb->tstat)) {
 		/*
 		 *  対象タスクが，実行できる状態の場合
 		 */
@@ -361,12 +361,12 @@ mig_tsk(ID tskid, ID prcid)
 			/* 対象タスクが他タスク */
 			/* マイグレート先のプロセッサでmake_runnableする */
 			make_runnable(p_my_pcb, p_tcb, p_new_pcb);
-			/* 
+			/*
 			 *  マイグレート先が自プロセッサの場合，自タスクの方が優先
 			 *  順位が高いため，自プロセッサでディスパッチが必要になる
 			 *  ことはない．
 			 */
-			ercd = E_OK; 
+			ercd = E_OK;
 		}
 	}
 	else if (!TSTAT_WAITING(p_tcb->tstat)
@@ -478,7 +478,7 @@ chg_pri(ID tskid, PRI tskpri)
 	LOG_CHG_PRI_ENTER(tskid, tskpri);
 	CHECK_TSKCTX_UNL_MYSTATE(&p_selftsk);	/*［NGKI1184］［NGKI1185］*/
 	if (tskid == TSK_SELF) {
-		p_tcb = p_selftsk;				/*［NGKI1198］*/
+		p_tcb = p_selftsk;						/*［NGKI1198］*/
 	}
 	else {
 		CHECK_ID(VALID_TSKID(tskid));			/*［NGKI1187］*/

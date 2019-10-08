@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: pridataq.h 145 2019-03-10 15:27:01Z ertl-honda $
+ *  $Id: pridataq.h 178 2019-10-08 13:55:00Z ertl-honda $
  */
 
 /*
@@ -112,7 +112,8 @@ extern PDQCB *const	p_pdqcb_table[];
  *  優先度データキュー管理ブロックから優先度データキューIDを取り出すた
  *  めのマクロ
  */
-#define	PDQID(p_pdqcb)	((ID)(((p_pdqcb->p_pdqinib) - pdqinib_table) + TMIN_PDQID))
+#define	PDQID(p_pdqcb)	((ID)(((p_pdqcb)->p_pdqinib - pdqinib_table) \
+															+ TMIN_PDQID))
 
 /*
  *  優先度データキュー機能の初期化

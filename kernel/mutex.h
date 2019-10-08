@@ -35,7 +35,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: mutex.h 145 2019-03-10 15:27:01Z ertl-honda $
+ *  $Id: mutex.h 178 2019-10-08 13:55:00Z ertl-honda $
  */
 
 /*
@@ -93,7 +93,8 @@ extern MTXCB *const	p_mtxcb_table[];
 /*
  *  ミューテックス管理ブロックからミューテックスIDを取り出すためのマクロ
  */
-#define	MTXID(p_mtxcb)	((ID)(((p_mtxcb->p_mtxinib) - mtxinib_table) + TMIN_MTXID))
+#define	MTXID(p_mtxcb)	((ID)(((p_mtxcb)->p_mtxinib - mtxinib_table) \
+															+ TMIN_MTXID))
 
 /*
  *  ミューテックス機能の初期化

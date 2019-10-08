@@ -2,9 +2,9 @@
 		TOPPERS/FMP3カーネル
 		ターゲット依存部 ポーティングガイド
 
-		対応バージョン: Release 3.0.0
-		対応ASP3カーネルバージョン : Release 3.4.0
-		最終更新: 2019年3月19日
+		対応バージョン: Release 3.1.0
+		対応ASP3カーネルバージョン : Release 3.5.0
+		最終更新: 2019年10月08日
 
 このドキュメントは，TOPPERS/FMP3カーネルを，未サポートのターゲットシス
 テムにポーティングするために必要となるターゲット依存部の実装方法を説明
@@ -53,7 +53,7 @@ TOPPERS/FMPカーネルは，シングルプロセッサ向けのRTOSであるTO
  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  の責任を負わない．
 
- $Id: porting.txt 150 2019-03-30 10:32:43Z ertl-honda $
+ $Id: porting.txt 178 2019-10-08 13:55:00Z ertl-honda $
 ----------------------------------------------------------------------
 
 ○目次
@@ -1712,53 +1712,30 @@ exit_and_migrate(PCB *p_my_pcb, TCB *p_selftsk)
 7.2.4 カーネルオブジェクトのデータ構造の配置場所
 
 以下に示すカーネルオブジェクトのコントロールブロック以外のメモリ領域の
-配置を制御するため，ターゲット依存部のパス2の生成スクリプトにおいて， 
-カーネルの構成・初期化ファイル（kernel_cfg.c)おいて変数を宣言する関数
-を用意する．なお，これらの関数を宣言しない場合は，特に配置指定を行わな
-い変数の宣言が生成される．引数は対象のオブジェクトのID番号である．これ
-らの変数の多くは，ローカルメモリないし，グローバルメモリに配置可能であ
-る．タスクスタックはプライベートメモリに配置可能である．
+配置を制御するため，ターゲット依存部のパス2の生成スクリプトにおいて，
+以下の関数を用意する 
 
-  1.カーネルオブジェクトのコントロールブロック以外のメモリ領域（タスク
-    スタック，データキューやメモリプール等バッファ領域の配置場所
+(7-2-4-1)  SecnameKernelData(cls)
 
-(7-2-4-1) TargetGenTSKSTK(tskid) タスクスタックの宣言関数
+カーネルオブジェクトデータのデータ構造を配置するセクションを返す．cls
+には対象のカーネルオブジェクトデータの所属するクラスが渡される．
 
-未宣言の場合は，次のフォーマットで変数宣言が生成される．
+(7-2-4-2)  SecnameStack(cls)
 
-	static STK_T _kernel_stack_$tskid$[COUNT_STK_T($TSK.STKSZ[tskid]$)];$NL$
+タスクスタックの配置するセクションを返す．clsには対象のタスクの所属す
+るクラスが渡される．
 
-(7-2-4-2) TargetGenDTQMB(dtqid)  データキュー領域の宣言関数
+(7-2-4-3)  DefineVariableSection(genFile, defvar, secname) 
 
-未宣言の場合は，次のフォーマットで変数宣言が生成される．
-
-	static intptr_t _kernel_dtqmb_$dtqid$[$DTQ.DTQCNT[dtqid]$];$NL$
-
-(7-2-4-3) TargetGenPDTQMB(pdqid)  優先度データキュー領域の宣言関数
-
-未宣言の場合は，次のフォーマットで変数宣言が生成される．
-
-	static PDQMB _kernel_pdqmb_$pdqid$[$PDQ.PDQCNT[pdqid]$];$NL$
-
-(7-2-4-4) TargetGenMPF_T(mpfid)  固定長メモリブールバッファの宣言関数
-
-未宣言の場合は，次のフォーマットで変数宣言が生成される．
-
-	static MPF_T _kernel_mpf_$mpfid$[($MPF.BLKCNT[mpfid]$) * COUNT_MPF_T($MPF.BLKSZ[mpfid]$)];$NL$
-
-(7-2-4-5) TargetGenMPFMB(mpfid)  固定長メモリプール管理領域の宣言関数
-
-未宣言の場合は，次のフォーマットで変数宣言が生成される．
-
-	static MPFMB _kernel_mpfmb_$mpfid$[$MPF.BLKCNT[mpfid]$];$NL$
+配置するセクションを指定した変数定義を生成する関数．配置するセクション
+の指定がない場合はsecnameは空白で渡される．
 
 7.2.5 プロセッサ毎のデータ構造の配置場所
 
-ターゲット依存部のパス2の生成ファイルでは，ターゲット非依存部をインク
-ルードする前に，カーネルの構成・初期化ファイル（kernel_cfg.c に)おいて
-宣言されるカーネル内でプロセッサ毎に必要となる以下のデータ構造に対して，
-配置先の指定のための関数を定義する．なお，これらの関数を宣言しない場合
-は，特に配置指定を行わない変数の宣言が生成される．
+カーネル内でプロセッサ毎に必要となる以下のデータ構造に対しては，初期割
+り付けプロセッサが対象のプロセッサに一致する最初のクラスのセクションを
+使用する．初期割付けプロセッサがprcidに一致するクラスがない時はセクシ
+ョン指定を行わない．
 
  1.PCB
    ・他プロセッサからアクセス可能な領域に配置すること．
@@ -1768,36 +1745,6 @@ exit_and_migrate(PCB *p_my_pcb, TCB *p_selftsk)
     ・自プロセッサからのみアクセスできる領域に配置可能．    
  4.タイムイベントヒープ
     ・他プロセッサからアクセス可能な領域に配置すること．
-
-(7-2-6-1) TargetGenPCB(prcid) プロセッサコントロールブロックの宣言関数
-
-未宣言の場合は，次のフォーマットで変数宣言が生成される．
-
-	PCB _kernel_prc$prcid$_pcb;$NL$
-
-(7-2-6-2) TargetGenISTACK(prcid) 非タスクコンテキスト用スタックの宣言関数
-
-未宣言の場合は，次のフォーマットで変数宣言が生成される．
-
-	static STK_T	_kernel_prc$prcid$_istack[COUNT_STK_T(DEFAULT_PRC$prcid$_ISTKSZ)];$NL$
-
-(7-2-6-3) TargetGenIDSTACKprcid) アイドル処理用スタックの宣言関数
-
-未宣言の場合は，次のフォーマットで変数宣言が生成される．
-
-	static STK_T	_kernel_prc$prcid$_idstack[COUNT_STK_T(DEFAULT_PRC$prcid$_IDSTKSZ)];$NL$
-
-(7-2-6-4) TargetGenISTACKICS(prcid, istksz) ICS使用時の非タスクコンテキスト用スタックの宣言関数
-
-未宣言の場合は，次のフォーマットで変数宣言が生成される．
-
-	static STK_T	_kernel_prc$prcid$_istack[COUNT_STK_T($ICS.ISTKSZ[icsid]$)];$NL$
-
-(7-2-6-5) TargetGenTMEVTN_HEAP(prcid) タイムイベントヒープの宣言関数
-
-未宣言の場合は，次のフォーマットで変数宣言が生成される．
-
-	TMEVTN	_kernel_prc$prcid$_tmevt_heap[TNUM_TSKID + TNUM_CYCID + TNUM_ALMID];$NL$
 
 7.3 パス3の生成スクリプトのターゲット依存部
 

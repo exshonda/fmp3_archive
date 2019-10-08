@@ -35,7 +35,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  @(#) $Id: winfo.h 135 2019-01-28 14:31:50Z ertl-honda $
+ *  @(#) $Id: winfo.h 178 2019-10-08 13:55:00Z ertl-honda $
  */
 
 /*
@@ -120,6 +120,6 @@ typedef union wait_object_waiting_information {
 	WINFO_SPDQ	spdq;		/* 優先度データキュー送信待ち情報ブロック */
 	WINFO_RPDQ	rpdq;		/* 優先度データキュー受信待ち情報ブロック */
 	WINFO_MPF	mpf;		/* 固定長メモリプール待ち情報ブロック */
-}WINFO_OBJ;
+} WINFO_OBJ;
 
 #endif  /* TOPPERS_WINFO_H */

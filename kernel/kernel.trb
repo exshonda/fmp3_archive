@@ -37,7 +37,7 @@
 #   アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
 #   の責任を負わない．
 # 
-#   $Id: kernel.trb 145 2019-03-10 15:27:01Z ertl-honda $
+#   $Id: kernel.trb 178 2019-10-08 13:55:00Z ertl-honda $
 # 
 
 #
@@ -58,6 +58,11 @@ $kernelCfgH.add(<<EOS)
 #ifndef TOPPERS_KERNEL_CFG_H
 #define TOPPERS_KERNEL_CFG_H
 EOS
+
+#
+#  内部で使用するID
+#
+$TCLS_NONE = 0			# クラス共通
 
 #
 #  kernel_cfg.cの先頭部分の生成
@@ -81,15 +86,26 @@ GenerateIncludes($kernelCfgC)
 $kernelCfgC.add()
 
 #
-#  スタック領域の確保関数
+#  スタック領域の確保
 #
 #  スタック領域の定義分と，スタック領域のサイズ記述を配列で返す．
 #
 unless defined? AllocStack()
-  def AllocStack(stack, size)
+  def AllocStack(stack, size, secname)
     # 大きい方に丸めたサイズで確保する［NGKI1050］［NGKI3220］
-    $kernelCfgC.add("static STK_T #{stack}[COUNT_STK_T(#{size})];")
+    DefineVariableSection($kernelCfgC, \
+					"static STK_T #{stack}[COUNT_STK_T(#{size})]", secname)
     return("ROUND_STK_T(#{size})")
+  end
+end
+
+#
+#  固定長メモリプール領域の確保
+#
+unless defined? AllocUserMempfix()
+  def AllocUserMempfix(mpf, blkcnt, blksz, secname)
+    DefineVariableSection($kernelCfgC, \
+		"static MPF_T #{mpf}[(#{blkcnt}) * COUNT_MPF_T(#{blksz})]", secname)
   end
 end
 
@@ -177,9 +193,9 @@ class KernelObject
       if !@omit_cb
         # オブジェクト管理ブロックの生成
         $cfgData[@api].sort.each_with_index do |(_, params), index|
-          $kernelCfgC.append("#{@OBJ_S}CB " \
-								"_kernel_#{@obj_s}cb_#{params[@objid]}")
-          $kernelCfgC.add(";")
+          DefineVariableSection($kernelCfgC, \
+				"static #{@OBJ_S}CB _kernel_#{@obj_s}cb_#{params[@objid]}", \
+				SecnameKernelData(params[:class]))
         end
         $kernelCfgC.add
 
@@ -201,7 +217,7 @@ class KernelObject
       $kernelCfgC.add("TOPPERS_EMPTY_LABEL(const #{@OBJ_S}INIB, " \
 										"_kernel_#{@obj_s}inib_table);")
       if !@omit_cb
-        $kernelCfgC.add2("TOPPERS_EMPTY_LABEL(#{@OBJ_S}CB\t*const, " \
+        $kernelCfgC.add2("TOPPERS_EMPTY_LABEL(#{@OBJ_S}CB *const, " \
 										"_kernel_p_#{@obj_s}cb_table);")
       end
     end
@@ -314,7 +330,6 @@ def generateNotifyHandler(key, params, objid)
       # エラー通知処理の処理
       $kernelCfgC.add("\tif (ercd != E_OK) {")
 
-
       if nfymode2 == $TENFY_SETVAR
         # 変数の設定
         $kernelCfgC.add("\t\t*#{funcname}_p_evar = (intptr_t) ercd;")
@@ -340,6 +355,7 @@ def generateNotifyHandler(key, params, objid)
         $kernelCfgC.add("\t\t(void) psnd_dtq(#{funcname}_edtqid," \
 													" (intptr_t) ercd);")
       else
+        # nfymodeの値が正しくない場合（E_PAR）［NGKI3730］
         error_illegal_id("E_PAR", params, :nfymode, objid)
       end
       $kernelCfgC.add("\t}")
@@ -368,16 +384,30 @@ end
 $TCLS_ERROR = $clsData.keys.first
 
 #
-#  PCB
+#  プロセッサ毎のデータ構造を置くセクションを決定するクラスの決定
+#
+$prcClass = {}
+1.upto($TNUM_PRCID) do |prcid|
+  # クラスのリストをサーチして，初期割付けプロセッサがprcidに一致する
+  # 最初のクラスを用いる．
+  cls = $clsData.find {|_, params2| prcid == params2[:initPrc]}
+  if cls.nil?
+    # 初期割付けプロセッサがprcidに一致するクラスがない時はセクション
+    # 指定を行わない．
+    $prcClass[prcid] = $TCLS_NONE
+  else
+    $prcClass[prcid] = cls[0]
+  end
+end
+
+#
+#  プロセッサコントロールブロック（PCB）
 #
 $kernelCfgC.comment_header("Processor Management Functions")
 
 1.upto($TNUM_PRCID) do |prcid|
-  if defined? TargetGenPCB()
-    TargetGenPCB(prcid)
-  else
-    $kernelCfgC.add("PCB _kernel_pcb_prc#{prcid};")
-  end
+  DefineVariableSection($kernelCfgC, "static PCB _kernel_pcb_prc#{prcid}", \
+									SecnameKernelData($prcClass[prcid]))
 end
 $kernelCfgC.add()  
 
@@ -453,20 +483,22 @@ end
 
 1.upto($TNUM_PRCID).each do |prcid|
   if !$icsData.has_key?(prcid)
-    # DEF_ICSがない場合のデフォルト値の設定
+    # DEF_ICSがない場合，スタックを配置するセクションの決定にどのクラ
+    # スを用いるかは，仕様上はターゲット定義である［NGKI5138］．
+    # $prcClass[prcid]は，ターゲット依存部で定義するクラスのリストから
+    # 決めているため，以下の処理でターゲット定義で決まることになる．
     params = {}
     params[:istksz] = AllocStack("_kernel_istack_prc#{prcid}", \
-										  "DEFAULT_ISTKSZ")
+						"DEFAULT_ISTKSZ", SecnameStack($prcClass[prcid]))
     params[:istk] = "_kernel_istack_prc#{prcid}"
     $icsData[prcid] = params
   else
     params = $icsData[prcid]
     if params[:istk] == "NULL"
       # スタック領域の自動割付け
-      #ToDo
-      #sstkSecname = SecnameSystemStack(params[:class])
+      stkSecname = SecnameStack(params[:class])
       params[:istksz] = AllocStack("_kernel_istack_prc#{prcid}", \
-											params[:istksz])
+											params[:istksz], stkSecname)
       params[:istk] = "_kernel_istack_prc#{prcid}"
     else
       params[:istksz] = "(#{params[:istksz]})"
@@ -484,7 +516,7 @@ end
 $kernelCfgC.add
 $kernelCfgC.add2("};")
 
-$kernelCfgC.add("STK_T\t*const _kernel_istk_table[TNUM_PRCID] = {")
+$kernelCfgC.add("STK_T *const _kernel_istk_table[TNUM_PRCID] = {")
 1.upto($TNUM_PRCID).each_with_index do |prcid, index|
   $kernelCfgC.add(",") if index > 0
   $kernelCfgC.append("\t#{$icsData[prcid][:istk]}")
@@ -493,7 +525,7 @@ $kernelCfgC.add
 $kernelCfgC.add2("};")
 
 $kernelCfgC.add("#ifdef TOPPERS_ISTKPT")
-$kernelCfgC.add("STK_T\t*const _kernel_istkpt_table[TNUM_PRCID] = {")
+$kernelCfgC.add("STK_T *const _kernel_istkpt_table[TNUM_PRCID] = {")
 1.upto($TNUM_PRCID).each_with_index do |prcid, index|
   $kernelCfgC.add(",") if index > 0
   $kernelCfgC.append("\tTOPPERS_ISTKPT(#{$icsData[prcid][:istk]}, " \
@@ -508,22 +540,29 @@ $kernelCfgC.add2("#endif /* TOPPERS_ISTKPT */")
 #
 $kernelCfgC.comment_header("Stack Area for Idle")
 
-idstksz = 0
+idstksz = ""
 1.upto($TNUM_PRCID) do |prcid|
-  if defined? TargetGenIDSTACK()
-    idstksz = TargetGenIDSTACK(prcid)
-  else
-    idstksz = AllocStack("_kernel_idstack_prc#{prcid}", "DEFAULT_IDSTKSZ")
-  end
+  idstksz = AllocStack("_kernel_idstack_prc#{prcid}", \
+					"DEFAULT_IDSTKSZ", SecnameStack($prcClass[prcid]))
 end
-
 $kernelCfgC.add
+
+$kernelCfgC.add("#ifndef TOPPERS_ISTKPT")
+$kernelCfgC.add("STK_T *const _kernel_idstk_table[TNUM_PRCID] = {")
+1.upto($TNUM_PRCID).each_with_index do |prcid, index|
+  $kernelCfgC.add(",") if index > 0
+  $kernelCfgC.append("\t_kernel_idstack_prc#{prcid}")
+end
+$kernelCfgC.add
+$kernelCfgC.add("};")
+$kernelCfgC.add2("#endif /* TOPPERS_ISTKPT */")
 
 $kernelCfgC.add("#ifdef TOPPERS_ISTKPT")
 $kernelCfgC.add("STK_T *const _kernel_idstkpt_table[TNUM_PRCID] = {")
-1.upto($TNUM_PRCID) do |prcid|
-  $kernelCfgC.add(",") if prcid > 1
-  $kernelCfgC.append("\tTOPPERS_ISTKPT(_kernel_idstack_prc#{prcid}, #{idstksz})")
+1.upto($TNUM_PRCID).each_with_index do |prcid, index|
+  $kernelCfgC.add(",") if index > 0
+  $kernelCfgC.append("\tTOPPERS_ISTKPT(_kernel_idstack_prc#{prcid}, " \
+															"#{idstksz})")
 end
 $kernelCfgC.add
 $kernelCfgC.add("};")
@@ -537,11 +576,9 @@ $kernelCfgC.comment_header("Time Event Management")
 # タイムイベントヒープ領域の生成
 1.upto($TNUM_PRCID) do |prcid|
   if $TOPPERS_TEPP_PRC & (1 << (prcid-1)) != 0
-    if defined? TargetGenTMEVTN_HEAP()
-      TargetGenTMEVTN_HEAP(prcid)
-    else
-      $kernelCfgC.add("TMEVTN _kernel_tmevt_heap_prc#{prcid}[1 + TNUM_TSKID + TNUM_CYCID + TNUM_ALMID];")
-    end
+      DefineVariableSection($kernelCfgC, \
+				"static TMEVTN\t_kernel_tmevt_heap_prc#{prcid}" \
+				"[1 + TNUM_TSKID + TNUM_CYCID + TNUM_ALMID]", SecnameKernelData($prcClass[prcid]))
   end
 end
 $kernelCfgC.add

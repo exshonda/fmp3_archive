@@ -4,7 +4,7 @@
 #  TOPPERS Software
 #      Toyohashi Open Platform for Embedded Real-Time Systems
 # 
-#  Copyright (C) 2007-2017 by Embedded and Real-Time Systems Laboratory
+#  Copyright (C) 2007-2019 by Embedded and Real-Time Systems Laboratory
 #              Graduate School of Information Science, Nagoya Univ., JAPAN
 # 
 #  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -36,7 +36,7 @@
 #  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
 #  の責任を負わない．
 # 
-#  $Id: gentest.rb 135 2019-01-28 14:31:50Z ertl-honda $
+#  $Id: gentest.rb 178 2019-10-08 13:55:00Z ertl-honda $
 # 
 
 #
@@ -162,7 +162,7 @@ class PUCode
   def append(*lines)
     lines.each do |line|
       @code[@currentCount].push(line)
-        end
+    end
   end
 
   # 変数の追加
@@ -422,6 +422,8 @@ def parseLine(line, prcid, oline_list)
       call_string = $2
       pu.append("\t#{call_string};", "")
       pu.useSil() if /^SIL_..._INT\(\)$/ =~ call_string
+    when /^VAR\(\s*(.*)\s+(.*)\s*\)$/
+      pu.addVariable($2, $1)
     when /^RETURN((\(.*\))?)$/
       pu.append("\treturn#{$1};", "")
       pu.incrementCount()
@@ -431,7 +433,7 @@ def parseLine(line, prcid, oline_list)
       pu.append("#{$1}:", "")
     when /^BARRIER\((.*)\)$/
       pu.append("\ttest_barrier(#{$1});", "")
-    when /^((SET|RESET|WAIT|RESET_WAIT|WAIT_RESET)\(.*\))$/
+    when /^((SET|RESET|WAIT|WAIT_WO_RESET|WAIT_RESET)\(.*\))$/
       pu.append("\t#{$1};", "")
     when /^([a-z_]+\(.*\))\s*(\-\>\s*([A-Za-z0-9_]*))?\s*$/
       genServiceCall(pu, $1, $3)
@@ -461,7 +463,7 @@ $procFlag = false					# スクリプト処理中フラグ
 $procFlagEnd = false				# スクリプト処理終了フラグ
 $startFlag = false					# テスト開始コードの出力フラグ
 $currentPu = {}						# 読み込み中の処理単位
-$puList = {}				# 処理単位のリスト
+$puList = {}						# 処理単位のリスト
 $outputLines = []					# 出力すべき行のリストのリスト
 $cpSuffix = Hash.new("")			# チェックポイント関数のサフィックス
 $lastCheckPoint = Hash.new(0)		# 最後のチェックポイント番号

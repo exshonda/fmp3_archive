@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: eventflag.h 145 2019-03-10 15:27:01Z ertl-honda $
+ *  $Id: eventflag.h 178 2019-10-08 13:55:00Z ertl-honda $
  */
 
 /*
@@ -94,7 +94,8 @@ extern FLGCB *const		p_flgcb_table[];
 /*
  *  イベントフラグ管理ブロックからイベントフラグIDを取り出すためのマクロ
  */
-#define	FLGID(p_flgcb)	((ID)((((p_flgcb)->p_flginib) - flginib_table) + TMIN_FLGID))
+#define	FLGID(p_flgcb)	((ID)(((p_flgcb)->p_flginib - flginib_table) \
+															+ TMIN_FLGID))
 
 /*
  *  イベントフラグ機能の初期化
