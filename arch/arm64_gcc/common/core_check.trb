@@ -1,0 +1,54 @@
+# -*- coding: utf-8 -*-
+# 
+#		チェックパスの生成スクリプトのコア依存部（ARM用）
+# 
+#  $Id: core_check.trb 214 2020-02-15 19:05:52Z ertl-honda $
+#
+
+#
+#  ターゲット非依存部のインクルード
+#
+IncludeTrb("kernel/kernel_check.trb")
+
+#
+#  割込みハンドラテーブルに関するチェック
+#
+# DEF_INHで登録した割込みハンドラのみチェックする．逆に言うと，コンフィ
+# ギュレータで生成した割込みハンドラや，default_int_handlerのチェックは
+# 行わない．
+#
+p_inhTable = SYMBOL("_kernel_p_inh_table")
+$cfgData[:DEF_INH].each do |_, params|
+  prcid = $clsData[params[:class]][:initPrc]
+  inhTable = PEEK(p_inhTable + (prcid - 1) * $sizeof_void_ptr, $sizeof_void_ptr)
+  inthdr = PEEK(inhTable + params[:index] * $sizeof_FP, $sizeof_FP)
+
+  #	割込みハンドラの先頭番地のチェック［NGKI3056］
+  if (inthdr & ($CHECK_FUNC_ALIGN - 1)) != 0
+    error_wrong_id("E_PAR", params, :inthdr, :inhno, "not aligned")
+  end
+  if $CHECK_FUNC_NONNULL && inthdr == 0
+    error_wrong_id("E_PAR", params, :inthdr, :inhno, "null")
+  end
+end
+
+#
+#  CPU例外ハンドラテーブルに関するチェック
+#
+# DEF_EXCで登録したCPU例外ハンドラのみチェックする．逆に言うと，
+# default_exc_handlerのチェックは行わない．
+#
+p_excTable = SYMBOL("_kernel_p_exc_table")
+$cfgData[:DEF_EXC].each do |_, params|
+  prcid = $clsData[params[:class]][:initPrc]
+  excTable = PEEK(p_excTable + (prcid - 1) * $sizeof_void_ptr, $sizeof_void_ptr)
+  exchdr = PEEK(excTable + params[:index] * $sizeof_FP, $sizeof_FP)
+
+  # CPU例外ハンドラの先頭番地のチェック［NGKI3135］
+  if (exchdr & ($CHECK_FUNC_ALIGN - 1)) != 0
+    error_wrong_id("E_PAR", params, :exchdr, :excno, "not aligned")
+  end
+  if $CHECK_FUNC_NONNULL && exchdr == 0
+    error_wrong_id("E_PAR", params, :exchdr, :excno, "null")
+  end
+end

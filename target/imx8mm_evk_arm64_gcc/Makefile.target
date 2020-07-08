@@ -1,0 +1,133 @@
+#
+#		Makefile のターゲット依存部 (IMX8MM_EVK用)
+#
+
+#
+#  System monitor設定
+#    ATF_S     :   ATF(SafeG64) Secure EL1動作
+#    ATF_NS    :   ATF Non-Secure EL1動作
+#    指定なし  :   ATF Secure EL1動作
+#
+#SYSMON = ATF_S
+
+#
+#  システム名，チップ名，コア名，開発環境名の定義
+#
+SYS = imx8mm_evk
+CHIP = imx8mm
+CORE = arm64
+TOOL = gcc
+
+#
+#  FPUサポート
+#
+#  FPUを使用する場合はUSE_ARM64_FPUをマクロ定義する．
+#
+CDEFS := $(CDEFS) -DUSE_ARM64_FPU
+
+#
+#  コンパイルオプション
+#
+INCLUDES := $(INCLUDES) -I$(TARGETDIR)
+COPTS := $(COPTS) -mlittle-endian
+LDFLAGS := $(LDFLAGS) -mlittle-endian -Wl,--build-id=none
+CDEFS := $(CDEFS)
+CFG1_OUT_LDFLAGS := -nostdlib $(CFG1_OUT_LDFLAGS)
+
+#
+# シリアルポートに関する設定
+#
+#CDEFS := $(CDEFS) -DUSE_UART1
+#CDEFS := $(CDEFS) -DUSE_UART2
+#CDEFS := $(CDEFS) -DUSE_UART3
+CDEFS := $(CDEFS) -DUSE_UART4
+
+#
+#  カーネルに関する定義
+#
+KERNEL_DIRS := $(KERNEL_DIRS) $(CHIPDIR) $(TARGETDIR)
+KERNEL_COBJS := $(KERNEL_COBJS) target_kernel_impl.o
+KERNEL_ASMOBJS := $(KERNEL_ASMOBJS) psci_support.o
+
+#
+#  リンカスクリプトの定義
+#
+LDSCRIPT = $(TARGETDIR)/imx8mm_evk.ld
+
+#
+#  リンカフラグに関する定義
+#
+#  LDFLAGSに-nostdlibを追加する．
+#
+LDFLAGS := -nostdlib $(LDFLAGS)
+
+#
+#  スタートアップモジュールに関する定義
+#
+#  zynqmp_a53.ldに「STARTUP(start.o)」を記述したため，スタートアップモジュー
+#  ルの名前をHIDDEN_OBJSに定義する．
+#
+HIDDEN_OBJS = $(OBJDIR)/start.o
+
+$(HIDDEN_OBJS): $(OBJDIR)/%.o: %.S
+	${MKOBJDIR_P}
+	$(CC) -o $@ -c $(CFLAGS) $(KERNEL_CFLAGS) $<
+
+#
+#  TECSを外すかどうかの定義
+#
+OMIT_TECS = true
+
+#
+#  GNU開発環境のターゲットアーキテクチャの定義
+#
+GCC_TARGET = aarch64-none-elf
+
+#
+#  動作モード毎に異なる
+#
+ifeq ($(SYSMON),ATF_S)
+#
+#  ATF(Secure動作)に関する定義
+#
+CDEFS := $(CDEFS) -DTOPPERS_WITH_ATF
+CDEFS := $(CDEFS) -DTOPPERS_TZ_S
+CDEFS := $(CDEFS) -DSYSMON
+TEXT_START_ADDRESS=0x00BE000000
+DATA_START_ADDRESS=0x00BE800000
+else ifeq ($(SYSMON),ATF_NS)
+#
+#  ATF(Non-Secure動作)に関する定義
+#
+CDEFS := $(CDEFS) -DTOPPERS_WITH_ATF
+CDEFS := $(CDEFS) -DTOPPERS_TZ_NS
+CDEFS := $(CDEFS) -DSYSMON
+TEXT_START_ADDRESS=0x0040000000
+DATA_START_ADDRESS=0x0040800000
+else
+#
+#  単独動作に関する定義
+#
+CDEFS := $(CDEFS) -DTOPPERS_WITH_ATF
+CDEFS := $(CDEFS) -DTOPPERS_TZ_S
+CDEFS := $(CDEFS) -USYSMON
+TEXT_START_ADDRESS=0x00BE000000
+DATA_START_ADDRESS=0x00BE800000
+endif
+
+#
+#  メモリアドレスの設定
+#
+CDEFS := $(CDEFS) -DTOPPERS_MEM_ADDR=$(TEXT_START_ADDRESS)
+CDEFS := $(CDEFS) -DTOPPERS_MEM_SIZE=0x0001000000
+CDEFS := $(CDEFS) -DTOPPERS_32BIT_ABOVE_ADDR	#MMU 64bitアドレス空間対応
+
+#
+#  アライメントチェックを行うか
+#
+ENABLE_ALIGNMENT_CHECK = true
+
+#
+#  チップ依存部
+#
+include $(SRCDIR)/arch/$(CORE)_$(TOOL)/$(CHIP)/Makefile.chip

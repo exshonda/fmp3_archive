@@ -1,0 +1,12 @@
+diff -upr imx-atf_org/plat/imx/imx8mm/imx8mm_bl31_setup.c imx-atf/plat/imx/imx8mm/imx8mm_bl31_setup.c
+--- imx-atf_org/plat/imx/imx8mm/imx8mm_bl31_setup.c	2020-05-27 10:41:56.435252625 +0900
++++ imx-atf/plat/imx/imx8mm/imx8mm_bl31_setup.c	2020-05-27 12:37:27.308504110 +0900
+@@ -310,7 +310,7 @@ void bl31_early_platform_setup2(u_regist
+ 
+ 	/* Assign M4 to domain 1 */
+ 	mmio_write_32(IMX_RDC_BASE + 0x204, 0x1);
+-	mmio_write_32(IMX_RDC_BASE + 0x518, 0xfc);
++	mmio_write_32(IMX_RDC_BASE + 0x518, 0xff);
+ 	mmio_write_32(IMX_RDC_BASE + 0x5A4, 0xf3);
+ 
+ #if defined (CSU_RDC_TEST)

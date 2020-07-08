@@ -1,0 +1,9 @@
+# target_config.c
+target_el3_initialize
+target_el2_initialize
+target_mprc_initialize
+target_mmu_init
+target_initialize
+target_exit
+
+INCLUDE "chip"
