@@ -5,7 +5,7 @@
  * 
  *  Copyright (C) 2000-2003 by Embedded and Real-Time Systems Laboratory
  *                              Toyohashi Univ. of Technology, JAPAN
- *  Copyright (C) 2005-2019 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2005-2020 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  * 
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: task.h 178 2019-10-08 13:55:00Z ertl-honda $
+ *  $Id: task.h 207 2020-01-30 09:31:28Z ertl-honda $
  */
 
 /*
@@ -179,11 +179,11 @@ typedef struct task_initialization_block {
  *  フィールドが有効な値を保持する条件は次の通り．
  *
  *  ・初期化後は常に有効：
- *  		p_tinib，tstat，actque
+ *  		p_tinib，p_dominib，p_schedcb，tstat，actque，p_pcb，actprc
  *  ・休止状態以外で有効（休止状態では初期値になっている）：
  *  		bpriority，priority，wupque，raster，enater，p_lastmtx
  *  ・待ち状態（二重待ち状態を含む）で有効：
- *  		p_winfo
+ *  		winfo，p_wobjcb，winfo_obj
  *  ・実行できる状態と同期・通信オブジェクトに対する待ち状態で有効：
  *  		task_queue
  *  ・実行可能状態，待ち状態，強制待ち状態，二重待ち状態で有効：
@@ -200,7 +200,7 @@ struct task_control_block {
 #else /* UINT8_MAX */
 	BIT_FIELD_UINT	tstat : 8;		/* タスク状態（内部表現）*/
 	BIT_FIELD_UINT	bpriority : 8;	/* ベース優先度（内部表現）*/
-	BIT_FIELD_UINT	priority : 8;	/* 現在の優先度（内部表現）*/;
+	BIT_FIELD_UINT	priority : 8;	/* 現在の優先度（内部表現）*/
 #endif /* UINT8_MAX */
 	BIT_FIELD_BOOL	actque : 1;		/* 起動要求キューイング */
 	BIT_FIELD_BOOL	wupque : 1;		/* 起床要求キューイング */
@@ -211,7 +211,7 @@ struct task_control_block {
 	MTXCB			*p_lastmtx;		/* 最後にロックしたミューテックス */
 	TSKCTXB			tskctxb;		/* タスクコンテキストブロック */
 
-	PCB				*p_pcb;			/* 割り付けプロセッサのPCB */
+	PCB				*p_pcb;			/* 割付けプロセッサのPCB */
 	ID				actprc;			/* 次回起動時割付けプロセッサ */
 
 	/*
@@ -359,6 +359,10 @@ extern void	make_non_runnable(PCB *p_my_pcb, TCB *p_tcb, PCB *p_pcb);
 Inline void
 set_dspflg(PCB *p_my_pcb)
 {
+	/*
+	 *  割込み優先度マスクをTIPM_ENAALLに戻す．
+	 */
+	t_set_ipm(TIPM_ENAALL);
 	p_my_pcb->dspflg = true;
 	update_schedtsk(p_my_pcb, p_my_pcb, search_schedtsk(p_my_pcb));
 }
@@ -415,18 +419,21 @@ extern void	rotate_ready_queue(PCB *p_my_pcb, uint_t pri, PCB *p_pcb);
 /*
  *  タスクの終了処理
  *
- *  p_tcbで指定されるタスクを終了させる処理を行う．タスクの起動要求キュー
- *  イング数が0でない場合には，再度起動するための処理を行う．
+ *  p_tcbで指定されるタスクを終了させる処理を行う．p_tcbで指定されるタ
+ *  スクは，自プロセッサに割り付けられているタスクでなければならない．
+ *  タスクの起動要求キューイング数が0でない場合には，再度起動するため
+ *  の処理を行う．p_tcbで指定されるタスクが自タスクで，他のプロセッサ
+ *  で再起動すべき場合にtrue，そうでない場合にfalseを返す．
  */
 extern bool_t task_terminate(PCB *p_my_pcb, TCB *p_tcb);
 
 /*
- *  自タスクのマイグレーション
+ *  自タスクのマイグレート
  */
 extern void migrate_self(PCB *p_my_pcb, TCB *p_selftsk, PCB *p_new_pcb);
 
 /*
- *  自タスクのマイグレーションと起動
+ *  自タスクのマイグレートと起動
  */
 extern void migrate_activate_self(PCB *p_my_pcb, TCB *p_selftsk);
 

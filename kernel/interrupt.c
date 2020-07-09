@@ -5,7 +5,7 @@
  * 
  *  Copyright (C) 2000-2003 by Embedded and Real-Time Systems Laboratory
  *                              Toyohashi Univ. of Technology, JAPAN
- *  Copyright (C) 2005-2019 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2005-2020 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  * 
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: interrupt.c 174 2019-09-02 06:50:50Z ertl-honda $
+ *  $Id: interrupt.c 207 2020-01-30 09:31:28Z ertl-honda $
  */
 
 /*
@@ -373,15 +373,21 @@ chg_ipm(PRI intpri)
 	PCB		*p_my_pcb;
 
 	LOG_CHG_IPM_ENTER(intpri);
-	CHECK_TSKCTX_UNL();							/*［NGKI3108］［NGKI3109］*/
+	CHECK_TSKCTX_UNL_MYSTATE(&p_selftsk);		/*［NGKI3108］［NGKI3109］*/
 	CHECK_PAR(VALID_INTPRI_CHGIPM(intpri));		/*［NGKI3113］［NGKI3114］*/
 
 	lock_cpu();
+  retry:
 	acquire_glock();
 	p_my_pcb = get_my_pcb();
+	if (p_selftsk != p_my_pcb->p_schedtsk) {
+		release_glock();
+		dispatch();
+		goto retry;
+	}
 	p_selftsk = p_my_pcb->p_runtsk;
-	t_set_ipm(intpri);							/*［NGKI3111］*/
 	if (intpri == TIPM_ENAALL && p_my_pcb->enadsp) {
+		/* set_dspflgは，割込み優先度マスクをTIPM_ENAALLにする．*/
 		set_dspflg(p_my_pcb);
 		if (p_selftsk->raster && p_selftsk->enater) {
 			if (task_terminate(p_my_pcb, p_selftsk)) {
@@ -401,10 +407,11 @@ chg_ipm(PRI intpri)
 				ercd = E_OK;
 				goto unlock_and_exit;
 			}
-			ercd = E_OK;
 		}
+		ercd = E_OK;
 	}
 	else {
+		t_set_ipm(intpri);						/*［NGKI3111］*/
 		p_my_pcb->dspflg = false;
 		ercd = E_OK;
 	}

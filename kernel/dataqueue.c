@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: dataqueue.c 145 2019-03-10 15:27:01Z ertl-honda $
+ *  $Id: dataqueue.c 207 2020-01-30 09:31:28Z ertl-honda $
  */
 
 /*
@@ -521,7 +521,7 @@ rcv_dtq(ID dtqid, intptr_t *p_data)
 	ER		ercd;
 	TCB		*p_selftsk;
 	PCB		*p_my_pcb;
-	
+
 	LOG_RCV_DTQ_ENTER(dtqid, p_data);
 	CHECK_DISPATCH();
 	CHECK_ID(VALID_DTQID(dtqid));
@@ -546,7 +546,7 @@ rcv_dtq(ID dtqid, intptr_t *p_data)
 	else {
 		make_wait(p_my_pcb, TS_WAITING_RDTQ, p_selftsk);
 		queue_insert_prev(&(p_dtqcb->rwait_queue), &(p_selftsk->task_queue));
-		p_selftsk->p_wobjcb = (WOBJCB*)p_dtqcb;
+		p_selftsk->p_wobjcb = (WOBJCB *) p_dtqcb;
 		LOG_TSKSTAT(p_selftsk);
 		release_glock();
 		dispatch();
@@ -636,7 +636,7 @@ trcv_dtq(ID dtqid, intptr_t *p_data, TMO tmout)
 	if (p_selftsk->raster) {
 		ercd = E_RASTER;
 	}
-	if (receive_data(p_my_pcb, p_dtqcb, p_data)) {
+	else if (receive_data(p_my_pcb, p_dtqcb, p_data)) {
 		if (p_my_pcb->p_runtsk != p_my_pcb->p_schedtsk) {
 			release_glock();
 			dispatch();
@@ -651,7 +651,7 @@ trcv_dtq(ID dtqid, intptr_t *p_data, TMO tmout)
 	else {
 		make_wait_tmout(p_my_pcb, TS_WAITING_RDTQ, p_selftsk, tmout);
 		queue_insert_prev(&(p_dtqcb->rwait_queue), &(p_selftsk->task_queue));
-		p_selftsk->p_wobjcb = (WOBJCB*)p_dtqcb;
+		p_selftsk->p_wobjcb = (WOBJCB *) p_dtqcb;
 		LOG_TSKSTAT(p_selftsk);
 		release_glock();
 		dispatch();

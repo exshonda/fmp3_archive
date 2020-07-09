@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: time_manage.c 178 2019-10-08 13:55:00Z ertl-honda $
+ *  $Id: time_manage.c 207 2020-01-30 09:31:28Z ertl-honda $
  */
 
 /*
@@ -128,7 +128,7 @@ get_tim(SYSTIM *p_systim)
 
 	lock_cpu();
 	acquire_glock();
-	update_current_evttim();						/*［ASPD1057］*/
+	update_current_evttim();					/*［ASPD1057］*/
 	*p_systim = systim_offset + monotonic_evttim;	/*［ASPD1058］*/
 	ercd = E_OK;
 	release_glock();
@@ -178,9 +178,9 @@ adj_tim(int32_t adjtim)
 				systim_offset += 1LLU << 32;
 			}
 #endif /* UINT64_MAX */
-			monotonic_evttim = current_evttim;	/*［ASPD1054］*/
+			monotonic_evttim = current_evttim;		/*［ASPD1054］*/
 		}
-		for(prcid = TMIN_PRCID; prcid <= TMAX_PRCID; prcid++) {
+		for (prcid = TMIN_PRCID; prcid <= TMAX_PRCID; prcid++) {
 			p_pcb = get_pcb(prcid);
 			if (p_pcb->p_tevtcb != NULL
 									&& !(p_pcb->p_tevtcb->in_signal_time)) {
@@ -205,9 +205,9 @@ adj_tim(int32_t adjtim)
  *  任意の状態から呼び出せるようにするために，SILの全割込みロック状態の
  *  制御機能を用いて，排他制御を実現している［NGKI3572］．
  *
- *  ここでは，グローバルロックを取得せずにtarget_hrt_get_currentを呼び
- *  出している．そのため，target_hrt_get_currentは，複数のプロセッサで
- *  同時に呼び出されても動作するように実装しなければならない．
+ *  ここでは，ジャイアントロックを取得せずにtarget_hrt_get_currentを呼
+ *  び出している．そのため，target_hrt_get_currentは，複数のプロセッサ
+ *  で同時に呼び出されても動作するように実装しなければならない．
  */
 #ifdef TOPPERS_fch_hrt
 

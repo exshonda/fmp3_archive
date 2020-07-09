@@ -34,7 +34,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: test_notify1.h 33 2018-07-30 03:21:03Z ertl-honda $
+ *  $Id: test_notify1.h 207 2020-01-30 09:31:28Z ertl-honda $
  */
 
 /* 
@@ -83,8 +83,8 @@ extern void	task2(intptr_t exinf);
 /*
  *  変数の宣言
  */
-extern volatile bool_t event_variable;
-extern volatile int_t count_variable;
-extern volatile ER error_variable;
+extern volatile intptr_t event_variable;
+extern volatile intptr_t count_variable;
+extern volatile intptr_t error_variable;
 
 #endif /* TOPPERS_MACRO_ONLY */

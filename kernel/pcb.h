@@ -3,7 +3,7 @@
  *      Toyohashi Open Platform for Embedded Real-Time Systems/
  *      Flexible MultiProcessor Kernel
  *
- *  Copyright (C) 2009-2019 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2009-2020 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN  
  *
  *  上記著作権者は，以下の(1)～(4)の条件を満たす場合に限り，本ソフトウェ
@@ -35,11 +35,11 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  @(#) $Id: pcb.h 178 2019-10-08 13:55:00Z ertl-honda $
+ *  @(#) $Id: pcb.h 207 2020-01-30 09:31:28Z ertl-honda $
  */
 
 /*
- *		プロセッサコントロールブロックの定義
+ *		プロセッサ管理ブロックの定義
  */
 
 #ifndef TOPPERS_PCB_H
@@ -94,9 +94,14 @@ struct processor_control_block {
 	 *  合はNULLにする．
 	 *
 	 *  p_runtskは，通常はp_schedtskと一致しているが，非タスクコンテキ
-	 *  スト実行中は，一致しているとは限らない．割込み優先度マスク全解
-	 *  除でない状態の間とディスパッチ禁止状態の間（すなわち，dspflgが
-	 *  falseである間）は，p_schedtskを更新しない．
+	 *  スト実行中は，一致しているとは限らない．また，他のプロセッサで
+	 *  p_schedtskが変更された後，要求されたプロセッサ間割込みを受け付
+	 *  けてディスパッチするまでの間も，p_runtskとp_schedtskは一致しな
+	 *  くなる．
+	 *
+	 *  割込み優先度マスク全解除でない状態の間とディスパッチ禁止状態の
+	 *  間（すなわち，dspflgがfalseである間）は，p_schedtskを更新しな
+	 *  い．
 	 */
 	TCB		*p_schedtsk;
 
@@ -167,12 +172,6 @@ struct processor_control_block {
 #endif /* OMIT_TARGET_PCB */
 
 	/*
-	 *  構造体アクセス時のオフセットサイズに制限があるターゲットがある
-	 *  ため，使用頻度が低いデータ構造と，サイズが大きいデータ構造は後
-	 *  ろに配置する．
-	 */
-
-	/*
 	 *  カーネル動作状態フラグ
 	 *
 	 *  スタートアップルーチンで，false（＝0）に初期化されることを期待
@@ -194,9 +193,12 @@ extern PCB *const	p_pcb_table[];
 
 /*
  *  自プロセッサのPCBの取得
+ *
+ *  get_my_pcbは，kernel_cfg.c中に生成される割込みハンドラから呼び出さ
+ *  れるため，参照する変数に"_kernel_"を付ける必要がある．
  */
 #ifndef get_my_pcb
-#define get_my_pcb()		(p_pcb_table[get_my_prcidx()])
+#define get_my_pcb()		(_kernel_p_pcb_table[get_my_prcidx()])
 #endif /* get_my_pcb */
 
 /*

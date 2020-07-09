@@ -4,7 +4,7 @@
  * 
  *  Copyright (C) 2000-2003 by Embedded and Real-Time Systems Laboratory
  *                              Toyohashi Univ. of Technology, JAPAN
- *  Copyright (C) 2004-2019 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2004-2020 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  * 
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -36,7 +36,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: t_syslog.h 178 2019-10-08 13:55:00Z ertl-honda $
+ *  $Id: t_syslog.h 207 2020-01-30 09:31:28Z ertl-honda $
  */
 
 /*
@@ -90,11 +90,12 @@ extern "C" {
 #define LOG_TYPE_TSKSTAT	UINT_C(0x21)	/* タスク状態変化 */
 #define LOG_TYPE_DSP		UINT_C(0x31)	/* ディスパッチャ */
 #define LOG_TYPE_SVC		UINT_C(0x41)	/* サービスコール */
-#define LOG_TYPE_TSKMIG		UINT_C(0x1b)	/* タスクマイグレーション */
-#define LOG_TYPE_CYCMIG		UINT_C(0x1c)	/* 周期ハンドラマイグレーション */
-#define LOG_TYPE_ALMMIG		UINT_C(0x1d)	/* アラームハンドラマイグレーション */
+#define LOG_TYPE_TSKMIG		UINT_C(0x61)	/* タスクマイグレーション */
+#define LOG_TYPE_CYCMIG		UINT_C(0x62)	/* 周期通知マイグレーション */
+#define LOG_TYPE_ALMMIG		UINT_C(0x63)	/* アラーム通知マイグレーション */
 
 #define LOG_ENTER			UINT_C(0x00)	/* 入口／開始 */
+#define LOG_START			UINT_C(0x00)	/* 開始 */
 #define LOG_LEAVE			UINT_C(0x80)	/* 出口／終了 */
 
 /*
@@ -315,7 +316,7 @@ Inline void
 syslog(uint_t prio, const char *format, ...)
 {
 }
-												
+
 Inline void
 t_perror(uint_t prio, const char *file, int_t line, const char *expr, ER ercd)
 {

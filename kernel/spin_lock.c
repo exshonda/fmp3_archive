@@ -3,7 +3,7 @@
  *      Toyohashi Open Platform for Embedded Real-Time Systems/
  *      Flexible MultiProcessor Kernel
  * 
- *  Copyright (C) 2007-2019 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2007-2020 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  * 
  *  上記著作権者は，以下の(1)～(4)の条件を満たす場合に限り，本ソフトウェ
@@ -35,7 +35,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  @(#) $Id: spin_lock.c 178 2019-10-08 13:55:00Z ertl-honda $
+ *  @(#) $Id: spin_lock.c 207 2020-01-30 09:31:28Z ertl-honda $
  */
 
 /*
@@ -138,11 +138,6 @@ initialize_spin_lock(PCB *p_my_pcb)
 	uint_t			i;
 	const SPNINIB	*p_spninib;
 
-	/*
-	 *  取得しているスピンロックの初期化
-	 */
-	p_my_pcb->p_locspn = NULL;
-
 	if (is_mprc(p_my_pcb)) {
 		for (i = 0; i < tnum_spn;  i++) {
 			p_spninib = &(spninib_table[i]);
@@ -169,6 +164,7 @@ force_unlock_spin(PCB *p_my_pcb)
 	const SPNINIB	*p_spninib = p_my_pcb->p_locspn;
 
 	if (p_spninib != NULL) {
+		/* ここではCPUロック状態になっている */
 		p_my_pcb->p_locspn = NULL;
 		if (IS_NATIVE(p_spninib->spnatr)) {
 			unlock_native_spn(p_spninib);

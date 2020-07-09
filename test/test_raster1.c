@@ -34,7 +34,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: test_raster1.c 33 2018-07-30 03:21:03Z ertl-honda $
+ *  $Id: test_raster1.c 207 2020-01-30 09:31:28Z ertl-honda $
  */
 
 /* 
@@ -93,8 +93,6 @@
  *			  返ること［NGKI3467］
  *		(G-3) タスク終了禁止状態の場合にdisterにtrueが返ること［NGKI3468］
  *		(G-4) タスク終了許可状態の場合にdisterにfalseが返ること［NGKI3468］
- *	ASPカーネルに適用されない要求：
- *		［NGKI3473］［NGKI3474］［NGKI3481］
  *
  * 【使用リソース】
  *
@@ -109,7 +107,8 @@
  *
  *	== TASK1 ==
  *	1:	act_tsk(TASK2)
- *		sta_alm(ALM1, TEST_TIME_CP) ... ALM1が実行開始するまで
+ *		sta_alm(ALM1, TEST_TIME_CP * 2) ... ALM1が実行開始するまで
+ *										... * 2 しないと，時々エラーになる
  *		slp_tsk()
  *	== TASK2-1（1回目）==
  *	2:	DO(while(true))
@@ -311,7 +310,7 @@ task1(intptr_t exinf)
 	ercd = act_tsk(TASK2);
 	check_ercd(ercd, E_OK);
 
-	ercd = sta_alm(ALM1, TEST_TIME_CP);
+	ercd = sta_alm(ALM1, TEST_TIME_CP * 2);
 	check_ercd(ercd, E_OK);
 
 	ercd = slp_tsk();

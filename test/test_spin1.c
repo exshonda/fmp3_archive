@@ -34,7 +34,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  @(#) $Id: test_spin1.c 176 2019-09-05 05:21:03Z ertl-honda $
+ *  @(#) $Id: test_spin1.c 195 2019-12-04 02:06:38Z ertl-honda $
  */
 
 /* 
@@ -60,6 +60,10 @@
 #include "syssvc/test_svc.h"
 #include "kernel_cfg.h"
 #include "test_spin1.h"
+
+#if TNUM_PRCID > 2
+#error This test program only supports 2 processor configuration.
+#endif /* TNUM_PRCID > 2 */
 
 #define LOOP_REF 10000
 #define BUSY_LOOP_REF 1000
@@ -260,9 +264,7 @@ task1_1(intptr_t exinf)
 	set_wait();
 	wait_test();
 
-	check_finish(13);
-
-	
+	check_finish_prc(13, PRC1);
 }
 
 /*

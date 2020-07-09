@@ -5,7 +5,7 @@
 #       Flexible MultiProcessor Kernel
 # 
 #   Copyright (C) 2015 by FUJI SOFT INCORPORATED, JAPAN
-#   Copyright (C) 2015-2019 by Embedded and Real-Time Systems Laboratory
+#   Copyright (C) 2015-2020 by Embedded and Real-Time Systems Laboratory
 #               Graduate School of Information Science, Nagoya Univ., JAPAN
 # 
 #   上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -37,7 +37,7 @@
 #   アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
 #   の責任を負わない．
 # 
-#   $Id: kernel.trb 178 2019-10-08 13:55:00Z ertl-honda $
+#   $Id: kernel.trb 207 2020-01-30 09:31:28Z ertl-honda $
 # 
 
 #
@@ -125,10 +125,13 @@ class KernelObject
   end
 
   def generate()
-    # kernel_cfg.hの生成
+    # オブジェクトの数のマクロ定義の生成（kernel_cfg.h）
+    # ［NGKI1022］［NGKI1451］［NGKI1557］［NGKI1664］［NGKI1799］
+    # ［NGKI2020］［NGKI3298］［NGKI2127］［NGKI2220］［NGKI2378］
+    # ［NGKI2486］［NGKI3612］
     $kernelCfgH.add("#define TNUM_#{@OBJ}ID\t#{$cfgData[@api].size}")
 
-    # オブジェクトのID番号のマクロ定義の生成
+    # オブジェクトのID番号のマクロ定義の生成（kernel_cfg.h）
     $cfgData[@api].sort.each do |_, params|
       $kernelCfgH.add("#define #{params[@objid]}\t#{params[@objid].val}")
     end
@@ -401,7 +404,7 @@ $prcClass = {}
 end
 
 #
-#  プロセッサコントロールブロック（PCB）
+#  プロセッサ管理ブロック（PCB）
 #
 $kernelCfgC.comment_header("Processor Management Functions")
 
@@ -448,7 +451,7 @@ $cfgData[:DEF_ICS].each do |_, params|
 
   # クラスの囲みの中に記述されていない場合（E_RSATR）［NGKI3214］
   if !params.has_key?(:class)
-    error_ercd("E_RSATR", params, "%apiname must be with a class")
+    error_ercd("E_RSATR", params, "%apiname must be within a class")
     # 以降のエラーの抑止
     params[:class] = $TCLS_ERROR
   # 属するクラスの指定が有効範囲外の場合（E_RSATR）［NGKI5128］
@@ -478,7 +481,7 @@ $cfgData[:DEF_ICS].each do |_, params|
   end
 
   # $icsDataにパラメータ情報を格納
-  $icsData[prcid] = params
+  $icsData[prcid] = params.dup
 end
 
 1.upto($TNUM_PRCID).each do |prcid|

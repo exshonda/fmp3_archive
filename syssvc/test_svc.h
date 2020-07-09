@@ -35,7 +35,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: test_svc.h 148 2019-03-29 16:36:07Z ertl-honda $
+ *  $Id: test_svc.h 193 2019-11-27 13:46:23Z ertl-honda $
  */
 
 /* 
@@ -58,6 +58,7 @@ extern "C" {
  */
 extern void	test_start(const char *progname);
 extern void	check_point_prc(uint_t count, ID prcid);
+extern void	check_finish(uint_t count);
 extern void	check_finish_prc(uint_t count, ID prcid);
 extern void	check_assert_error(const char *expr, const char *file, int_t line);
 extern void	check_ercd_error(ER ercd, const char *file, int_t line);
@@ -108,6 +109,5 @@ extern void	test_barrier(uint_t phase);
  *  シングルプロセッサ向けサービスとの互換性のための定義
  */
 #define	check_point(count)			check_point_prc(count, 0)
-#define	check_finish(count)			check_finish_prc(count, 0)
 
 #endif /* TOPPERS_TEST_SVC_H */

@@ -34,7 +34,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: perf4.c 42 2018-07-31 07:29:20Z ertl-honda $
+ *  $Id: perf4.c 207 2020-01-30 09:31:28Z ertl-honda $
  */
 
 /*
@@ -141,7 +141,6 @@ volatile uint_t		cyclic_handler_error_count;
  */
 void cyclic_handler(intptr_t exinf)
 {
-	T_RTSK	rtsk;
 	ER		ercd;
 
 	ercd = begin_measure(3);

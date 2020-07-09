@@ -5,7 +5,7 @@
  * 
  *  Copyright (C) 2000-2003 by Embedded and Real-Time Systems Laboratory
  *                              Toyohashi Univ. of Technology, JAPAN
- *  Copyright (C) 2005-2019 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2005-2020 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  * 
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: task_term.c 178 2019-10-08 13:55:00Z ertl-honda $
+ *  $Id: task_term.c 207 2020-01-30 09:31:28Z ertl-honda $
  */
 
 /*
@@ -129,7 +129,7 @@ ext_tsk(void)
 	/*
 	 *  CPUロック状態でext_tskが呼ばれた場合でも，グローバルロックの取
 	 *  得待ちの間に割込み要求があると，割込みを受け付ける．これは，カー
-	 *  ネル処理の不可分性の原則の例外となっている．［NGKI5183］
+	 *  ネル処理の不可分性の原則の例外となっている．［NGKI5183］［NGKI0648］
 	 */
 	acquire_glock();
 
@@ -143,14 +143,10 @@ ext_tsk(void)
 			 */
 			p_my_pcb->enadsp = true;
 		}
-		if (t_get_ipm() != TIPM_ENAALL) {
-			/*
-			 *  割込み優先度マスク（IPM）がTIPM_ENAALL以外の状態で
-			 *  ext_tskが呼ばれた場合は，IPMをTIPM_ENAALLにしてからタス
-			 *  クを終了する．［NGKI1168］
-			 */
-			t_set_ipm(TIPM_ENAALL);
-		}
+		/*
+		 *  set_dspflgは，割込み優先度マスクをTIPM_ENAALLにする．
+		 *  ［NGKI1168］
+		 */
 		set_dspflg(p_my_pcb);
 	}
 

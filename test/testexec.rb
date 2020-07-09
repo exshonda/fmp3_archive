@@ -4,7 +4,7 @@
 #  TOPPERS Software
 #      Toyohashi Open Platform for Embedded Real-Time Systems
 # 
-#  Copyright (C) 2016-2018 by Embedded and Real-Time Systems Laboratory
+#  Copyright (C) 2016-2020 by Embedded and Real-Time Systems Laboratory
 #              Graduate School of Information Science, Nagoya Univ., JAPAN
 # 
 #  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -36,7 +36,7 @@
 #  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
 #  の責任を負わない．
 # 
-#  $Id: testexec.rb 176 2019-09-05 05:21:03Z ertl-honda $
+#  $Id: testexec.rb 207 2020-01-30 09:31:28Z ertl-honda $
 # 
 
 Encoding.default_external = 'utf-8'
@@ -47,57 +47,74 @@ require "pp"
 #
 TEST_SPEC = {
   # 機能テストプログラム
-  "cpuexc1"  => { SRC: "test_cpuexc1", CFG: "test_cpuexc", SYSLIB: "test_svc" },
-  "cpuexc2"  => { SRC: "test_cpuexc2", CFG: "test_cpuexc", SYSLIB: "test_svc" },
-  "cpuexc3"  => { SRC: "test_cpuexc3", CFG: "test_cpuexc", SYSLIB: "test_svc" },
-  "cpuexc4"  => { SRC: "test_cpuexc4", CFG: "test_cpuexc", SYSLIB: "test_svc" },
-  "cpuexc5"  => { SRC: "test_cpuexc5", CFG: "test_cpuexc", SYSLIB: "test_svc" },
-  "cpuexc6"  => { SRC: "test_cpuexc6", CFG: "test_cpuexc", SYSLIB: "test_svc" },
-  "cpuexc7"  => { SRC: "test_cpuexc7", CFG: "test_cpuexc", SYSLIB: "test_svc" },
-  "cpuexc8"  => { SRC: "test_cpuexc8", CFG: "test_cpuexc", SYSLIB: "test_svc" },
-  "cpuexc9"  => { SRC: "test_cpuexc9", CFG: "test_cpuexc", SYSLIB: "test_svc" },
-  "cpuexc10" => { SRC: "test_cpuexc10", CFG: "test_cpuexc", SYSLIB: "test_svc" },
-  "dlynse"   => { SRC: "test_dlynse", SYSLIB: "test_svc" },
-  "dtq1"     => { SRC: "test_dtq1", SYSLIB: "test_svc" },
-  "exttsk"   => { SRC: "test_exttsk", SYSLIB: "test_svc" },
-  "flg1"     => { SRC: "test_flg1", SYSLIB: "test_svc" },
-  "hrt1"     => { SRC: "test_hrt1", SYSLIB: "test_svc" },
-  "int1"     => { SRC: "test_int1", SYSLIB: "test_svc" },
-  "mutex1"   => { SRC: "test_mutex1", CDL: "test_pf_bitmutex", SYSLIB: "test_svc" },
-  "mutex2"   => { SRC: "test_mutex2", CDL: "test_pf_bitmutex", SYSLIB: "test_svc" },
-  "mutex3"   => { SRC: "test_mutex3", CDL: "test_pf_bitmutex", SYSLIB: "test_svc" },
-  "mutex4"   => { SRC: "test_mutex4", CDL: "test_pf_bitmutex", SYSLIB: "test_svc" },
-  "mutex5"   => { SRC: "test_mutex5", CDL: "test_pf_bitmutex", SYSLIB: "test_svc" },
-  "mutex6"   => { SRC: "test_mutex6", CDL: "test_pf_bitmutex", SYSLIB: "test_svc" },
-  "mutex7"   => { SRC: "test_mutex7", CDL: "test_pf_bitmutex", SYSLIB: "test_svc" },
-  "mutex8"   => { SRC: "test_mutex8", CDL: "test_pf_bitmutex", SYSLIB: "test_svc" },
-  "notify1"  => { SRC: "test_notify1", SYSLIB: "test_svc" },
-  "raster1"  => { SRC: "test_raster1", SYSLIB: "test_svc" },
-  "raster2"  => { SRC: "test_raster2", SYSLIB: "test_svc" },
-  "sem1"     => { SRC: "test_sem1", SYSLIB: "test_svc" },
-  "sem2"     => { SRC: "test_sem2", SYSLIB: "test_svc" },
-  "sysman1"  => { SRC: "test_sysman1", SYSLIB: "test_svc" },
-  "sysstat1" => { SRC: "test_sysstat1", SYSLIB: "test_svc" },
-  "task1"    => { SRC: "test_task1", SYSLIB: "test_svc" },
-  "tmevt1"   => { SRC: "test_tmevt1", SYSLIB: "test_svc" },
-  "subprio1" => { SRC: "test_subprio1", SYSLIB: "test_svc" },
-  "subprio2" => { SRC: "test_subprio2", SYSLIB: "test_svc" },
+  "cpuexc1"  => { SRC: "test_cpuexc1", CFG: "test_cpuexc"},
+  "cpuexc2"  => { SRC: "test_cpuexc2", CFG: "test_cpuexc" },
+  "cpuexc3"  => { SRC: "test_cpuexc3", CFG: "test_cpuexc" },
+  "cpuexc4"  => { SRC: "test_cpuexc4", CFG: "test_cpuexc" },
+  "cpuexc5"  => { SRC: "test_cpuexc5", CFG: "test_cpuexc" },
+  "cpuexc6"  => { SRC: "test_cpuexc6", CFG: "test_cpuexc" },
+  "cpuexc7"  => { SRC: "test_cpuexc7", CFG: "test_cpuexc" },
+  "cpuexc8"  => { SRC: "test_cpuexc8", CFG: "test_cpuexc" },
+  "cpuexc9"  => { SRC: "test_cpuexc9", CFG: "test_cpuexc" },
+  "cpuexc10" => { SRC: "test_cpuexc10", CFG: "test_cpuexc" },
+  "dlynse"   => { SRC: "test_dlynse" },
+  "dtq1"     => { SRC: "test_dtq1" },
+  "exttsk"   => { SRC: "test_exttsk", CDL: "test_pf_bitkernel" },
+  "flg1"     => { SRC: "test_flg1" },
+  "hrt1"     => { SRC: "test_hrt1" },
+  "int1"     => { SRC: "test_int1" },
+  "mutex1"   => { SRC: "test_mutex1", CDL: "test_pf_bitmutex" },
+  "mutex2"   => { SRC: "test_mutex2", CDL: "test_pf_bitmutex" },
+  "mutex3"   => { SRC: "test_mutex3", CDL: "test_pf_bitmutex" },
+  "mutex4"   => { SRC: "test_mutex4", CDL: "test_pf_bitmutex" },
+  "mutex5"   => { SRC: "test_mutex5", CDL: "test_pf_bitmutex" },
+  "mutex6"   => { SRC: "test_mutex6", CDL: "test_pf_bitmutex" },
+  "mutex7"   => { SRC: "test_mutex7", CDL: "test_pf_bitmutex" },
+  "mutex8"   => { SRC: "test_mutex8", CDL: "test_pf_bitmutex" },
+  "notify1"  => { SRC: "test_notify1" },
+  "raster1"  => { SRC: "test_raster1", CDL: "test_pf_bitkernel" },
+  "raster2"  => { SRC: "test_raster2" },
+  "sem1"     => { SRC: "test_sem1" },
+  "sem2"     => { SRC: "test_sem2" },
+  "suspend1" => { SRC: "test_suspend1" },
+  "sysman1"  => { SRC: "test_sysman1" },
+  "sysstat1" => { SRC: "test_sysstat1" },
+  "task1"    => { SRC: "test_task1", CDL: "test_pf_bitkernel" },
+  "tmevt1"   => { SRC: "test_tmevt1" },
 
-  # FMPカーネル向けテストプログラム
-  "mact1" => { SRC: "test_mact1", SYSLIB: "test_svc" },
-  "mact2" => { SRC: "test_mact2", SYSLIB: "test_svc" },
-  "mact3" => { SRC: "test_mact3", SYSLIB: "test_svc" },
-  "mig1"  => { SRC: "test_mig1",  SYSLIB: "test_svc" },
-  "mig2"  => { SRC: "test_mig2",  SYSLIB: "test_svc" },
-  "spin1" => { SRC: "test_spin1", SYSLIB: "test_svc" },
+  # マルチプロセッサ対応のテストプログラム
+  "mtskman1" => { SRC: "test_mtskman1" },
+  "mtskman2" => { SRC: "test_mtskman2" },
+  "mtskman3" => { SRC: "test_mtskman3" },
+  "mtrans2"  => { SRC: "test_mtrans2" },
+  "mtrans3"  => { SRC: "test_mtrans3" },
+  "mtrans4"  => { SRC: "test_mtrans4" },
+  "mtrans5"  => { SRC: "test_mtrans5" },
+  "mmutex1"  => { SRC: "test_mmutex1" },
+  "malarm1"  => { SRC: "test_malarm1" },
+
+  # スピンロック機能のテストプログラム
+  "spinlock1"      => { SRC: "test_spinlock1" },
+  "spinlock1-emu"  => { TARGET: 0, SRC: "test_spinlock1",
+										DEFS: "-DTMAX_NATIVE_SPN=0" },
+  "spinlock1-both" => { TARGET: 0, SRC: "test_spinlock1",
+										DEFS: "-DTMAX_NATIVE_SPN=1" },
+
+  # サブ優先度機能拡張パッケージの機能テストプログラム
+  "subprio1" => { SRC: "test_subprio1" },
+  "subprio2" => { SRC: "test_subprio2" },
 
   # 性能評価プログラム
-  "perf0" => { SRC: "perf0", SYSLIB: "test_svc", SYSLIB2: "histogram" },
-  "perf1" => { SRC: "perf1", SYSLIB: "test_svc", SYSLIB2: "histogram" },
-  "perf2" => { SRC: "perf2", SYSLIB: "test_svc", SYSLIB2: "histogram" },
-  "perf3" => { SRC: "perf3", SYSLIB: "test_svc", SYSLIB2: "histogram" },
-  "perf4" => { SRC: "perf4", SYSLIB: "test_svc", SYSLIB2: "histogram" },
-  "perf5" => { SRC: "perf5", SYSLIB: "test_svc", SYSLIB2: "histogram" },
+  "perf0" => { CDL: "perf_pf", SYSLIB: "histogram" },
+  "perf1" => { CDL: "perf_pf", SYSLIB: "histogram" },
+  "perf2" => { CDL: "perf_pf", SYSLIB: "histogram" },
+  "perf3" => { CDL: "perf_pf", SYSLIB: "histogram" },
+  "perf4" => { CDL: "perf_pf", SYSLIB: "histogram" },
+  "perf5" => { CDL: "perf_pf", SYSLIB: "histogram" },
+
+  # ARM向けテストプログラム
+  "arm_cpuexc" => { SRC: "arm_cpuexc", SRCDIR: "arch/arm_gcc/test" },
+  "arm_fpu1" => { TARGET: 2, SRC: "arm_fpu1", SRCDIR: "arch/arm_gcc/test" },
 }
 
 #
@@ -145,7 +162,12 @@ def BuildTest(test, testSpec, mkdirFlag=false)
     else
       configCommand += " #{$targetOptions[0]}"
     end
-    configCommand += " -a #{$usedSrcDir}/test"
+    if testSpec.has_key?(:SRCDIR)
+      configCommand += " -a \"#{$usedSrcDir}/#{testSpec[:SRCDIR]}" \
+											" #{$usedSrcDir}/test\""
+    else
+      configCommand += " -a #{$usedSrcDir}/test"
+    end
 
     if (!testSpec.has_key?(:TARGET) || testSpec[:TARGET] == 0)
       configCommand += " -L ../KERNELLIB"
@@ -164,17 +186,24 @@ def BuildTest(test, testSpec, mkdirFlag=false)
       configCommand += " -C test_pf.cdl"
     end
     if testSpec.has_key?(:SYSLIB)
-      configCommand += " -S #{testSpec[:SYSLIB]}.o"
+      configCommand += " -S \"" \
+			+ testSpec[:SYSLIB].split(/\s+/).map{|f| f+".o"}.join(" ") \
+			+ "\""
     end
-    if testSpec.has_key?(:SYSLIB2)
-      configCommand += " -S #{testSpec[:SYSLIB2]}.o"
+    if testSpec.has_key?(:APPLOBJ)
+      configCommand += " -U \"" \
+			+ testSpec[:APPLOBJ].split(/\s+/).map{|f| f+".o"}.join(" ") \
+			+ "\""
+    end
+    if testSpec.has_key?(:OPTS)
+      configCommand += " -o \"#{testSpec[:OPTS]}\""
     end
     if testSpec.has_key?(:DEFS)
       configCommand += " -O \"#{testSpec[:DEFS]}\""
     end
     puts(configCommand)
     system(configCommand)
-    system("make -j4")
+    system("make -j8")
     if File.exist?("Makefile.bak")
       File.delete("Makefile.bak")
     end
@@ -186,7 +215,7 @@ end
 #
 def BuildAll
   TEST_SPEC.each do |test, testSpec|
-    BuildTest(test, testSpec, true)
+    BuildTest(test, testSpec)
   end
 end
 

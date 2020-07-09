@@ -2,7 +2,7 @@
  *  TOPPERS Software
  *      Toyohashi Open Platform for Embedded Real-Time Systems
  * 
- *  Copyright (C) 2015-2016 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2015-2019 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  * 
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -34,7 +34,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: test_notify1.c 33 2018-07-30 03:21:03Z ertl-honda $
+ *  $Id: test_notify1.c 207 2020-01-30 09:31:28Z ertl-honda $
  */
 
 /* 
@@ -234,9 +234,9 @@
 #include "kernel_cfg.h"
 #include "test_notify1.h"
 
-volatile bool_t	event_variable = false;
-volatile int_t	count_variable = 1;
-volatile ER		error_variable = E_INVALID;
+volatile intptr_t	event_variable = false;
+volatile intptr_t	count_variable = 1;
+volatile intptr_t	error_variable = E_INVALID;
 
 void
 wait_event(void)

@@ -5,7 +5,7 @@
  * 
  *  Copyright (C) 2000-2003 by Embedded and Real-Time Systems Laboratory
  *                              Toyohashi Univ. of Technology, JAPAN
- *  Copyright (C) 2005-2019 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2005-2020 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  * 
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: wait.c 178 2019-10-08 13:55:00Z ertl-honda $
+ *  $Id: wait.c 207 2020-01-30 09:31:28Z ertl-honda $
  */
 
 /*
@@ -112,14 +112,16 @@ wait_tmout(TCB *p_tcb)
 	PCB		*p_my_pcb = get_my_pcb();
 	PCB		*p_pcb = p_tcb->p_pcb;
 
-	/*
-	 *  ジャイアントロックの場合は単にwaitキューから削除するだけ
-	 */
 	wait_dequeue_wobj(p_my_pcb, p_tcb);
 	p_tcb->winfo.wercd = E_TMOUT;
 	make_non_wait(p_my_pcb, p_tcb, p_pcb);
 	if (p_my_pcb->p_runtsk != p_my_pcb->p_schedtsk) {
-		request_dispatch_retint();
+		if (!sense_context(p_my_pcb)) {
+			assert(!p_my_pcb->dspflg);
+		}
+		else { 
+			request_dispatch_retint();
+		}
 	}
 
 	/*
@@ -145,7 +147,12 @@ wait_tmout_ok(TCB *p_tcb)
 	p_tcb->winfo.wercd = E_OK;
 	make_non_wait(p_my_pcb, p_tcb, p_pcb);
 	if (p_my_pcb->p_runtsk != p_my_pcb->p_schedtsk) {
-		request_dispatch_retint();
+		if (!sense_context(p_my_pcb)) {
+			assert(!p_my_pcb->dspflg);
+		}
+		else { 
+			request_dispatch_retint();
+		}
 	}
 
 	/*

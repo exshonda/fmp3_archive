@@ -4,7 +4,7 @@
  * 
  *  Copyright (C) 2000-2003 by Embedded and Real-Time Systems Laboratory
  *                              Toyohashi Univ. of Technology, JAPAN
- *  Copyright (C) 2007-2015 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2007-2020 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  * 
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -36,7 +36,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: test_hrt1.c 33 2018-07-30 03:21:03Z ertl-honda $
+ *  $Id: test_hrt1.c 207 2020-01-30 09:31:28Z ertl-honda $
  */
 
 /*
@@ -85,7 +85,7 @@ cyclic_handler(intptr_t exinf)
 
 	if (prev_hrtcnt > hrtcnt) {
 		syslog(LOG_NOTICE,
-				"system performance time goes back: %d(%s) %d(CYC)",
+				"high resolution timer count goes back: %d(%s) %d(CYC)",
 								prev_hrtcnt, prev_hrtcnt_pos, hrtcnt);
 	}
 	cyclic_count += 1U;
@@ -100,7 +100,7 @@ main_task(intptr_t exinf)
 
 	cyclic_count = 0U;
 	recent_hrtcnt = fch_hrt();
-	syslog(LOG_NOTICE, "system performance time test starts.");
+	syslog(LOG_NOTICE, "high resolution timer count test starts.");
 
 	for (i = 0; i < NO_LOOP; i++) {
 		(void) loc_cpu();
@@ -113,12 +113,12 @@ main_task(intptr_t exinf)
 
 		if (prev_hrtcnt > hrtcnt) {
 			syslog(LOG_NOTICE,
-				"system performance time goes back: %d(%s) %d(TSK)",
+				"high resolution timer count goes back: %d(%s) %d(TSK)",
 								prev_hrtcnt, prev_hrtcnt_pos, hrtcnt);
 		}
 	}
 
-	syslog(LOG_NOTICE, "system performance time test finishes.");
+	syslog(LOG_NOTICE, "high resolution timer count test finishes.");
 	syslog(LOG_NOTICE, "number of cyclic handler execution: %d", cyclic_count);
 	check_finish(0);
 }

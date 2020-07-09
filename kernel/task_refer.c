@@ -3,7 +3,7 @@
  *      Toyohashi Open Platform for Embedded Real-Time Systems/
  *      Flexible MultiProcessor Kernel
  * 
- *  Copyright (C) 2005-2019 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2005-2020 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  * 
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -35,7 +35,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: task_refer.c 178 2019-10-08 13:55:00Z ertl-honda $
+ *  $Id: task_refer.c 205 2020-01-22 04:19:19Z ertl-honda $
  */
 
 /*
@@ -197,12 +197,12 @@ ref_tsk(ID tskid, T_RTSK *pk_rtsk)
 		 *  タスク終了禁止状態の取出し
 		 */
 		pk_rtsk->dister = !(p_tcb->enater);
-
-		/*
-		 *  サブ優先度の取出し
-		 */
-		pk_rtsk->subpri = p_tcb->subpri;
 	}
+
+	/*
+	 *  サブ優先度の取出し
+	 */
+	pk_rtsk->subpri = p_tcb->subpri;
 
 	/*
 	 *  起動要求キューイング数の取出し

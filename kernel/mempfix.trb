@@ -37,7 +37,7 @@
 #   アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
 #   の責任を負わない．
 # 
-#   $Id: mempfix.trb 178 2019-10-08 13:55:00Z ertl-honda $
+#   $Id: mempfix.trb 207 2020-01-30 09:31:28Z ertl-honda $
 # 
 
 #
@@ -75,7 +75,7 @@ class MempfixObject < KernelObject
       mpfName = "_kernel_mpf_#{params[:mpfid]}"
       DefineVariableSection($kernelCfgC, \
 				"static MPF_T #{mpfName}" \
-				"[#{params[:blkcnt]} * COUNT_MPF_T(#{params[:blksz]})]", \
+					"[#{params[:blkcnt]} * COUNT_MPF_T(#{params[:blksz]})]", \
 				SecnameKernelData(params[:class]))
       params[:mpfinib_mpf] = mpfName
     else

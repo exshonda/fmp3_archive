@@ -2,10 +2,10 @@
  *  TOPPERS Software
  *      Toyohashi Open Platform for Embedded Real-Time Systems
  * 
- *  Copyright (C) 2007-2018 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2018 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  * 
- *  上記著作権者は，以下の(1)～(4)の条件を満たす場合に限り，本ソフトウェ
+ *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
  *  ア（本ソフトウェアを改変したものを含む．以下同じ）を使用・複製・改
  *  変・再配布（以下，利用と呼ぶ）することを無償で許諾する．
  *  (1) 本ソフトウェアをソースコードの形で利用する場合には，上記の著作
@@ -34,12 +34,11 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  @(#) $Id: test_mact1.h 38 2018-07-31 06:36:28Z ertl-honda $
+ *  $Id: test_suspend1.h 208 2020-01-30 09:46:12Z ertl-honda $
  */
 
-
 /* 
- *		割付けプロセッサ指定でのタスクの起動のテスト(1)
+ *		強制待ち状態に関するテスト(1)
  */
 
 #include <kernel.h>
@@ -63,17 +62,18 @@
 #define	STACK_SIZE		4096		/* タスクのスタックサイズ */
 #endif /* STACK_SIZE */
 
+#ifndef TEST_TIME_CP
+#define TEST_TIME_CP	50000U		/* チェックポイント到達情報の出力時間 */
+#endif /* TEST_TIME_CP */
+
 /*
  *  関数のプロトタイプ宣言
  */
 #ifndef TOPPERS_MACRO_ONLY
 
-extern void	task1_1(intptr_t exinf);
-extern void	task1_2(intptr_t exinf);
-extern void	task1_4(intptr_t exinf);
-extern void	task1_5(intptr_t exinf);
-extern void	task1_6(intptr_t exinf);
-extern void	task1_7(intptr_t exinf);
-extern void	task2_2(intptr_t exinf);
+extern void	task1(intptr_t exinf);
+extern void	task2(intptr_t exinf);
+extern void	task3(intptr_t exinf);
+extern void	alarm1_handler(intptr_t exinf);
 
 #endif /* TOPPERS_MACRO_ONLY */

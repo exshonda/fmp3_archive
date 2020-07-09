@@ -2,8 +2,8 @@
 		TOPPERS/FMP3カーネル
 		ユーザーズマニュアル
 
-		対応バージョン: Release 3.1.0
-		最終更新: 2019年10月09日
+		対応バージョン: Release 3.1.1
+		最終更新: 2020年7月9日
 
 このドキュメントは，TOPPERS/FMP3カーネルを使用するために必要な事項を説
 明するものである．
@@ -13,7 +13,7 @@
      Toyohashi Open Platform for Embedded Real-Time Systems/
      Flexible MultiProcessor Kernel
 
- Copyright (C) 2005-2019 by Embedded and Real-Time Systems Laboratory
+ Copyright (C) 2005-2020 by Embedded and Real-Time Systems Laboratory
              Graduate School of Information Science, Nagoya Univ., JAPAN
  
  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -45,7 +45,7 @@
  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  の責任を負わない．
  
- $Id: user.txt 183 2019-10-09 00:40:00Z ertl-honda $
+ $Id: user.txt 250 2020-07-09 07:03:05Z ertl-honda $
 ----------------------------------------------------------------------
 
 ○目次
@@ -278,7 +278,9 @@ FMP3カーネルを用いたシステム構築には，以下のツールが必�
 		ruby		動作確認：2.3.6
 
 	TOPPERS第3世代カーネル向け Ruby版コンフィギュレータ
-		cfg			動作確認：1.4.0
+		cfg			動作確認：1.5.0
+					※ 1.4.0より古いバージョンでは動作しないので注意す
+					   ること．
 
 	ターゲットシステム用のツール（クロス開発環境）
 		標準規格に準拠したCコンパイラ
@@ -1724,12 +1726,16 @@ test_cpuexc.cfgを指定する必要がある．
 (33) test_tmevt1			タイムイベント管理モジュールのテスト(1)
 (34) test_subprior1			サブ優先度機能のテスト(1)
 (35) test_subprior2			サブ優先度機能のテスト(2)
-(36) test_mact1				割付けプロセッサ指定でのタスクの起動のテスト(1)
-(37) test_mact2				割付けプロセッサ指定でのタスクの起動のテスト(2)
-(38) test_mact3				割付けプロセッサ指定でのタスクの起動のテスト(3)
-(39) test_mig1				タスクの割付けプロセッサの変更のテスト(1)
-(40) test_mig2				タスクの割付けプロセッサの変更のテスト(2)
-(50) test_spin1				スピンロック機能のテスト(1)
+(36) test_malarm1			マルチプロセッサ対応のアラーム通知のテスト(1)
+(37) test_mmutex1			マルチプロセッサ対応のミューテックスのテスト(1)
+(38) test_mtrans2			過渡的な状態のテスト(2)
+(39) test_mtrans3			過渡的な状態のテスト(3)
+(40) test_mtrans4			過渡的な状態のテスト(4)
+(41) test_mtskman1			マルチプロセッサ対応のタスク管理機能のテスト(1)
+(42) test_mtskman2			マルチプロセッサ対応のタスク管理機能のテスト(2)
+(43) test_mtskman3			マルチプロセッサ対応のタスク管理機能のテスト(3)
+(44) test_spinlock1			スピンロック機能のテスト(1)
+(45) test_spinlock2			スピンロック機能のテスト(2)
 
 CPU例外処理のテストプログラムの一部は，CPU例外ハンドラからリターンした
 場合に，CPU例外を発生させた命令の次から実行が継続されることを前提に作成
@@ -2444,5 +2450,6 @@ TOPPERSプロジェクトでは，何からの形でプロジェクトに貢献�
 
 	2019年03月30日	Release 3.0.0		最初の早期リリース
 	2019年10月09日	Release 3.1.0
+	2020年07月09日	Release 3.1.1		不具合修正
 
 以上

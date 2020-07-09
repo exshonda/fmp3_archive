@@ -5,7 +5,7 @@
  * 
  *  Copyright (C) 2000-2003 by Embedded and Real-Time Systems Laboratory
  *                              Toyohashi Univ. of Technology, JAPAN
- *  Copyright (C) 2005-2019 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2005-2020 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  * 
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: task.c 145 2019-03-10 15:27:01Z ertl-honda $
+ *  $Id: task.c 237 2020-07-01 01:55:14Z ertl-honda $
  */
 
 /*
@@ -193,6 +193,9 @@ search_schedtsk(PCB *p_pcb)
 
 /*
  *  実行すべきタスクの更新
+ *
+ *  この関数を，他プロセッサのPCBをパラメータとして呼び出す場合には，
+ *  呼び出す前にdata_memory_barrierを呼び出さなければならない．
  */
 #ifdef TOPPERS_schedtsk
 
@@ -203,6 +206,7 @@ update_schedtsk(PCB *p_my_pcb, PCB *p_pcb, TCB *p_new_schedtsk)
 
 	if (p_pcb->dspflg) {
 		p_prev_schedtsk = p_pcb->p_schedtsk;
+		memory_barrier();
 		p_pcb->p_schedtsk = p_new_schedtsk;
 		if ((p_pcb != p_my_pcb) && (p_prev_schedtsk != p_pcb->p_schedtsk)) {
 			request_dispatch_prc(p_pcb->prcid);
@@ -383,15 +387,15 @@ change_priority(PCB *p_my_pcb, TCB *p_tcb, PCB *p_pcb,
 											 &(p_tcb->task_queue));
 		}
 		primap_set(newpri, p_pcb);
+
 		if (p_pcb->p_schedtsk == p_tcb) {
 			if (newpri >= oldpri) {
 				update_schedtsk(p_my_pcb, p_pcb, search_schedtsk(p_pcb));
 			}
 		}
 		else {
-			if (mtxmode ? newpri <= p_pcb->p_schedtsk->priority
-						: newpri < p_pcb->p_schedtsk->priority) {
-				update_schedtsk(p_my_pcb, p_pcb, p_tcb);
+			if (newpri <= p_pcb->p_schedtsk->priority) {
+				update_schedtsk(p_my_pcb, p_pcb, (TCB *)(p_pcb->ready_queue[newpri].p_next));
 			}
 		}
 	}
@@ -495,6 +499,7 @@ task_terminate(PCB *p_my_pcb, TCB *p_tcb)
 	if (p_tcb->actque) {
 		p_tcb->actque = false;
 		if (p_tcb->actprc != TPRC_NONE) {
+			LOG_TSKMIG(p_tcb, p_tcb->p_pcb->prcid, p_tcb->actprc);
 			p_new_pcb = get_pcb(p_tcb->actprc);
 			p_tcb->p_pcb = p_new_pcb;
 			p_tcb->actprc = TPRC_NONE;
@@ -519,9 +524,9 @@ task_terminate(PCB *p_my_pcb, TCB *p_tcb)
 /*
  *  自タスクのマイグレーション
  *
- *  CPUロック状態，スピンロック取得状態で，コンテキストを保存した後，
- *  アイドル処理用スタックで実行すること．マイグレート先が自プロセッサ
- *  であっても良い．
+ *  CPUロック状態かつジャイアントロック取得状態で，コンテキストを保存
+ *  した後，アイドル処理用スタックで実行すること．マイグレート先が自プ
+ *  ロセッサであっても良い．
  */
 void
 migrate_self(PCB *p_my_pcb, TCB *p_selftsk, PCB *p_new_pcb)
@@ -539,9 +544,9 @@ migrate_self(PCB *p_my_pcb, TCB *p_selftsk, PCB *p_new_pcb)
 /*
  *  自タスクのマイグレーションと起動
  *
- *  CPUロック状態，スピンロック取得状態で，コンテキストを保存した後，
- *  アイドル処理用スタックで実行すること．マイグレート先が自プロセッサ
- *  であってはならない．
+ *  CPUロック状態かつジャイアントロック取得状態で，コンテキストを保存
+ *  した後，アイドル処理用スタックで実行すること．マイグレート先が自プ
+ *  ロセッサであってはならない．
  */
 void
 migrate_activate_self(PCB *p_my_pcb, TCB *p_selftsk)

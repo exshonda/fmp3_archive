@@ -3,7 +3,7 @@
  *      Toyohashi Open Platform for Embedded Real-Time Systems/
  *      Flexible MultiProcessor Kernel
  * 
- *  Copyright (C) 2007-2019 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2007-2020 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  * 
  *  上記著作権者は，以下の(1)～(4)の条件を満たす場合に限り，本ソフトウェ
@@ -35,7 +35,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  @(#) $Id: spin_lock.h 145 2019-03-10 15:27:01Z ertl-honda $
+ *  @(#) $Id: spin_lock.h 207 2020-01-30 09:31:28Z ertl-honda $
  */
 
 /*
@@ -81,7 +81,8 @@ extern void	initialize_spin_lock(PCB *p_my_pcb);
  *  スピンロックの強制解放
  *
  *  この関数は，CPUロック状態とCPUロック解除状態のいずれで呼んでもよい．
- *  この関数では，CPUロック状態を解除しない．
+ *  ただし，タスクマイグレーションを避けるために，ディスパッチ保留状態
+ *  で呼ばなければならない．この関数では，CPUロック状態を解除しない．
  */
 extern void	force_unlock_spin(PCB *p_my_pcb);
 

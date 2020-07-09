@@ -5,7 +5,7 @@
  * 
  *  Copyright (C) 2000-2003 by Embedded and Real-Time Systems Laboratory
  *                              Toyohashi Univ. of Technology, JAPAN
- *  Copyright (C) 2005-2019 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2005-2020 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  * 
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: startup.c 178 2019-10-08 13:55:00Z ertl-honda $
+ *  $Id: startup.c 207 2020-01-30 09:31:28Z ertl-honda $
  */
 
 /*
@@ -156,6 +156,11 @@ sta_ker(void)
 	p_my_pcb->prcid = ID_PRC(my_prcidx);
 
 	/*
+	 *  取得しているスピンロックの初期化
+	 */
+	p_my_pcb->p_locspn = NULL;
+
+	/*
 	 *  ターゲット依存の初期化
 	 */
 	target_initialize(p_my_pcb);
@@ -254,7 +259,7 @@ ext_ker(void)
 	/*
 	 *  他のプロセッサへ終了処理を要求する
 	 */
-	for(prcid = TMIN_PRCID; prcid <= TMAX_PRCID; prcid++){
+	for (prcid = TMIN_PRCID; prcid <= TMAX_PRCID; prcid++) {
 		request_ext_ker(prcid);
 	}
 

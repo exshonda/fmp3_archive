@@ -5,7 +5,7 @@
  * 
  *  Copyright (C) 2000-2003 by Embedded and Real-Time Systems Laboratory
  *                              Toyohashi Univ. of Technology, JAPAN
- *  Copyright (C) 2005-2019 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2005-2020 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  * 
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: exception.c 145 2019-03-10 15:27:01Z ertl-honda $
+ *  $Id: exception.c 207 2020-01-30 09:31:28Z ertl-honda $
  */
 
 /*
@@ -45,6 +45,7 @@
  */
 
 #include "kernel_impl.h"
+#include "check.h"
 #include "task.h"
 #include "exception.h"
 
@@ -97,14 +98,21 @@ xsns_dpn(void *p_excinf)
 {
 	bool_t	state;
 	PCB		*p_my_pcb;
-	SIL_PRE_LOC;
 
 	LOG_XSNS_DPN_ENTER(p_excinf);
-	SIL_LOC_INT();
-	p_my_pcb = get_my_pcb();
-	state = (p_my_pcb->kerflg && exc_sense_intmask(p_excinf) && p_my_pcb->enadsp
+	if (check_tskctx()) {
+		/*
+		 *  非タスクコンテキストの場合は，CPUロック状態にせずに自プロ
+		 *  セッサのPCBにアクセスしてよい．
+		 */
+		p_my_pcb = get_my_pcb();
+		state = (p_my_pcb->kerflg && exc_sense_intmask(p_excinf)
+								&& p_my_pcb->enadsp
 								&& p_my_pcb->p_runtsk != NULL) ? false : true;
-	SIL_UNL_INT();
+	}
+	else {
+		state = true;							/*［NGKI3152］*/
+	}
 	LOG_XSNS_DPN_LEAVE(state);
 	return(state);
 }

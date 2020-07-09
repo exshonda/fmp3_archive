@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: check.h 178 2019-10-08 13:55:00Z ertl-honda $
+ *  $Id: check.h 207 2020-01-30 09:31:28Z ertl-honda $
  */
 
 /*
@@ -92,7 +92,7 @@ check_tskctx(void)
 	SIL_LOC_INT();
 	state = sense_context(get_my_pcb());
 	SIL_UNL_INT();
-	return (state);
+	return(state);
 }
 
 #endif /* OMIT_CHECK_TSKCTX */
@@ -219,7 +219,7 @@ check_dispatch(void)
 #endif /* OMIT_CHECK_DISPATCH */
 
 #define CHECK_DISPATCH() do {								\
-	if (check_dispatch()){									\
+	if (check_dispatch()) {									\
 		ercd = E_CTX;										\
 		goto error_exit;									\
 	}														\

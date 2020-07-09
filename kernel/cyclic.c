@@ -5,7 +5,7 @@
  * 
  *  Copyright (C) 2000-2003 by Embedded and Real-Time Systems Laboratory
  *                              Toyohashi Univ. of Technology, JAPAN
- *  Copyright (C) 2005-2019 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2005-2020 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  * 
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: cyclic.c 145 2019-03-10 15:27:01Z ertl-honda $
+ *  $Id: cyclic.c 207 2020-01-30 09:31:28Z ertl-honda $
  */
 
 /*
@@ -70,11 +70,11 @@
 
 #ifndef LOG_MSTA_CYC_ENTER
 #define LOG_MSTA_CYC_ENTER(cycid, prcid)
-#endif /* LOG_STA_CYC_ENTER */
+#endif /* LOG_MSTA_CYC_ENTER */
 
 #ifndef LOG_MSTA_CYC_LEAVE
 #define LOG_MSTA_CYC_LEAVE(ercd)
-#endif /* LOG_STA_CYC_LEAVE */
+#endif /* LOG_MSTA_CYC_LEAVE */
 
 #ifndef LOG_CYCMIG
 #define LOG_CYCMIG(p_cyccb, src_id, dest_id)
@@ -162,7 +162,7 @@ sta_cyc(ID cycid)
 	CHECK_TSKCTX_UNL();
 	CHECK_ID(VALID_CYCID(cycid));
 	p_cyccb = get_cyccb(cycid);
-	
+
 	lock_cpu();
 	acquire_glock();
 	if (p_cyccb->cycsta) {
@@ -230,7 +230,7 @@ msta_cyc(ID cycid, ID prcid)
 	unlock_cpu();
 
   error_exit:
-	LOG_STA_CYC_LEAVE(ercd);
+	LOG_MSTA_CYC_LEAVE(ercd);
 	return(ercd);
 }
 

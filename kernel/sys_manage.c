@@ -5,7 +5,7 @@
  * 
  *  Copyright (C) 2000-2003 by Embedded and Real-Time Systems Laboratory
  *                              Toyohashi Univ. of Technology, JAPAN
- *  Copyright (C) 2005-2019 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2005-2020 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  * 
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: sys_manage.c 178 2019-10-08 13:55:00Z ertl-honda $
+ *  $Id: sys_manage.c 207 2020-01-30 09:31:28Z ertl-honda $
  */
 
 /*
@@ -558,7 +558,9 @@ loc_cpu(void)
  *  CPUロック中は，ディスパッチが必要となるサービスコールを呼び出すこ
  *  とはできないため，CPUロック状態の解除時にディスパッチャを起動する
  *  必要はない．
- *  スピンロックを取得している間（PCB中のlockspnid != 0）は状態は変化しない． 
+ *
+ *  自プロセッサがスピンロックを取得している時（自プロセッサのPCB中の
+ *  p_locspn != NULLの時）は，CPUロック状態を解除しない．
  */
 #ifdef TOPPERS_unl_cpu
 
@@ -569,8 +571,9 @@ unl_cpu(void)
 
 	LOG_UNL_CPU_ENTER();
 
-	if (sense_lock() && (get_my_pcb()->p_locspn == NULL)) {	/*［NGKI2738］*/
-		unlock_cpu();							/*［NGKI2737］*/
+	if (sense_lock()								/*［NGKI2738］*/
+			&& (get_my_pcb()->p_locspn == NULL)) {	/*［NGKI2739］*/
+		unlock_cpu();								/*［NGKI2737］*/
 	}
 	ercd = E_OK;
 
@@ -590,13 +593,21 @@ dis_dsp(void)
 {
 	ER		ercd;
 	PCB		*p_my_pcb;
-	
+	TCB		*p_selftsk;
+
 	LOG_DIS_DSP_ENTER();
 	CHECK_TSKCTX_UNL();							/*［NGKI2741］［NGKI2742］*/
 
 	lock_cpu();
+  retry:
 	acquire_glock();
 	p_my_pcb = get_my_pcb();
+	p_selftsk = p_my_pcb->p_runtsk;
+	if (p_selftsk != p_my_pcb->p_schedtsk) {
+		release_glock();
+		dispatch();
+		goto retry;
+	}
 	p_my_pcb->enadsp = false;
 	p_my_pcb->dspflg = false;
 	ercd = E_OK;
@@ -650,8 +661,8 @@ ena_dsp(void)
 				ercd = E_OK;
 				goto unlock_and_exit;
 			}
-			ercd = E_OK;
 		}
+		ercd = E_OK;
 	}
 	else {
 		ercd = E_OK;

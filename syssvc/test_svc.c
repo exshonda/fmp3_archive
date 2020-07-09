@@ -35,7 +35,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: test_svc.c 148 2019-03-29 16:36:07Z ertl-honda $
+ *  $Id: test_svc.c 207 2020-01-30 09:31:28Z ertl-honda $
  */
 
 /* 
@@ -167,7 +167,20 @@ check_point_prc(uint_t count, ID prcid)
 }
 
 /*
- *	完了チェックポイント
+ *	完了チェックポイント（シングルコアテスト用）
+ */
+void
+check_finish(uint_t count)
+{
+	if (count > 0U) {
+		check_point_prc(count, 0);
+		syslog_0(LOG_NOTICE, "All check points passed.");
+	}
+	test_finish();
+}
+
+/*
+ *	完了チェックポイント（マルチコアテスト用）
  */
 void
 check_finish_prc(uint_t count, ID prcid)

@@ -5,7 +5,7 @@
  * 
  *  Copyright (C) 2000-2003 by Embedded and Real-Time Systems Laboratory
  *                              Toyohashi Univ. of Technology, JAPAN
- *  Copyright (C) 2004-2019 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2004-2020 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  * 
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: sample1.c 184 2019-10-09 06:05:15Z ertl-honda $
+ *  $Id: sample1.c 207 2020-01-30 09:31:28Z ertl-honda $
  */
 
 /* 
@@ -47,35 +47,64 @@
  *
  *  プログラムの概要:
  *
- *  ユーザインタフェースを受け持つメインタスク（タスクID: MAIN_TASK，優
- *  先度: MAIN_PRIORITY）と，3つの並行実行されるタスク（タスクID:
- *  TASK1〜TASK3，初期優先度: MID_PRIORITY）で構成される．また，起動周
- *  期が2秒の周期ハンドラ（周期ハンドラID: CYCHDR1）を用いる．
+ *  ユーザインタフェースを受け持つメインタスク（MAIN_TASK）と，プロセッ
+ *  サ毎に，3つの並行実行されるタスク（TASK1_1〜TASK1_3，TASK2_1〜
+ *  TASK2_3，TASK3_1〜TASK3_3，TASK4_1〜TASK4_3），例外処理タスク
+ * （EXC_TASK1，EXC_TASK2，EXC_TASK3，EXC_TASK4），アラーム通知で
+ *  起動されるタスク（ALM_TASK1，ALM_TASK2，ALM_TASK3，ALM_TASK4）の
+ *  計21個のタスクを用いる．
+ *  これらの他に，システムログタスクが動作する．また，プロセッサ毎に，
+ *  周期ハンドラ，アラーム通知，割込みサービスルーチン，CPU例外ハンド
+ *  ラをそれぞれ1つ用いる．
  *
- *  並行実行されるタスクは，task_loop回空ループを実行する度に，タスクが
- *  実行中であることをあらわすメッセージを表示する．空ループを実行する
- *  のは，空ループなしでメッセージを出力すると，多量のメッセージが出力
- *  され，プログラムの動作が確認しずらくなるためである．また，低速なシ
+ *  はカーネルドメインに属する．
+ *
+ *  システム周期を15ミリ秒とし，システム動作モードを3つ用意する．シス
+ *  テム動作モード1（SOM1）では，両プロセッサで，DOM1とDOM2に各4ミリ秒
+ *  のタイムウィンドウを割り当てる．システム動作モード2（SOM2）とシス
+ *  テム動作モード3（SOM3）は，2つを巡回するようにし，いずれのシステム
+ *  動作モードでも，プロセッサ1ではDOM1の方に長いタイムウィンドウを割
+ *  り当て，プロセッサ2ではDOM1のみにタイムウィンドウを割り当てる．
+ *
+ *  並行実行されるタスクは，task_loop回のループを実行する度に，タスク
+ *  が実行中であることをあらわすメッセージを表示する．ループを実行する
+ *  のは，プログラムの動作を確認しやすくするためである．また，低速なシ
  *  リアルポートを用いてメッセージを出力する場合に，すべてのメッセージ
  *  が出力できるように，メッセージの量を制限するという理由もある．
  *
- *  周期ハンドラは，三つの優先度（HIGH_PRIORITY，MID_PRIORITY，
- *  LOW_PRIORITY）のレディキューを回転させる．プログラムの起動直後は，
- *  周期ハンドラは停止状態になっている．
+ *  周期ハンドラ，アラーム通知で起動されるタスク，割込みサービスルーチ
+ *  ンは，3つの優先度（HIGH_PRIORITY，MID_PRIORITY，
+ *  LOW_PRIORITY）のレディキューを回転させる．周期ハンドラは，プログラ
+ *  ムの起動直後は停止状態になっている．
  *
- *  メインタスクは，シリアルI/Oポートからの文字入力を行い（文字入力を
- *  待っている間は，並行実行されるタスクが実行されている），入力された
- *  文字に対応した処理を実行する．入力された文字と処理の関係は次の通り．
+ *  CPU例外ハンドラは，CPU例外からの復帰が可能な場合には，例外処理タス
+ *  クを起動する．例外処理タスクは，CPU例外を起こしたタスクに対して，
+ *  終了要求を行う．
+ *
+ *  メインタスクは，シリアルポートからの文字入力を行い（文字入力を待っ
+ *  ている間は，並行実行されるタスクが実行されている），入力された文字
+ *  に対応した処理を実行する．入力された文字と処理の関係は次の通り．
  *  Control-Cまたは'Q'が入力されると，プログラムを終了する．
  *
- *  '1' : 対象タスクをTASK1_1/TASK2_1に切り換える（初期設定はTASK1_1）．
- *  '2' : 対象タスクをTASK1_2/TASK2_2に切り換える．
- *  '3' : 対象タスクをTASK1_3/TASK2_3に切り換える．
- *  '4' : 対象タスクからTASK1_1をact_tskにより起動する．
- *  '5' : 対象タスクからTASK1_2をact_tskにより起動する．
- *  '6' : 対象タスクからTASK1_3をact_tskにより起動する．
+ *  '1' : 対象タスクをTASK1_1/TASK2_1/TASK3_1/TASK4_1に切り換える（初期設定はTASK1_1）．
+ *  '2' : 対象タスクをTASK1_2/TASK2_2/TASK3_2/TASK4_2に切り換える．
+ *  '3' : 対象タスクをTASK1_3/TASK2_3/TASK3_3/TASK4_3に切り換える．
+ *  '4' : クラス1に所属するタスクを指定する．
+ *        対象周期ハンドラをCYCHDR1に切り替える．
+ *        対象アラームハンドラをALMHDR1に切り替える．
+ *  '5' : クラス2に所属するタスクを指定する．
+ *        対象周期ハンドラをCYCHDR2に切り替える．
+ *        対象アラームハンドラをALMHDR2に切り替える．
+ *  '6' : クラス3に所属するタスクを指定する．
+ *        対象周期ハンドラをCYCHDR3に切り替える．
+ *        対象アラームハンドラをALMHDR3に切り替える．
+ *  '7' : クラス4に所属するタスクを指定する．
+ *        対象周期ハンドラをCYCHDR4に切り替える．
+ *        対象アラームハンドラをALMHDR4に切り替える．
  *  '8' : 対象プロセッサをPRC1とする（初期設定）
  *  '9' : 対象プロセッサをPRC2とする
+ *  '0' : 対象プロセッサをPRC3とする
+ *  '-' : 対象プロセッサをPRC4とする  
  *  'a' : 対象タスクをact_tskにより起動する．
  *  'A' : 対象タスクに対する起動要求をcan_actによりキャンセルする．
  *  'e' : 対象タスクにext_tskを呼び出させ，終了させる．
@@ -150,7 +179,7 @@ consume_time(ulong_t ctime)
 #define SERVER_REQ_MIG_TSK  0x01
 #define SERVER_REQ_TER_TSK  0x02
 
-ID const server_dtqid[TNUM_PRCID] = {
+const ID server_dtqid[TNUM_PRCID] = {
     SERVER_DTQ1,
 #if TNUM_PRCID >= 2
     SERVER_DTQ2,
@@ -166,7 +195,7 @@ ID const server_dtqid[TNUM_PRCID] = {
 /*
  *  タスクIDのテーブル
  */
-uint_t const sample_tskid[TNUM_PRCID][3] = {
+const uint_t task_id[TNUM_PRCID][3] = {
     {TASK1_1,TASK1_2,TASK1_3},
 #if TNUM_PRCID >= 2
     {TASK2_1,TASK2_2,TASK2_3},
@@ -180,27 +209,27 @@ uint_t const sample_tskid[TNUM_PRCID][3] = {
 };
 
 /*
- *  タスクNO(コンソール表示用)のテーブル
+ *  タスク名(コンソール表示用)のテーブル
  */
-uint_t const sample_tskno[TNUM_PRCID][3] = {
-    {0x11,0x12,0x13},
+const char *task_name[TNUM_PRCID][3] = {
+    {"TASK1_1", "TASK1_2", "TASK1_3"},
 #if TNUM_PRCID >= 2
-    {0x21,0x22,0x23},
+    {"TASK2_1", "TASK2_2", "TASK2_3"},
 #endif /* TNUM_PRCID >= 2 */
 #if TNUM_PRCID >= 3
-    {0x31,0x32,0x33},
+    {"TASK3_1", "TASK3_2", "TASK3_3"},
 #endif /* TNUM_PRCID >= 3 */
 #if TNUM_PRCID >= 4
-    {0x41,0x42,0x43},
+    {"TASK4_1", "TASK4_2", "TASK4_3"}
 #endif /* TNUM_PRCID >= 4 */
 };
 
-#define TSKNO_TO_TSKID(tskno)  sample_tskid[(tskno >> 4) - 1][(tskno & 0xf) -1]
+#define TSKNO_TO_TSKID(tskno)  task_id[(tskno >> 4) - 1][(tskno & 0xf) -1]
 
 /*
  *  例外タスクのタスクIDのテーブル
  */
-uint_t const exctsk_tskid[TNUM_PRCID] = {
+const uint_t exctsk_tskid[TNUM_PRCID] = {
 	EXC_TASK1,
 #if TNUM_PRCID >= 2
 	EXC_TASK2,
@@ -216,7 +245,7 @@ uint_t const exctsk_tskid[TNUM_PRCID] = {
 /*
  *  周期ハンドラIDのテーブル
  */
-uint_t const sample_cycid[TNUM_PRCID] = {
+const uint_t cychd_id[TNUM_PRCID] = {
     CYCHDR1_1,
 #if TNUM_PRCID >= 2
     CYCHDR2_1,
@@ -232,7 +261,7 @@ uint_t const sample_cycid[TNUM_PRCID] = {
 /*
  *  アラームIDのテーブル
  */
-uint_t const sample_almid[TNUM_PRCID] = {
+const uint_t almhd_id[TNUM_PRCID] = {
     ALMHDR1_1,
 #if TNUM_PRCID >= 2
     ALMHDR2_1,
@@ -246,9 +275,9 @@ uint_t const sample_almid[TNUM_PRCID] = {
 };
 
 /*
- *  アラームIDのテーブル
+ *  割込み番号のテーブル
  */
-INTNO const sample_intno[TNUM_PRCID] = {
+const INTNO inthd_no[TNUM_PRCID] = {
     INTNO1,
 #if TNUM_PRCID >= 2
     INTNO2,
@@ -269,7 +298,6 @@ void server_task(intptr_t exinf)
 {
 	intptr_t req;
 	ID		tskid;
-	int_t	tskno;
 	ID		prcid;
 	uint8_t syscall;
 	ID dtqid = server_dtqid[exinf - 1];
@@ -278,8 +306,7 @@ void server_task(intptr_t exinf)
 
 	while(1){
 		rcv_dtq(dtqid, &req);
-		tskno = (req >> 16) & 0xff;
-		tskid = TSKNO_TO_TSKID(tskno);
+		tskid = (req >> 16) & 0xff;
 		prcid = (req >>  8) & 0xff;
 		syscall = req & 0xff;
 
@@ -290,11 +317,11 @@ void server_task(intptr_t exinf)
 		 *  れているプロセッサではエラーとなる．
 		 */
 		if (syscall == SERVER_REQ_MIG_TSK) {
-			syslog(LOG_INFO, "#Server task %d : mig_tsk(0x%x, %d)", (int_t) exinf, tskno, prcid);
+			syslog(LOG_INFO, "#Server task %d : mig_tsk(0x%x, %d)", (int_t) exinf, tskid, prcid);
 			SVC_PERROR(mig_tsk(tskid, prcid));
 		}
 		else if (syscall == SERVER_REQ_TER_TSK) {
-			syslog(LOG_INFO, "#Server task %d : ter_tsk(0x%x)", (int_t) exinf, tskno);
+			syslog(LOG_INFO, "#Server task %d : ter_tsk(0x%x)", (int_t) exinf, tskid);
 			SVC_PERROR(ter_tsk(tskid));
 		}
 	}
@@ -324,6 +351,7 @@ task(intptr_t exinf)
 	int_t		n = 0;
 	int_t		tskno = (int_t) (exinf & 0xffff);
 	int_t		classno = (int_t) (exinf >> 16);
+	const char	*tskname = task_name[classno-1][tskno-1];
 	const char	*graph[] = { "|", "  +", "    *" };
 	char		c;
 	ID		prcid;
@@ -331,59 +359,59 @@ task(intptr_t exinf)
 
 	while (true) {
 		SVC_PERROR(get_pid(&prcid));
-		syslog(LOG_NOTICE, "task%d_%d is running on prc%d (%03d) .   %s",
-			   classno, tskno, prcid, ++n, graph[tskno-1]);
+		syslog(LOG_NOTICE, "%s is running on prc%d (%03d) .   %s",
+			   tskname, prcid, ++n, graph[tskno-1]);
 		consume_time(task_loop);
 		c = message[classno-1][tskno-1];
 		message[classno-1][tskno-1] = 0;
 		switch (c) {
 		case 'e':
-			syslog(LOG_INFO, "#%d#ext_tsk()", tskno);
+			syslog(LOG_INFO, "#%s#ext_tsk()", tskname);
 			SVC_PERROR(ext_tsk());
 			assert(0);
 		case 's':
-			syslog(LOG_INFO, "#%d#slp_tsk()", tskno);
+			syslog(LOG_INFO, "#%d#slp_tsk()", tskname);
 			SVC_PERROR(slp_tsk());
 			break;
 		case 'S':
-			syslog(LOG_INFO, "#%d#tslp_tsk(10000000)", tskno);
+			syslog(LOG_INFO, "#%s#tslp_tsk(10000000)", tskname);
 			SVC_PERROR(tslp_tsk(10000000));
 			break;
 		case 'd':
-			syslog(LOG_INFO, "#%d#dly_tsk(2000000)", tskno);
-			SVC_PERROR(dly_tsk(2000000));
+			syslog(LOG_INFO, "#%s#dly_tsk(10000000)", tskname);
+			SVC_PERROR(dly_tsk(10000000));
 			break;
 		case 'g':
-			syslog(LOG_INFO, "#%d#mig_tsk(0, %d)", tskno, tsk_mig_prc);
+			syslog(LOG_INFO, "#%s#mig_tsk(0, %d)", tskname, tsk_mig_prc);
 			SVC_PERROR(mig_tsk(0, tsk_mig_prc));
 			break;
 		case 'y':
-			syslog(LOG_INFO, "#%d#dis_ter()", tskno);
+			syslog(LOG_INFO, "#%s#dis_ter()", tskname);
 			SVC_PERROR(dis_ter());
 			break;
 		case 'Y':
-			syslog(LOG_INFO, "#%d#ena_ter()", tskno);
+			syslog(LOG_INFO, "#%s#ena_ter()", tskname);
 			SVC_PERROR(ena_ter());
 			break;
 		case 'p':
-			syslog(LOG_INFO, "#%d#get_pid()", tskno);
+			syslog(LOG_INFO, "#%s#get_pid()", tskname);
 			SVC_PERROR(ercd = get_pid(&prcid));
 			if (ercd >= 0) {
 				syslog(LOG_NOTICE, "Processor id is %d", prcid);
-			}			
+			}
 			break;
-#ifdef CPUEXC1
+#if defined(CPUEXC1_PRC1) || defined(CPUEXC1_PRC2) || defined(CPUEXC1_PRC3) || defined(CPUEXC1_PRC4)
 		case 'z':
-			syslog(LOG_NOTICE, "#%d#raise CPU exception", tskno);
+			syslog(LOG_NOTICE, "#%s#raise CPU exception", tskname);
 			RAISE_CPU_EXCEPTION;
 			break;
 		case 'Z':
 			SVC_PERROR(loc_cpu());
-			syslog(LOG_NOTICE, "#%d#raise CPU exception", tskno);
+			syslog(LOG_NOTICE, "#%s#raise CPU exception", tskname);
 			RAISE_CPU_EXCEPTION;
 			SVC_PERROR(unl_cpu());
 			break;
-#endif /* CPUEXC1 */
+#endif /* defined(CPUEXC1_PRC1) || defined(CPUEXC1_PRC2) || defined(CPUEXC1_PRC3) || defined(CPUEXC1_PRC4) */
 		default:
 			break;
 		}
@@ -398,7 +426,7 @@ task(intptr_t exinf)
  */
 #ifdef INTNO1
 
-void 
+void
 intno1_isr(intptr_t exinf)
 {
 	intno1_clear();
@@ -412,7 +440,7 @@ intno1_isr(intptr_t exinf)
 
 #ifdef INTNO2
 
-void 
+void
 intno2_isr(intptr_t exinf)
 {
 	intno2_clear();
@@ -519,7 +547,7 @@ cpuexc_handler(void *p_excinf)
  *  HIGH_PRIORITY，MID_PRIORITY，LOW_PRIORITY の各優先度のレディキュー
  *  を回転させる．
  */
-void 
+void
 cyclic_handler(intptr_t exinf)
 {
 	ID	prcid = (ID) exinf;
@@ -550,7 +578,7 @@ alarm_handler(intptr_t exinf)
 /*
  *  例外処理タスク
  */
-void 
+void
 exc_task(intptr_t exinf)
 {
 	ID	prcid;
@@ -624,27 +652,27 @@ local_terrtn(intptr_t exinf)
 void 
 main_task(intptr_t exinf)
 {
-	char	c;
-	ER_UINT	ercd;
-	PRI		tskpri;
-	ID		clsid = exinf;
-	ID		prcid = exinf;
-	ID		tskid = sample_tskid[(int_t)exinf-1][0];
-	int_t	tskno = sample_tskno[(int_t)exinf-1][0];
-	ID		cycid = sample_cycid[(int_t)exinf-1];
-	ID		almid = sample_almid[(int_t)exinf-1];
-	INTNO	intno = sample_intno[(int_t)exinf-1];
-	bool_t  update_select = true;
-	uint_t  tsk_select    = 1;
-	uint_t  tme_select    = exinf;
-	uint_t  class_select  = exinf;
-	uint_t  prc_select    = exinf;
-	uint_t  int_select    = exinf;
-	uint32_t server_req;
+	ER_UINT		ercd;
+	PRI			tskpri;
+	ID			clsid = exinf;
+	ID			prcid = exinf;
+	ID			tskid = task_id[(int_t)exinf-1][0];
+	const char	*tskname = task_name[(int_t)exinf-1][0];
+	ID			cycid = cychd_id[(int_t)exinf-1];
+	ID			almid = almhd_id[(int_t)exinf-1];
+	INTNO		intno = inthd_no[(int_t)exinf-1];
+	bool_t		update_select = true;
+	uint_t		tsk_select    = 1;
+	uint_t		tme_select    = exinf;
+	uint_t		class_select  = exinf;
+	uint_t		prc_select    = exinf;
+	uint_t		int_select    = exinf;
+	uint32_t	server_req;
 #ifndef TASK_LOOP
-	SYSTIM	stime1, stime2;
+	SYSTIM		stime1, stime2;
 #endif /* TASK_LOOP */
-	HRTCNT	hrtcnt1, hrtcnt2;
+	HRTCNT		hrtcnt1, hrtcnt2;
+	char		c;
 
 	tsk_mig_prc = 1;
 
@@ -670,7 +698,7 @@ main_task(intptr_t exinf)
  	 *  ループ回数の設定
 	 *
 	 *  並行実行されるタスク内でのループの回数（task_loop）は，ループ
-	 *  の実行時間が約0.4秒になるように設定する．この設定のために，
+	 *  の実行時間が約0.2秒になるように設定する．この設定のために，
 	 *  LOOP_REF回のループの実行時間を，その前後でget_timを呼ぶことで
 	 *  測定し，その測定結果から空ループの実行時間が0.2秒になるループ
 	 *  回数を求め，task_loopに設定する．
@@ -680,17 +708,17 @@ main_task(intptr_t exinf)
 	 *  かりすぎるという問題を生じる．逆に想定したより速いプロセッサで
 	 *  は，LOOP_REF回のループの実行時間が短くなり，task_loopに設定す
 	 *  る値の誤差が大きくなるという問題がある．そこで，そのようなター
-     *  ゲットでは，target_test.hで，LOOP_REFを適切な値に定義すること
+	 *  ゲットでは，target_test.hで，LOOP_REFを適切な値に定義すること
 	 *  とする．
 	 *
 	 *  また，task_loopの値を固定したい場合には，その値をTASK_LOOPにマ
 	 *  クロ定義する．TASK_LOOPがマクロ定義されている場合，上記の測定
 	 *  を行わずに，TASK_LOOPに定義された値をループの回数とする．
 	 *
-	 * ターゲットによっては，ループの実行時間の1回目の測定で，本来より
-	 * も長めになるものがある．このようなターゲットでは，MEASURE_TWICE
-	 * をマクロ定義することで，1回目の測定結果を捨てて，2回目の測定結
-	 * 果を使う．
+	 *  ターゲットによっては，ループの実行時間の1回目の測定で，本来より
+	 *  も長めになるものがある．このようなターゲットでは，MEASURE_TWICE
+	 *  をマクロ定義することで，1回目の測定結果を捨てて，2回目の測定結
+	 *  果を使う．
 	 */
 #ifdef TASK_LOOP
 	task_loop = TASK_LOOP;
@@ -705,15 +733,31 @@ main_task(intptr_t exinf)
 	SVC_PERROR(get_tim(&stime1));
 	consume_time(LOOP_REF);
 	SVC_PERROR(get_tim(&stime2));
-	task_loop = LOOP_REF * 400LU / (ulong_t)(stime2 - stime1) * 1000LU;
+	task_loop = LOOP_REF * 200LU / (ulong_t)(stime2 - stime1) * 1000LU;
 
 #endif /* TASK_LOOP */
 
 	/*
  	 *  タスクの起動
 	 */
-	SVC_PERROR(act_tsk(tskid));
-
+	SVC_PERROR(act_tsk(TASK1_1));
+	SVC_PERROR(act_tsk(TASK1_2));
+	SVC_PERROR(act_tsk(TASK1_3));
+#if TNUM_PRCID >= 2
+	SVC_PERROR(act_tsk(TASK2_1));
+	SVC_PERROR(act_tsk(TASK2_2));
+	SVC_PERROR(act_tsk(TASK2_3));
+#endif /* TNUM_PRCID >= 2 */
+#if TNUM_PRCID >= 3
+	SVC_PERROR(act_tsk(TASK3_1));
+	SVC_PERROR(act_tsk(TASK3_2));
+	SVC_PERROR(act_tsk(TASK3_3));
+#endif /* TNUM_PRCID >= 3 */
+#if TNUM_PRCID >= 4
+	SVC_PERROR(act_tsk(TASK4_1));
+	SVC_PERROR(act_tsk(TASK4_2));
+	SVC_PERROR(act_tsk(TASK4_3));
+#endif /* TNUM_PRCID >= 4 */
 	/*
  	 *  メインループ
 	 */
@@ -721,14 +765,14 @@ main_task(intptr_t exinf)
 		if (update_select) {
 			prcid = prc_select;
 			clsid = class_select;
-			tskid = sample_tskid[clsid - 1][tsk_select-1];
-			tskno = sample_tskno[clsid - 1][tsk_select-1];
-			cycid = sample_cycid[tme_select-1];
-			almid = sample_almid[tme_select-1];
-			intno = sample_intno[int_select-1];
+			tskid = task_id[clsid - 1][tsk_select-1];
+			tskname = task_name[clsid - 1][tsk_select-1];
+			cycid = cychd_id[tme_select-1];
+			almid = almhd_id[tme_select-1];
+			intno = inthd_no[int_select-1];
 			tsk_mig_prc = prcid;
 			update_select = false;
-			syslog(LOG_INFO, "select tskno 0x%x", tskno);
+			syslog(LOG_INFO, "select %s", tskname);
 			syslog(LOG_INFO, "select cycid %d", cycid);
 			syslog(LOG_INFO, "select almid %d", almid);
 			syslog(LOG_INFO, "select processor %d", prcid);
@@ -748,7 +792,7 @@ main_task(intptr_t exinf)
 		case 'z':
 		case 'Z':
 		case 'g':
-			message[clsid-1][(tskno & 0x0f) - 1] = c;
+			message[clsid-1][tsk_select-1] = c;
 			break;
 		case '1':
 			tsk_select = 1;
@@ -815,22 +859,22 @@ main_task(intptr_t exinf)
 			break;
 #endif /* TNUM_PRCID >= 4 */
 		case 'a':
-			syslog(LOG_INFO, "#act_tsk(0x%x)", tskno);
+			syslog(LOG_INFO, "#act_tsk(%s)", tskname);
 			SVC_PERROR(act_tsk(tskid));
 			break;
 		case 'A':
-			syslog(LOG_INFO, "#can_act(0x%x)", tskno);
+			syslog(LOG_INFO, "#can_act(%s)", tskname);
 			SVC_PERROR(ercd = can_act(tskid));
 			if (ercd >= 0) {
-				syslog(LOG_NOTICE, "can_act(0x%x) returns %d", tskno, ercd);
+				syslog(LOG_NOTICE, "can_act(%s) returns %d", tskname, ercd);
 			}
 			break;
 		case 'f':
-			syslog(LOG_INFO, "#mact_tsk(0x%x, 0x%x)", tskno, tsk_mig_prc);
+			syslog(LOG_INFO, "#mact_tsk(%s, 0x%x)", tskname, tsk_mig_prc);
 			SVC_PERROR(mact_tsk(tskid, tsk_mig_prc));
 			break;
 		case 't':
-			server_req = tskno << 16 | SERVER_REQ_TER_TSK;
+			server_req = tskid << 16 | SERVER_REQ_TER_TSK;
 			SVC_PERROR(snd_dtq(SERVER_DTQ1, server_req));
 #if TNUM_PRCID >= 2
 			SVC_PERROR(snd_dtq(SERVER_DTQ2, server_req));
@@ -843,45 +887,45 @@ main_task(intptr_t exinf)
 #endif /* TNUM_PRCID >= 4 */
 			break;
 		case '>':
-			syslog(LOG_INFO, "#chg_pri(0x%x, HIGH_PRIORITY)", tskno);
+			syslog(LOG_INFO, "#chg_pri(%s, HIGH_PRIORITY)", tskname);
 			SVC_PERROR(chg_pri(tskid, HIGH_PRIORITY));
 			break;
 		case '=':
-			syslog(LOG_INFO, "#chg_pri(0x%x, MID_PRIORITY)", tskno);
+			syslog(LOG_INFO, "#chg_pri(%s, MID_PRIORITY)", tskname);
 			SVC_PERROR(chg_pri(tskid, MID_PRIORITY));
 			break;
 		case '<':
-			syslog(LOG_INFO, "#chg_pri(0x%x, LOW_PRIORITY)", tskno);
+			syslog(LOG_INFO, "#chg_pri(%s, LOW_PRIORITY)", tskname);
 			SVC_PERROR(chg_pri(tskid, LOW_PRIORITY));
 			break;
 		case 'G':
-			syslog(LOG_INFO, "#get_pri(0x%x, &tskpri)", tskno);
+			syslog(LOG_INFO, "#get_pri(%s, &tskpri)", tskname);
 			SVC_PERROR(ercd = get_pri(tskid, &tskpri));
 			if (ercd >= 0) {
-				syslog(LOG_NOTICE, "priority of task 0x%x is %d", tskno, tskpri);
+				syslog(LOG_NOTICE, "priority of %s is %d", tskname, tskpri);
 			}
 			break;
 		case 'w':
-			syslog(LOG_INFO, "#wup_tsk(0x%x)", tskno);
+			syslog(LOG_INFO, "#wup_tsk(%s)", tskname);
 			SVC_PERROR(wup_tsk(tskid));
 			break;
 		case 'W':
-			syslog(LOG_INFO, "#can_wup(0x%x)", tskno);
+			syslog(LOG_INFO, "#can_wup(%s)", tskname);
 			SVC_PERROR(ercd = can_wup(tskid));
 			if (ercd >= 0) {
-				syslog(LOG_NOTICE, "can_wup(0x%x) returns %d", tskno, ercd);
+				syslog(LOG_NOTICE, "can_wup(%s) returns %d", tskname, ercd);
 			}
 			break;
 		case 'l':
-			syslog(LOG_INFO, "#rel_wai(0x%x)", tskno);
+			syslog(LOG_INFO, "#rel_wai(%s)", tskname);
 			SVC_PERROR(rel_wai(tskid));
 			break;
 		case 'u':
-			syslog(LOG_INFO, "#sus_tsk(0x%x)", tskno);
+			syslog(LOG_INFO, "#sus_tsk(%s)", tskname);
 			SVC_PERROR(sus_tsk(tskid));
 			break;
 		case 'i':
-			server_req = (tskno << 16) | (prcid << 8) | SERVER_REQ_MIG_TSK;
+			server_req = (tskid << 16) | (prcid << 8) | SERVER_REQ_MIG_TSK;
 			SVC_PERROR(snd_dtq(SERVER_DTQ1, server_req));
 #if TNUM_PRCID >= 2
 			SVC_PERROR(snd_dtq(SERVER_DTQ2, server_req));
@@ -894,11 +938,11 @@ main_task(intptr_t exinf)
 #endif /* TNUM_PRCID >= 4 */
 			break;
 		case 'm':
-			syslog(LOG_INFO, "#rsm_tsk(0x%x)", tskno);
+			syslog(LOG_INFO, "#rsm_tsk(%s)", tskname);
 			SVC_PERROR(rsm_tsk(tskid));
 			break;
 		case 'x':
-			syslog(LOG_INFO, "#ras_ter(0x%x)", tskno);
+			syslog(LOG_INFO, "#ras_ter(%s)", tskname);
 			SVC_PERROR(ras_ter(tskid));
 			break;
 		case 'r':
@@ -935,6 +979,7 @@ main_task(intptr_t exinf)
 			syslog(LOG_INFO, "#ras_int(0x%x)", intno);
 			SVC_PERROR(ras_int(intno));
 			break;
+
 		case 'V':
 			hrtcnt1 = fch_hrt();
 			consume_time(1000LU);
@@ -942,6 +987,7 @@ main_task(intptr_t exinf)
 			syslog(LOG_NOTICE, "hrtcnt1 = %tu, hrtcnt2 = %tu",
 								(uint32_t) hrtcnt1, (uint32_t) hrtcnt2);
 			break;
+
 		case 'v':
 			SVC_PERROR(syslog_msk_log(LOG_UPTO(LOG_INFO),
 										LOG_UPTO(LOG_EMERG)));

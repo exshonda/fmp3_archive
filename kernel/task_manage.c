@@ -5,7 +5,7 @@
  * 
  *  Copyright (C) 2000-2003 by Embedded and Real-Time Systems Laboratory
  *                              Toyohashi Univ. of Technology, JAPAN
- *  Copyright (C) 2005-2019 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2005-2020 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  * 
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: task_manage.c 178 2019-10-08 13:55:00Z ertl-honda $
+ *  $Id: task_manage.c 207 2020-01-30 09:31:28Z ertl-honda $
  */
 
 /*
@@ -186,7 +186,7 @@ act_tsk(ID tskid)
 #endif /* TOPPERS_act_tsk */
 
 /*
- *  割付けプロセッサ指定でのタスクの起動［NGKI3530]
+ *  割付けプロセッサ指定でのタスクの起動［NGKI3530］
  */
 #ifdef TOPPERS_mact_tsk
 
@@ -221,6 +221,7 @@ mact_tsk(ID tskid, ID prcid)
 	acquire_glock();
 	p_my_pcb = get_my_pcb();
 	if (TSTAT_DORMANT(p_tcb->tstat)) {
+		LOG_TSKMIG(p_tcb, p_tcb->p_pcb->prcid, prcid);
 		p_new_pcb = get_pcb(prcid);
 		p_tcb->p_pcb = p_new_pcb;				/*［NGKI1132］*/
 		make_active(p_my_pcb, p_tcb, p_new_pcb);		/*［NGKI1132］*/
@@ -294,7 +295,7 @@ can_act(ID tskid)
 #endif /* TOPPERS_can_act */
 
 /*
- *  タスクの割付けプロセッサの変更[NGKI1147]
+ *  タスクの割付けプロセッサの変更［NGKI1147］
  */
 #ifdef TOPPERS_mig_tsk
 
@@ -331,8 +332,7 @@ mig_tsk(ID tskid, ID prcid)
 	if (p_tcb->p_pcb != p_my_pcb) {
 		/*
 		 *  対象タスクが，自タスクと異なるプロセッサに割り付けられてい
-		 *  る場合．mig_tskを呼び出したタスクが，サービスコールを呼び
-		 *  出した後にマイグレートされた場合にも，ここでエラーとなる．
+		 *  る場合
 		 */
 		ercd = E_OBJ;								/*［NGKI1157］*/
 	}
@@ -353,7 +353,7 @@ mig_tsk(ID tskid, ID prcid)
 		if (p_tcb == p_selftsk) {
 			/* 対象タスクが自タスク */
 			dispatch_and_migrate(p_my_pcb, p_selftsk, p_new_pcb);
-			/* ここに戻ってくる時にはロックは解放されている */
+			/* ここに戻ってくる時にはジャイアントロックは解放されている */
 			ercd = E_OK; 
 			goto unlock_and_exit;
 		} 
@@ -361,6 +361,7 @@ mig_tsk(ID tskid, ID prcid)
 			/* 対象タスクが他タスク */
 			/* マイグレート先のプロセッサでmake_runnableする */
 			make_runnable(p_my_pcb, p_tcb, p_new_pcb);
+
 			/*
 			 *  マイグレート先が自プロセッサの場合，自タスクの方が優先
 			 *  順位が高いため，自プロセッサでディスパッチが必要になる
@@ -414,7 +415,6 @@ get_tst(ID tskid, STAT *p_tskstat)
 	uint_t	tstat;
 	ER		ercd;
 	TCB		*p_selftsk;
-	PCB		*p_my_pcb;
 
 	LOG_GET_TST_ENTER(tskid, p_tskstat);
 	CHECK_TSKCTX_UNL_MYSTATE(&p_selftsk);		/*［NGKI3614］［NGKI3615］*/
@@ -428,7 +428,6 @@ get_tst(ID tskid, STAT *p_tskstat)
 
 	lock_cpu();
 	acquire_glock();
-	p_my_pcb = get_my_pcb();
 	tstat = p_tcb->tstat;
 	if (TSTAT_DORMANT(tstat)) {					/*［NGKI3620］*/
 		*p_tskstat = TTS_DMT;
@@ -444,7 +443,7 @@ get_tst(ID tskid, STAT *p_tskstat)
 	else if (TSTAT_WAITING(tstat)) {
 		*p_tskstat = TTS_WAI;
 	}
-	else if (p_tcb == p_my_pcb->p_runtsk) {
+	else if (p_tcb == p_tcb->p_pcb->p_runtsk) {
 		*p_tskstat = TTS_RUN;
 	}
 	else {
