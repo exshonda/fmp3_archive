@@ -1,0 +1,74 @@
+# -*- coding: utf-8 -*-
+#
+#		パス2の生成スクリプトのターゲット依存部（ZCU102 Cortex-A53(AArch64)用）
+#
+#  $Id: target_kernel.trb 213 2020-02-15 17:11:06Z ertl-honda $
+#
+
+#
+#  クラスのリスト
+#
+$globalVars.push("clsData")
+
+case $TNUM_PRCID
+when 1
+  $clsData = {
+    1 => { clsid: NumStr.new(1, "CLS_ALL_PRC1"),
+           initPrc: 1, affinityPrcList: [ 1 ] },
+    5 => { clsid: NumStr.new(5, "CLS_PRC1"),
+           initPrc: 1, affinityPrcList: [ 1 ] },
+  }
+
+when 2
+  $clsData = {
+    1 => { clsid: NumStr.new(1, "CLS_ALL_PRC1"),
+           initPrc: 1, affinityPrcList: [ 1,2 ] },
+    2 => { clsid: NumStr.new(2, "CLS_ALL_PRC2"),
+           initPrc: 2, affinityPrcList: [ 1,2 ] },
+    5 => { clsid: NumStr.new(5, "CLS_PRC1"),
+           initPrc: 1, affinityPrcList: [ 1 ] },
+    6 => { clsid: NumStr.new(6, "CLS_PRC2"),
+           initPrc: 2, affinityPrcList: [ 2 ] },
+  }
+
+when 3
+  $clsData = {
+    1 => { clsid: NumStr.new(1, "CLS_ALL_PRC1"),
+           initPrc: 1, affinityPrcList: [ 1,2,3 ] },
+    2 => { clsid: NumStr.new(2, "CLS_ALL_PRC2"),
+           initPrc: 2, affinityPrcList: [ 1,2,3 ] },
+    3 => { clsid: NumStr.new(3, "CLS_ALL_PRC3"),
+           initPrc: 3, affinityPrcList: [ 1,2,3 ] },
+    5 => { clsid: NumStr.new(5, "CLS_PRC1"),
+           initPrc: 1, affinityPrcList: [ 1 ] },
+    6 => { clsid: NumStr.new(6, "CLS_PRC2"),
+           initPrc: 2, affinityPrcList: [ 2 ] },
+    7 => { clsid: NumStr.new(7, "CLS_PRC3"),
+           initPrc: 3, affinityPrcList: [ 3 ] },
+  }
+
+when 4
+  $clsData = {
+    1 => { clsid: NumStr.new(1, "CLS_ALL_PRC1"),
+           initPrc: 1, affinityPrcList: [ 1,2,3,4 ] },
+    2 => { clsid: NumStr.new(2, "CLS_ALL_PRC2"),
+           initPrc: 2, affinityPrcList: [ 1,2,3,4 ] },
+    3 => { clsid: NumStr.new(3, "CLS_ALL_PRC3"),
+           initPrc: 3, affinityPrcList: [ 1,2,3,4 ] },
+    4 => { clsid: NumStr.new(4, "CLS_ALL_PRC4"),
+           initPrc: 4, affinityPrcList: [ 1,2,3,4 ] },
+    5 => { clsid: NumStr.new(5, "CLS_PRC1"),
+           initPrc: 1, affinityPrcList: [ 1 ] },
+    6 => { clsid: NumStr.new(6, "CLS_PRC2"),
+           initPrc: 2, affinityPrcList: [ 2 ] },
+    7 => { clsid: NumStr.new(7, "CLS_PRC3"),
+           initPrc: 3, affinityPrcList: [ 3 ] },
+    8 => { clsid: NumStr.new(8, "CLS_PRC4"),
+           initPrc: 4, affinityPrcList: [ 4 ] },
+  }
+end
+
+#
+#  生成スクリプトのチップ依存部
+#
+IncludeTrb("chip_kernel.trb")

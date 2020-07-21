@@ -1,0 +1,22 @@
+PACKAGE fmp_arch_arm64_gcc
+
+chip_kernel.h
+chip_kernel.trb
+chip_kernel_impl.c
+chip_kernel_impl.h
+chip_rename.def
+chip_rename.h
+chip_serial.c
+chip_serial.cfg
+chip_serial.h
+chip_stddef.h
+chip_timer.cfg
+chip_timer.h
+chip_unrename.h
+chip_user.txt
+Makefile.chip
+MANIFEST
+start.S
+xuartps.c
+xuartps.h
+zynqmp.h

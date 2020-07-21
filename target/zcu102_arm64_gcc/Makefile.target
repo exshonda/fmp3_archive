@@ -1,0 +1,176 @@
+#
+#		Makefile のターゲット依存部（ZYNQMP-A53-ARM64用）
+#
+
+#
+# ATFの BL32 (Secure-EL1 Payload) として動作させるか
+#
+#ENABLE_ATF_S_EL1 = true
+
+#
+#  システム名，チップ名，コア名，開発環境名の定義
+#
+SYS = zcu102_arm64
+CHIP = zynqmp
+CORE = arm64
+TOOL = gcc
+
+#
+#  FPUサポート
+#
+#  FPUを使用する場合はUSE_ARM64_FPUをマクロ定義する．
+#
+CDEFS := $(CDEFS) -DUSE_ARM64_FPU
+
+#
+#  QEMUに関する定義
+#
+#  QEMU上で実行する場合には，TOPPERS_USE_QEMUをマクロ定義する．QEMUの
+#  Semihostingを使わない場合には，TOPPERS_OMIT_QEMU_SEMIHOSTINGをマクロ
+#  定義する．Semihostingを使う場合には，QEMUの起動時に，-semihostingオ
+#  プションをつけることが必要である．
+#
+#COPTS := $(COPTS) -DTOPPERS_USE_QEMU
+#COPTS := $(COPTS) -DTOPPERS_OMIT_QEMU_SEMIHOSTING
+
+#
+#  各セグメントの開始アドレスとサイズのディフォルト値の定義
+#
+ifndef TOPPERS_MEM_BASE
+ifeq ($(ENABLE_ATF_S_EL1),true)
+TOPPERS_MEM_BASE = 0x7B000000
+TOPPERS_MEM_SIZE = 0x00E00000
+else
+TOPPERS_MEM_BASE = 0x00000000
+TOPPERS_MEM_SIZE = 0x40000000
+endif
+endif
+
+#
+#  コンパイルオプション
+#
+INCLUDES := $(INCLUDES) -I$(TARGETDIR)
+COPTS := $(COPTS) -mlittle-endian
+LDFLAGS := $(LDFLAGS) -mlittle-endian -Wl,--build-id=none
+CDEFS := $(CDEFS) -DTOPPERS_TZ_S
+CFG1_OUT_LDFLAGS := -nostdlib $(CFG1_OUT_LDFLAGS)
+
+#
+#  SIOPとするXUARTの番号
+#
+ifeq ($(ENABLE_ATF_S_EL1),true)
+SIOP = XUART1
+else
+SIOP = XUART0
+endif
+
+#
+# シリアルポートに関する設定
+#
+ifeq ($(SIOP),XUART0)
+CDEFS := $(CDEFS) -DUSE_XUART0
+else
+CDEFS := $(CDEFS) -DUSE_XUART1
+endif
+
+#
+#  カーネルに関する定義
+#
+KERNEL_DIRS := $(KERNEL_DIRS) $(CHIPDIR) $(TARGETDIR)
+KERNEL_COBJS := $(KERNEL_COBJS) target_kernel_impl.o
+KERNEL_ASMOBJS := $(KERNEL_ASMOBJS) psci_support.o
+
+#
+#  リンカスクリプトの定義
+#
+LDSCRIPT = $(TARGETDIR)/zcu102.ld
+
+#
+#  リンカフラグに関する定義
+#
+#  LDFLAGSに-nostdlibを追加する．
+#
+LDFLAGS := -nostdlib $(LDFLAGS)
+
+#
+#  スタートアップモジュールに関する定義
+#
+#  zynqmp_a53.ldに「STARTUP(start.o)」を記述したため，スタートアップモジュー
+#  ルの名前をHIDDEN_OBJSに定義する．
+#
+HIDDEN_OBJS = $(OBJDIR)/start.o
+
+$(HIDDEN_OBJS): $(OBJDIR)/%.o: %.S
+	${MKOBJDIR_P}
+	$(CC) -o $@ -c $(CFLAGS) $(KERNEL_CFLAGS) $<
+
+#
+#  TECSを外すかどうかの定義
+#
+OMIT_TECS = true
+
+#
+#  GNU開発環境のターゲットアーキテクチャの定義
+#
+GCC_TARGET = aarch64-none-elf
+
+#
+#  メモリアドレスの設定
+#
+CDEFS := $(CDEFS) -DTOPPERS_MEM_BASE=$(TOPPERS_MEM_BASE)
+CDEFS := $(CDEFS) -DTOPPERS_MEM_SIZE=$(TOPPERS_MEM_SIZE)
+CDEFS := $(CDEFS) -DTOPPERS_32BIT_ABOVE_ADDR
+
+#
+#  Xilinx SDK へのパス
+#
+XILINXSDK = C:/Xilinx/SDK/2019.1/
+
+#
+#  使用するツールの選択
+#
+ifeq ($(TARGET_UNAME),Cygwin)
+   XSCT = xsct.bat
+   QEMU = cygstart qemu-system-aarch64
+else
+ifeq ($(TARGET_UNAME),WSL)
+   XSCT = cmd.exe /c $(XILINXSDK)/bin/xsct.bat
+   QEMU = qemu-system-aarch64
+else
+   XSCT = xsct
+   QEMU = qemu-system-aarch64
+endif
+endif
+
+#
+#  GDBの選択
+#
+GDB = aarch64-elf-gdb
+
+runj:$(OBJFILE)
+	$(XSCT) -interactive $(SRCDIR)/target/zynqmp_r5_gcc/tools/jtag/jtag_a53_64.tcl \
+		$(SRCDIR)/target/zynqmp_r5_gcc/tools/jtag/$(PSU_INIT) \
+		$(OBJFILE) $(XILINXSDK)/scripts/sdk/util/zynqmp_utils.tcl  \
+		$(TOPPERS_MEM_BASE)
+
+runq:$(OBJFILE)
+	$(QEMU) -M arm-generic-fdt -nographic \
+	 -dtb $(XILINXSDK)/data/qemu/zynqMP/SINGLE_ARCH/zcu102-arm.dtb \
+	 -device loader,file=$(OBJFILE),cpu-num=0 \
+	 -device loader,addr=0xfd1a0104,data=0x8000000e,data-len=4 \
+	 -semihosting
+
+runqg:$(OBJFILE)
+	$(QEMU) -M arm-generic-fdt -nographic \
+	 -dtb $(XILINXSDK)/data/qemu/zynqMP/SINGLE_ARCH/zcu102-arm.dtb \
+	 -device loader,addr=0xfd1a0104,data=0x8000000e,data-len=4 \
+	 -semihosting \
+	 -S -gdb tcp::1234
+
+gdb:$(OBJFILE)
+	$(GDB) -x $(TARGETDIR)/gdb.ini $(OBJFILE)
+
+#
+#  チップ依存部
+#
+include $(SRCDIR)/arch/$(CORE)_$(TOOL)/$(CHIP)/Makefile.chip
