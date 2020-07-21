@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  *
- *  @(#) $Id: core_timer.h 214 2020-02-15 19:05:52Z ertl-honda $
+ *  @(#) $Id: core_timer.h 252 2020-07-14 06:36:21Z ertl-honda $
  */
 
 /*
@@ -111,6 +111,19 @@ extern void target_hrt_initialize(intptr_t exinf);
  */
 extern void target_hrt_terminate(intptr_t exinf);
 
+#ifdef _RUN_TTSP3_
+/*------------------------------------------------------------------*/
+/*  TTSP3ビルド時 _RUN_TTSP3_ を定義して全体をビルドする必要がある  */
+/*  ttsp3/library/FMP/target/imx8mm_evk_arm64_gcc/ttsp_target.sh の */
+/*  CONFIG_OPT で定義している                                       */
+/*------------------------------------------------------------------*/
+extern volatile bool_t stop_tick;
+extern volatile HRTCNT temp_gtc;
+extern volatile HRTCNT stop_time;
+extern volatile bool_t tick_int;
+extern void ttsp_int_raise(INTNO intno);
+#endif  /*  _RUN_TTSP3_ */
+
 /*
  *  ジェネリックタイマの現在値の読出し
  */
@@ -118,13 +131,26 @@ Inline CLOCK
 target_timer_get_count(void)
 {
 	CLOCK cnt;
-
+#ifdef _RUN_TTSP3_
+	/*  ttsp3実行用 */
+	if(stop_tick == true)
+	  /*  ソフトカウンタを返す    */
+	  return (CLOCK)stop_time;
 #ifdef TOPPERS_TZ_S
 	CNTPCT_EL0_READ(cnt);
 #else /* !TOPPERS_TZ_S */
 	CNTPCT_EL0_READ(cnt);
 #endif /* TOPPERS_TZ_S */
 	return cnt;
+#else /*  _RUN_TTSP3_ */
+    /*  現在のカウンタ値を返す  */
+#ifdef TOPPERS_TZ_S
+	CNTPCT_EL0_READ(cnt);
+#else /* !TOPPERS_TZ_S */
+	CNTPCT_EL0_READ(cnt);
+#endif /* TOPPERS_TZ_S */
+	return cnt;
+#endif /*  _RUN_TTSP3_ */
 }
 
 /*
@@ -146,6 +172,12 @@ target_timer_set_cval(uint64_t cvr)
 #else /* !TOPPERS_TZ_S */
 	CNTP_CVAL_EL0_WRITE(cvr);
 #endif /* TOPPERS_TZ_S */
+
+#ifdef _RUN_TTSP3_
+	/*  ttsp3実行用     */
+	/*  割り込みが完了している場合のみ  */
+	if(stop_tick == false)
+#endif /*  _RUN_TTSP3_ */
 
 	/* 割込みをイネーブル */
 #ifdef TOPPERS_TZ_S
@@ -223,6 +255,10 @@ target_hrt_get_current(void)
 Inline void
 target_hrt_set_event(ID prcid, HRTCNT hrtcnt)
 {
+#ifdef  _RUN_TTSP3_
+	/*  ttsp3実行用     */
+	tick_int = false;
+#endif /*  _RUN_TTSP3_ */
 	/*
 	 *  コンパレータ値を，(現在のカウント値＋hrtcnt×timer_clock)
 	 *  に設定し，コンパレータと割込みをイネーブルする．
@@ -254,7 +290,14 @@ target_hrt_clear_event(ID prcid)
 Inline void
 target_hrt_raise_event(ID prcid)
 {
+#ifdef  _RUN_TTSP3_
+	/*  ttsp3実行用     */
+	ena_int(INTNO_TIMER_PRC1);
+	stop_time = temp_gtc;
+	ttsp_int_raise(INTNO_TIMER);
+#else   /*  _RUN_TTSP3_ */
 	target_hrt_set_event(prcid, 1U);
+#endif  /*  _RUN_TTSP3_ */
 }
 
 /*

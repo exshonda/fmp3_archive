@@ -1,4 +1,4 @@
-E_PACKAGE fmp_imx8mm_evk_arm64_gcc
+E_PACKAGE fmp3_imx8mm_evk_arm64_gcc
 VERSION %date
 
 INCLUDE MANIFEST

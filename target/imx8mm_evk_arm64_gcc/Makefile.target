@@ -123,11 +123,6 @@ CDEFS := $(CDEFS) -DTOPPERS_MEM_SIZE=0x0001000000
 CDEFS := $(CDEFS) -DTOPPERS_32BIT_ABOVE_ADDR	#MMU 64bitアドレス空間対応
 
 #
-#  アライメントチェックを行うか
-#
-ENABLE_ALIGNMENT_CHECK = true
-
-#
 #  チップ依存部
 #
 include $(SRCDIR)/arch/$(CORE)_$(TOOL)/$(CHIP)/Makefile.chip

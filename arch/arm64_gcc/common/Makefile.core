@@ -1,7 +1,7 @@
 #
 #		Makefileのコア依存部（ARM64用）
 #
-#  $Id: Makefile.core 214 2020-02-15 19:05:52Z ertl-honda $
+#  $Id: Makefile.core 253 2020-07-20 12:04:55Z ertl-honda $
 #
 
 #
@@ -47,11 +47,3 @@ CFG_TABS := $(CFG_TABS) --symval-table $(COREDIR)/core_sym.def
 #  オフセットファイル生成のための定義
 #
 TARGET_OFFSET_TRB = $(COREDIR)/core_offset.trb
-
-#
-#  アライメントチェック
-#
-ifeq ($(ENABLE_ALIGNMENT_CHECK),true)
-COPTS := $(COPTS) -mstrict-align
-CDEFS := $(CDEFS) -DENABLE_ALIGNMENT_CHECK
-endif

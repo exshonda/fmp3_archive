@@ -35,7 +35,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  *
- *  @(#) $Id: core_timer.c 215 2020-02-17 05:45:15Z ertl-honda $
+ *  @(#) $Id: core_timer.c 252 2020-07-14 06:36:21Z ertl-honda $
  */
 
 /*
@@ -46,6 +46,12 @@
 #include "target_syssvc.h"
 #include "time_event.h"
 #include "target_timer.h"
+
+#ifdef  _RUN_TTSP3_
+    /*  ttsp3実行用     */
+#include "ttsp_target_test.h"
+extern volatile bool_t tick_int;
+#endif
 
 /*
  *  タイマの周波数を保持する変数
@@ -69,7 +75,7 @@ target_hrt_initialize(intptr_t exinf)
 	 *  タイマの停止
 	 */
 #ifdef TOPPERS_TZ_S
-	CNTPS_CTL_EL1_WRITE((uint32_t)CNTP_CTL_IMASK_BIT);
+	CNTPS_CTL_EL1_WRITE((uint32_t)CNTPS_CTL_IMASK_BIT);
 #else /* !TOPPERS_TZ_S */
 	CNTP_CTL_EL0_WRITE((uint32_t)CNTP_CTL_IMASK_BIT);
 #endif /* TOPPERS_TZ_S */
@@ -77,11 +83,12 @@ target_hrt_initialize(intptr_t exinf)
 	/*
 	 *  現在カウンタ値読み込み
 	 */
-#if defined(TOPPERS_TZ_S)
-	CNTPCT_EL0_READ(timer_cval[get_my_prcidx()]);
-#else /* !TOPPERS_TZ_S */
-	CNTPCT_EL0_READ(timer_cval[get_my_prcidx()]);
-#endif /* TOPPERS_TZ_S */
+	timer_cval[get_my_prcidx()] = target_timer_get_count();
+
+#ifdef  _RUN_TTSP3_
+	/*  ttsp3実行用  */
+	tick_int = false;
+#endif
 }
 
 /*
@@ -106,27 +113,24 @@ target_hrt_terminate(intptr_t exinf)
 void
 target_hrt_handler(void)
 {
-	ID prcid;
-
-	iget_pid(&prcid);
-
 	/*
 	 *  タイマの停止
 	 */
 #if defined(TOPPERS_TZ_S)
-	CNTPS_CTL_EL1_WRITE((uint32_t)CNTP_CTL_IMASK_BIT);
+	CNTPS_CTL_EL1_WRITE((uint32_t)CNTPS_CTL_IMASK_BIT);
 #else /* !TOPPERS_TZ_S */
 	CNTP_CTL_EL0_WRITE((uint32_t)CNTP_CTL_IMASK_BIT);
 #endif /* TOPPERS_TZ_S */
 
-    /*
-     *  現在カウンタ値読み込み
-     */
-#if defined(TOPPERS_TZ_S)
-	CNTPCT_EL0_READ(timer_cval[prcid - 1]);
-#else /* !TOPPERS_TZ_S */
-	CNTPCT_EL0_READ(timer_cval[prcid - 1]);
-#endif /* TOPPERS_TZ_S */
+#ifdef  _RUN_TTSP3_
+	/*  ttsp3実行用     */
+	tick_int = true;
+#endif
+
+	/*
+	 *  現在カウンタ値読み込み
+	 */
+	timer_cval[get_my_prcidx()] = target_timer_get_count();
 
 	/*
 	 *  高分解能タイマ割込みを処理する．
