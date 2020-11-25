@@ -1,14 +1,14 @@
 =====================================================================
-                     i.MX8M_A53(AArch64)ターゲット依存部
+                     ZYNQMP_A53(AArch64)ターゲット依存部
                             2018-2020 (C) Shinya Honda honda@ertl.jp                     
-                                  Last Modified:2020 Jul 20 20:33:31
+                                  Last Modified:2020 Nov 26 16:14:50
 =====================================================================
 
 ○概要
 
-i.MX8M_A53依存部は，NXP社のi.MX8M のCortex-A53のAArch64モードを
-サポートしている．サポートしているプロセッサ数は，1～4個であり，
-ディフォルトでは4個で動作する．
+ZYNQMP_A53依存部は，Xilinx社のZynq Ultrascale+ MPSoC のCortex-A53の
+AArch64モードをサポートしている．サポートしているプロセッサ数は，1～4
+個であり，ディフォルトでは4個で動作する．
 
 現状サポートしているボードは次の通りである．
 
@@ -16,22 +16,22 @@ i.MX8M_A53依存部は，NXP社のi.MX8M のCortex-A53のAArch64モードを
 
 動作確認を行ったボードは次の通りである．
 
-・NXP MCIMX8M-EVK
+・Xilinx ZCU102 Production
 
-●i.MX BSP
+●Xilinx SDK
 
-動作確認したi.MX BSPのバージョンは次の通りである．  
+動作確認したXilinx SDKのバージョンは次の通りである．  
 
-  - i.MX Linux 4.9.88_2.0.0 BSP
-
+  - Xilinx SDK (>2018.2)
+  
 ●コンパイラ
 
-動作確認を行ったGCCは，Linaro の
+動作確認を行ったARMから公開されているGCCである．
 
-   aarch64-elf-gcc (Linaro GCC 4.9-2015.01-3) 4.9.3 20150113 (prerelease)
+   aarch64-none-eabi-gcc.exe
    
-である．
-   
+   gcc version 9.2.1 20191025 (GNU Toolchain for the A-profile Architecture 9.2-2020.02 (arm-9.10))
+
 ●デバッグ環境
 
 デバッグ環境としては，京都マイクロコンピュータ製のPartner-Jet2 による
@@ -42,79 +42,59 @@ i.MX8M_A53依存部は，NXP社のi.MX8M のCortex-A53のAArch64モードを
 Partner-Jet2を使用する場合は，本カーネルはPLLやDDR等の初期化はu-bootで
 実施することを前提としている．
 
-○プロセッサ数
+実行・デバッグ手法については，FMPの以下のパッケージ
 
-ディフォルトでは，4プロセッサをサポートしている．TNUM_PRCID マクロを
-Makefileで設定することにより1～4の範囲で設定することが可能である．
+Zynq UltraScale+ MPSoC Cortex-R5 (Xilinx社) 簡易パッケージ 
+
+の以下のフォルダを参考のこと．
+
+../zynqmp_r5_gcc/doc/tools.txt
+
+●プロセッサ数
+
+実行環境・デバッグ環境としては， Xilnx SDK 付属の xsctないし，京都マイ
+クロコンピュータ製のPartner-Jet2，QEMU をサポートしている．
 
 
-○カーネルのコンフィギュレーション
+○システム構築手順
 
-●カーネルロック方式
+ZYNQMP_A53用のFMP3カーネルを構築する手順は，「TOPPERS/FMP3カーネル ユ
+ーザーズマニュアル」の「３．クイックスタートガイド」の章に記述されてい
+る通りである．
 
-ジャイアントロック方式とプロセッサロック方式と細粒度ロック方式をサポー
-ト．
+シリアルドライバを使用する際には以下のオプションでシリアルドライバと各
+種システムサービスをビルド対象とする．
 
-●カーネルタイマ方式
-
-グローバルタイマ方式とローカルタイマ方式の両方をサポート．
-
-●スピンロック方式
-
-ネイティブ方式とエミュレーション方式の両方をサポート．ネイティブ方式の
-場合の最大数は256個である．
-
+configure.rb -T zcu102_arm64_gcc -w -S "syslog.o banner.o serial.o chip_serial.o logtask.o xuartps.o"
+                         
 
 ○カーネルの使用リソース
 
 プロセッサ毎にカーネルは以下のリソースを使用する．
 
 ・タイマ
-  コア内蔵のNonSecure Physical Timerを使用する．
-
-・UART
-  i.MX8内蔵UART1～4を使用可能である.
-
-  TOPPERS/FMPのSIO Portに割り当てるUARTをimx8_uart.h の以下の
-  マクロによって選択する.
-
-  SIOP0_DEVSEL : SIO Port0割り当てポート
-  SIOP1_DEVSEL : SIO Port1割り当てポート
-  SIOP2_DEVSEL : SIO Port2割り当てポート
-  SIOP3_DEVSEL : SIO Port3割り当てポート
+  内蔵のジェネリックタイマーを使用する．
   
-  IMX8_UART1～4をこれらのマクロに指定することで割り当てる.
-
+・UART
+  Makefile.target の以下のマクロによって設定可能である．
+  ポート数
+   TNUM_SIOP = 1 or 2
+   
+  SIOP0(ポート) とするXUART
+   SIOP0 = XUART0 or  XUART1 
+  
 ・プロセッサ間割込み
   0番と1番のプロセッサ間割込みを使用する．
 
 ・メモリ
   DDRを使用．
-  TEXT      : 0x40000000
-  DATA      : 0x40800000
+  VECTOR    : 0x00000000 
+  TEXT/DATA : 0x00100000
 
-○システムログ機能
-
-システムログ機能は，グローバル方式のみが有効である．そのため，Makefile 
-の ENABLE_G_SYSLOG を true に定義すること．
-システムログ機能では,SIO Port0を使用している.
-
-
-○ブートの流れについて
-
-i.MX8 BSPではATFを採用しているため、ATFのブートシーケンスに従ってブー
-トされる．ATFからNon-SecureのBL33として起動し，PSCIを使用してサブコア
-を起動している．
 
 ○変更履歴
-2020/07/20
-・アライメントチェックを無効に．
 
-2020/07/02
-・ATFではBL32はオブジェクトの先頭から実行されるため，start.oをオブジェ
-  クトの先頭に配置するよう変更．
-
-2019/01/30
+2020/07/22
 ・最初のリリース
 
 以上．
