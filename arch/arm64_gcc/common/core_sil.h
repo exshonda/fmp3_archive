@@ -36,7 +36,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  *
- *  @(#) $Id: core_sil.h 223 2020-02-20 06:57:55Z ertl-honda $
+ *  @(#) $Id: core_sil.h 260 2020-10-26 09:11:16Z ertl-honda $
  */
 
 /*
@@ -155,7 +155,7 @@ TOPPERS_test_and_assign(uint32_t *p_var, uint32_t prcid)
 	Asm("ldxr	w1, [%1]			\n"
 	"	cmp		w1, #0				\n"
 	"	b.ne	1f					\n"
-	"	stxr	w1, %2, [%1]		\n"
+	"	stxr	w1, %w2, [%1]		\n"
 	"1:								\n"
 	"	mov		%0, x1				\n"
 	: "=r"(locked) : "r"(p_var),"r"(prcid) : "x1", "cc");

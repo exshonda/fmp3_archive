@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  *
- *  @(#) $Id: arm64_insn.h 215 2020-02-17 05:45:15Z ertl-honda $
+ *  @(#) $Id: arm64_insn.h 260 2020-10-26 09:11:16Z ertl-honda $
  */
 
 /*
@@ -169,7 +169,7 @@ test_and_set_uint32(uint32_t *p_var)
 	Asm("ldxr	w1, [%1]			\n"
 	"	cmp		w1, #0				\n"
 	"	b.ne	1f					\n"
-	"	stxr	w1, %2, [%1]		\n"
+	"	stxr	w1, %w2, [%1]		\n"
 	"1:								\n"
 	"	mov		%0, x1				\n"
 	: "=r"(locked) : "r"(p_var),"r"(1) : "x1", "cc");

@@ -36,7 +36,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  *
- *  $Id: gic_support.S 230 2020-05-07 10:53:01Z ertl-honda $
+ *  $Id: gic_support.S 256 2020-09-05 02:41:14Z ertl-honda $
  */
 
 /*
@@ -87,12 +87,14 @@ ALABEL(irc_begin_int)
 #elif (TOPPERS_GIC_VER == 3) || (TOPPERS_GIC_VER == 4)
 	mrs		x4, ICC_RPR_EL1			/* 受け付けた割込みの割込み優先度を取得 */
 	mrs		x20,ICC_PMR_EL1			/* 割込み発生前の割込み優先度を取得 */
-	/* 
-	 * 受け付けた割込みがspurious割込みの場合はRPRに0xFFが設定されるため，
-	 * Secure側のアイドル優先度(0x80)より優先度が低い場合（値が大きい場合）
-	 * はセットしない．また，EOIはセットしない（振る舞いがUNPREDICTABLEなため）．
+
+	/*
+	 *  Spurious割込み(1022/1023)の場合は優先度の設定やEOIへの書き込みは行わない
 	 */
-	tbnz	x4, 7, irc_begin_int_1
+	sub		x0, x0, #1022
+	cmp		x0, 1
+	bls		irc_begin_int_1
+
 	msr		ICC_PMR_EL1, x4		/* 新しい割込み優先度マスクをセットする */
 #endif /* TOPPERS_GIC_VER == 2 */
 	dsb		sy						/* 割込み優先度マスクがセットされるのを待つ */

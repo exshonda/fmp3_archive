@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  *
- *  @(#) $Id: gic_kernel_impl.c 227 2020-02-26 04:03:56Z ertl-honda $
+ *  @(#) $Id: gic_kernel_impl.c 258 2020-09-15 07:48:14Z ertl-honda $
  */
 
 /*
@@ -482,10 +482,7 @@ gicr_init(void)
 	volatile uint32_t   reg32_val;
 	uint_t  cnt;
 	uint_t	prc_id = get_my_prcidx();
-#ifndef TOPPERS_TZ_S
-	uint_t  prc_cnt, reg;
-#endif /* TOPPERS_TZ_S */
-	
+
 	gicr_base[prc_id] = GICR_BASE + (GICR_SIZE * prc_id);
 
 	/* Redistoributor起動 */
@@ -493,39 +490,10 @@ gicr_init(void)
 	reg32_val &= ~GICR_ProcSleep;
 	*((volatile uint32_t *)GICR_WAKER(prc_id)) = reg32_val;
 
+	/* 起動を待つ */
 	for( cnt = 0 ; cnt < 1000 ; cnt++ ) {
 		reg32_val = *((volatile uint32_t *)GICR_WAKER(prc_id));
 		if ((reg32_val & GICR_ChildrenAsleep) == 0) {
-			/* SGI, PPIの設定値をクリア */
-			/* SGI/PPIのSecure/Non-secure設定 */
-#ifdef TOPPERS_TZ_S
-			*((volatile uint32_t *)GICR_IGROUPR0(prc_id)) = 0x00000000;
-			*((volatile uint32_t *)GICR_IGRPMODR0(prc_id))  = 0xFFFFFFFF;
-#else  /* !TOPPERS_TZ_S */
-			*((volatile uint32_t *)GICR_IGROUPR0(prc_id))   = 0xFFFFFFFF;
-			*((volatile uint32_t *)GICR_IGRPMODR0(prc_id))  = 0x00000000;
-			/* 割込みを全て禁止 */
-			for( prc_cnt = 0 ; prc_cnt < TNUM_PRCID ; prc_cnt++ )  {
-				sil_wrw_mem((void *)GICR_ICENABLER0(prc_cnt),  0xFFFFFFFF);
-			}
-			/* ペンディングをクリア */
-			for( prc_cnt = 0 ; prc_cnt < TNUM_PRCID ; prc_cnt++ )  {
-				sil_wrw_mem((void *)GICR_ICPENDR0(prc_cnt),  0xFFFFFFFF);
-			}
-			/* 優先度最低に設定  */
-			for( prc_cnt = 0 ; prc_cnt < TNUM_PRCID ; prc_cnt++ )  {
-				for(reg = 0 ; reg < 8 ; reg++ )  {
-					sil_wrw_mem((void *)(GICR_IPRIORITYRn(prc_cnt)  + (uintptr_t)(4 * reg)),  0x01010101);
-				}
-			}
-			/* モード初期化(1-N Level) */
-			for( prc_cnt = 0 ; prc_cnt < TNUM_PRCID ; prc_cnt++ )  {
-				/*   SGIs */
-				sil_wrw_mem((void *)GICR_ICFGR0(prc_cnt),  0x55555555);
-				/*   PPIs */
-				sil_wrw_mem((void *)GICR_ICFGR1(prc_cnt),  0x55555555);
-			}
-#endif /* TOPPERS_TZ_S */
 			return true;
 		}
 		sil_dly_nse(1000000);
@@ -795,8 +763,11 @@ gic_sgi_ppi_init(void)
 	int_t i;
 	uint_t	prc_id = get_my_prcidx();
 
-	/* 割込みを全てグループ1(IRQ)に */
+#ifdef TOPPERS_TZ_S
+	/* SGIとPPIを全て Non-Secure Group 1 に */
 	sil_wrw_mem((void *)GICR_IGROUPR0(prc_id), 0xffffffff);
+	sil_wrw_mem((void *)GICR_IGRPMODR0(prc_id), 0x00000000);
+#endif /* TOPPERS_TZ_S */
 
 	/* 割込みを全て禁止 */
 	sil_wrw_mem((void *)GICR_ICENABLER0(prc_id), 0xffffffff);
