@@ -35,7 +35,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: target_kernel_impl.c 178 2019-10-08 13:55:00Z ertl-honda $
+ *  $Id: target_kernel_impl.c 263 2021-01-08 06:08:59Z ertl-honda $
  */
 
 /*
@@ -126,7 +126,7 @@ extern void	tPutLogSIOPort_initialize(void);
 
 #else /* TOPPERS_OMIT_TECS */
 
-extern void	sio_initialize(intptr_t exinf);
+extern void	sio_initialize(EXINF exinf);
 extern void	target_fput_initialize(void);
 
 #endif /* TOPPERS_OMIT_TECS */
@@ -149,7 +149,7 @@ boot_second_core(uint32_t address)
 #endif /* TNUM_PRCID >= 2 */
 
 /*
- *  OS起動時の初期化
+ *  ハードウェアの初期化
  */
 void
 hardware_init_hook(void)
@@ -233,11 +233,9 @@ target_exit(void)
 	/*
 	 *  QEMUを終了させる．
 	 */
-	if (ID_PRC(get_my_prcidx()) == TOPPERS_TMASTER_PRCID) {
-		Asm("ldr r1, =#0x20026\n\t"		/* ADP_Stopped_ApplicationExit */ 
-			"mov r0, #0x18\n\t"			/* angel_SWIreason_ReportException */
-			"svc 0x00123456");
-	}
+	Asm("ldr r1, =#0x20026\n\t"		/* ADP_Stopped_ApplicationExit */ 
+		"mov r0, #0x18\n\t"			/* angel_SWIreason_ReportException */
+		"svc 0x00123456");
 #endif
 	while (true) ;
 }
@@ -273,7 +271,9 @@ zybo_z7_uart_fput(char c)
 	/*
 	 *  送信できるまでポーリング
 	 */
-	while (!(sio_snd_chr(p_siopcb_target_fput, c))) ;
+	while (!(sio_snd_chr(p_siopcb_target_fput, c))) {
+		sil_dly_nse(100);
+	}
 }
 
 /*

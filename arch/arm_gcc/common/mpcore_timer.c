@@ -3,7 +3,7 @@
  *      Toyohashi Open Platform for Embedded Real-Time Systems/
  *      Flexible MultiProcessor Kernel
  * 
- *  Copyright (C) 2006-2018 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2006-2021 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  * 
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -35,7 +35,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: mpcore_timer.c 145 2019-03-10 15:27:01Z ertl-honda $
+ *  $Id: mpcore_timer.c 263 2021-01-08 06:08:59Z ertl-honda $
  */
 
 /*
@@ -60,7 +60,7 @@
  *  タイマの起動処理
  */
 void
-target_hrt_initialize(intptr_t exinf)
+target_hrt_initialize(EXINF exinf)
 {
 	/*
 	 * タイムマスタプロセッサであればカウンタを初期化
@@ -102,7 +102,7 @@ target_hrt_initialize(intptr_t exinf)
  *  タイマの停止処理
  */
 void
-target_hrt_terminate(intptr_t exinf)
+target_hrt_terminate(EXINF exinf)
 {
 	/*
 	 *  タイムマスタプロセッサであればタイマを停止する．
@@ -152,7 +152,7 @@ target_hrt_handler(void)
  *  オーバランタイマの初期化処理
  */
 void
-target_ovrtimer_initialize(intptr_t exinf)
+target_ovrtimer_initialize(EXINF exinf)
 {
 	/*
 	 *  ウォッチドッグを停止する．
@@ -182,7 +182,7 @@ target_ovrtimer_initialize(intptr_t exinf)
  *  オーバランタイマの終了処理
  */
 void
-target_ovrtimer_terminate(intptr_t exinf)
+target_ovrtimer_terminate(EXINF exinf)
 {
 	/*
 	 *  ウォッチドッグを停止する．

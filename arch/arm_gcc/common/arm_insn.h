@@ -36,7 +36,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: arm_insn.h 178 2019-10-08 13:55:00Z ertl-honda $
+ *  $Id: arm_insn.h 263 2021-01-08 06:08:59Z ertl-honda $
  */
 
 /*
@@ -337,7 +337,7 @@ arm_send_event(void)
 #define CP15_READ_PMCNTENSET(reg)  Asm("mrc p15, 0, %0, c9, c12, 1":"=r"(reg))
 #define CP15_WRITE_PMCNTENSET(reg) Asm("mcr p15, 0, %0, c9, c12, 1"::"r"(reg))
 
-/* パフォーマンスモニタカウンタサイクルレジスタ */
+/* パフォーマンスモニタサイクルカウントレジスタ */
 #define CP15_READ_PMCCNTR(reg)	Asm("mrc p15, 0, %0, c9, c13, 0":"=r"(reg))
 #define CP15_WRITE_PMCCNTR(reg)	Asm("mcr p15, 0, %0, c9, c13, 0"::"r"(reg))
 

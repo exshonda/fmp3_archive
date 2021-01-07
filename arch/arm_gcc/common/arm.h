@@ -4,7 +4,7 @@
  * 
  *  Copyright (C) 2000-2003 by Embedded and Real-Time Systems Laboratory
  *                              Toyohashi Univ. of Technology, JAPAN
- *  Copyright (C) 2006-2019 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2006-2021 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  * 
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -36,7 +36,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: arm.h 145 2019-03-10 15:27:01Z ertl-honda $
+ *  $Id: arm.h 263 2021-01-08 06:08:59Z ertl-honda $
  */
 
 /*
@@ -93,7 +93,7 @@
  *  CPSRのモードビット
  */
 #define CPSR_MODE_MASK	UINT_C(0x1f)
-#define CPSR_USER_MODE	UINT_C(0x10)
+#define CPSR_USR_MODE	UINT_C(0x10)
 #define CPSR_FIQ_MODE	UINT_C(0x11)
 #define CPSR_IRQ_MODE	UINT_C(0x12)
 #define CPSR_SVC_MODE	UINT_C(0x13)
@@ -204,12 +204,12 @@
 #define ARM_MMU_DSCR1_CB11			0x0000cU	/* Cビットが1，Bビットが1 */
 
 #define ARMV6_MMU_DSCR1_NONGLOBAL	0x20000U	/* グローバルでない */
-#define ARMV6_MMU_DSCR1_AP001		0x00400		/* APビットが001 */
-#define ARMV6_MMU_DSCR1_AP010		0x00800		/* APビットが010 */
-#define ARMV6_MMU_DSCR1_AP011		0x00c00		/* APビットが011 */
-#define ARMV6_MMU_DSCR1_AP101		0x08400		/* APビットが101 */
-#define ARMV6_MMU_DSCR1_AP110		0x08800		/* APビットが110 */
-#define ARMV6_MMU_DSCR1_AP111		0x08c00		/* APビットが111 */
+#define ARMV6_MMU_DSCR1_AP001		0x00400U	/* APビットが001 */
+#define ARMV6_MMU_DSCR1_AP010		0x00800U	/* APビットが010 */
+#define ARMV6_MMU_DSCR1_AP011		0x00c00U	/* APビットが011 */
+#define ARMV6_MMU_DSCR1_AP101		0x08400U	/* APビットが101 */
+#define ARMV6_MMU_DSCR1_AP110		0x08800U	/* APビットが110 */
+#define ARMV6_MMU_DSCR1_AP111		0x08c00U	/* APビットが111 */
 #define ARMV6_MMU_DSCR1_ECC			0x00200U	/* ECCが有効（MPCore）*/
 #define ARMV6_MMU_DSCR1_NOEXEC		0x00010U	/* 実行不可 */
 
@@ -227,12 +227,12 @@
 
 #define ARMV6_MMU_DSCR2_NONGLOBAL	0x0800U		/* グローバルでない */
 #define ARMV6_MMU_DSCR2_SHARED		0x0400U		/* プロセッサ間で共有 */
-#define ARMV6_MMU_DSCR2_AP001		0x0010		/* APビットが001 */
-#define ARMV6_MMU_DSCR2_AP010		0x0020		/* APビットが010 */
-#define ARMV6_MMU_DSCR2_AP011		0x0030		/* APビットが011 */
-#define ARMV6_MMU_DSCR2_AP101		0x0210		/* APビットが101 */
-#define ARMV6_MMU_DSCR2_AP110		0x0220		/* APビットが110 */
-#define ARMV6_MMU_DSCR2_AP111		0x0230		/* APビットが111 */
+#define ARMV6_MMU_DSCR2_AP001		0x0010U		/* APビットが001 */
+#define ARMV6_MMU_DSCR2_AP010		0x0020U		/* APビットが010 */
+#define ARMV6_MMU_DSCR2_AP011		0x0030U		/* APビットが011 */
+#define ARMV6_MMU_DSCR2_AP101		0x0210U		/* APビットが101 */
+#define ARMV6_MMU_DSCR2_AP110		0x0220U		/* APビットが110 */
+#define ARMV6_MMU_DSCR2_AP111		0x0230U		/* APビットが111 */
 
 /* ラージページのディスクリプタ用 */
 #define ARMV6_MMU_DSCR2L_TEX000		0x0000U		/* TEXビットが000 */

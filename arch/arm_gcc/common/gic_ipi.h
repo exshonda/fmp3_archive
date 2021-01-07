@@ -3,7 +3,7 @@
  *      Toyohashi Open Platform for Embedded Real-Time Systems/
  *      Flexible MultiProcessor Kernel
  *
- *  Copyright (C) 2009-2019 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2009-2020 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  *
  *  上記著作権者は，以下の(1)～(4)の条件を満たす場合に限り，本ソフトウェ
@@ -35,7 +35,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  *
- *  @(#) $Id: gic_ipi.h 178 2019-10-08 13:55:00Z ertl-honda $
+ *  @(#) $Id: gic_ipi.h 209 2020-01-30 09:59:08Z ertl-honda $
  */
 
 /*
@@ -130,7 +130,7 @@
  *  ディスパッチ要求プロセッサ間割込みの発行
  */
 Inline void
-request_dispatch_prc(uint_t prcid)
+request_dispatch_prc(ID prcid)
 {
 	gicd_raise_sgi(IPINO_DISPATCH, prcid);
 }
@@ -139,7 +139,7 @@ request_dispatch_prc(uint_t prcid)
  *  カーネル終了要求プロセッサ間割込みの発行
  */
 Inline void
-request_ext_ker(uint_t prcid)
+request_ext_ker(ID prcid)
 {
 	gicd_raise_sgi(IPINO_EXT_KER, prcid);
 }
@@ -148,7 +148,7 @@ request_ext_ker(uint_t prcid)
  *  高分解能タイマ設定要求プロセッサ間割込みの発行
  */
 Inline void
-request_set_hrt_event(uint_t prcid)
+request_set_hrt_event(ID prcid)
 {
 	gicd_raise_sgi(IPINO_SET_HRT_EVT, prcid);
 }

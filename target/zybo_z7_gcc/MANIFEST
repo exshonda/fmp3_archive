@@ -14,7 +14,6 @@ target_kernel.h
 target_kernel_impl.c
 target_kernel_impl.h
 target_kernel.trb
-target_pcb.h
 target_rename.def
 target_rename.h
 target_serial.cfg

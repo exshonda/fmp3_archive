@@ -5,7 +5,7 @@
  * 
  *  Copyright (C) 2000-2003 by Embedded and Real-Time Systems Laboratory
  *                              Toyohashi Univ. of Technology, JAPAN
- *  Copyright (C) 2006-2019 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2006-2020 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  * 
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: core_kernel_impl.c 178 2019-10-08 13:55:00Z ertl-honda $
+ *  $Id: core_kernel_impl.c 263 2021-01-08 06:08:59Z ertl-honda $
  */
 
 /*
@@ -205,6 +205,43 @@ arm_fpu_initialize(void)
 #endif /* USE_ARM_FPU */
 
 /*
+ *  パフォーマンスモニタの初期化
+ */
+#if defined(USE_ARM_PMCNT) && __TARGET_ARCH_ARM == 7
+
+void
+arm_pmcnt_initialize(void)
+{
+	uint32_t	reg;
+
+	/*
+	 *  パフォーマンスモニタをイネーブル
+	 *
+	 *  USE_ARM_PMCNT_DIV64が定義されている場合は，64クロック毎にカウ
+	 *  ントアップする（長い時間を計測したい場合に有効）．
+	 */
+	CP15_READ_PMCR(reg);
+	reg |= CP15_PMCR_ALLCNTR_ENABLE;
+
+#ifdef USE_ARM_PMCNT_DIV64
+	reg |= CP15_PMCR_PMCCNTR_DIVIDER;
+#else /* USE_ARM_PMCNT_DIV64 */
+	reg &= ~CP15_PMCR_PMCCNTR_DIVIDER;
+#endif /* USE_ARM_PMCNT_DIV64 */
+
+	CP15_WRITE_PMCR(reg);
+
+	/*
+	 *  パフォーマンスモニタのサイクルカウンタをイネーブル
+	 */
+	CP15_READ_PMCNTENSET(reg);
+	reg |= CP15_PMCNTENSET_CCNTR_ENABLE;
+	CP15_WRITE_PMCNTENSET(reg);
+}
+
+#endif /* defined(USE_ARM_PMCNT) && __TARGET_ARCH_ARM == 7 */
+
+/*
  *  コア依存の初期化
  */
 void
@@ -262,9 +299,9 @@ core_initialize(PCB *p_my_pcb)
 	/*
 	 *  パフォーマンスモニタの初期化
 	 */
-#if defined(USE_ARM_PM_HIST) && __TARGET_ARCH_ARM == 7
-	arm_init_pmcnt();
-#endif /* defined(USE_ARM_PM_HIST) && __TARGET_ARCH_ARM == 7 */
+#if defined(USE_ARM_PMCNT) && __TARGET_ARCH_ARM == 7
+	arm_pmcnt_initialize();
+#endif /* defined(USE_ARM_PMCNT) && __TARGET_ARCH_ARM == 7 */
 }
 
 /*

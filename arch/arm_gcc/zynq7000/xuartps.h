@@ -36,7 +36,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: xuartps.h 178 2019-10-08 13:55:00Z ertl-honda $
+ *  $Id: xuartps.h 263 2021-01-08 06:08:59Z ertl-honda $
  */
 
 /*
@@ -223,7 +223,7 @@ extern void		xuartps_isr(ID siopid);
 /*
  *  SIOポートのオープン
  */
-extern SIOPCB	*xuartps_opn_por(ID siopid, intptr_t exinf);
+extern SIOPCB	*xuartps_opn_por(ID siopid, EXINF exinf);
 
 /*
  *  SIOポートのクローズ
@@ -253,12 +253,12 @@ extern void		xuartps_dis_cbr(SIOPCB *siopcb, uint_t cbrtn);
 /*
  *  SIOポートからの送信可能コールバック
  */
-extern void		xuartps_irdy_snd(intptr_t exinf);
+extern void		xuartps_irdy_snd(EXINF exinf);
 
 /*
  *  SIOポートからの受信通知コールバック
  */
-extern void		xuartps_irdy_rcv(intptr_t exinf);
+extern void		xuartps_irdy_rcv(EXINF exinf);
 
 #endif /* TOPPERS_MACRO_ONLY */
 #endif /* TOPPERS_OMIT_TECS */

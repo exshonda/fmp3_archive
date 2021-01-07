@@ -2,7 +2,7 @@
 #
 #		オフセットファイル生成用Rubyテンプレート（ARM用）
 #
-#  $Id: core_offset.trb 78 2018-10-17 13:29:10Z ertl-honda $
+#  $Id: core_offset.trb 209 2020-01-30 09:59:08Z ertl-honda $
 #
 
 #
@@ -17,6 +17,7 @@ $offsetH.append(<<EOS)
 #define TCB_p_tinib		#{$offsetof_TCB_p_tinib}
 #define TCB_sp			#{$offsetof_TCB_sp}
 #define TCB_pc			#{$offsetof_TCB_pc}
+#define TINIB_tskatr	#{$offsetof_TINIB_tskatr}
 #define TINIB_exinf		#{$offsetof_TINIB_exinf}
 #define TINIB_task		#{$offsetof_TINIB_task}
 #define TINIB_stksz		#{$offsetof_TINIB_stksz}

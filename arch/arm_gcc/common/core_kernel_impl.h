@@ -5,7 +5,7 @@
  * 
  *  Copyright (C) 2000-2003 by Embedded and Real-Time Systems Laboratory
  *                              Toyohashi Univ. of Technology, JAPAN
- *  Copyright (C) 2006-2019 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2006-2020 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  * 
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: core_kernel_impl.h 178 2019-10-08 13:55:00Z ertl-honda $
+ *  $Id: core_kernel_impl.h 263 2021-01-08 06:08:59Z ertl-honda $
  */
 
 /*
@@ -82,6 +82,41 @@
 #ifndef TOPPERS_MACRO_ONLY
 
 /*
+ *  プロセッサ管理ブロックのターゲット依存部の定義
+ *
+ *  ARM依存部では，タスクコンテキストと非タスクコンテキストの両方をスー
+ *  パバイザモードで動作させるため，実行中のコンテキストをプロセッサモー
+ *  ドで判断することができない．そのため，割込みハンドラ／CPU例外ハン
+ *  ドラのネスト段数（これを，例外ネストカウントと呼ぶ）を管理し，例外
+ *  ネストカウントが0の時にタスクコンテキスト，0より大きい場合に非タス
+ *  クコンテキストであると判断する．
+ */
+typedef struct target_processor_control_block {
+	uint32_t	excpt_nest_count;	/* 例外ネストカウント */
+	STK_T		*istkpt;			/* 非タスクコンテキスト用スタックの初期値 */
+	STK_T		*idstkpt;			/* アイドル処理用スタックの初期値 */
+	const FP	*p_inh_tbl;			/* 割込みハンドラテーブルへのポインタ */
+	const FP	*p_exc_tbl;			/* CPU例外ハンドラテーブルへのポインタ */
+} TPCB;
+
+#ifdef USE_THREAD_ID_PCB
+/*
+ *  スレッドIDレジスタから自プロセッサのPCBへのポインタを取り出す
+ */
+Inline PCB *
+core_get_my_pcb(void)
+{
+	uint32_t reg;
+
+	CP15_READ_TPIDRPRW(reg);
+	return((PCB *) reg);
+}
+
+#define get_my_pcb()	core_get_my_pcb()
+
+#endif /* USE_THREAD_ID_PCB */
+
+/*
  *  レディキューサーチのためのビットマップサーチ関数
  *
  *  CLZ命令は最上位ビットからサーチするため，最上位ビットを最高優先度に
@@ -96,11 +131,14 @@ bitmap_search(uint16_t bitmap)
 	return((uint_t)(count_leading_zero((uint32_t) bitmap) - 16));
 }
 
-Inline bool_t
-sense_context(PCB *p_pcb)
-{
-	return(p_pcb->target_pcb.excpt_nest_count > 0U);
-}
+/*
+ *  コンテキストの参照
+ *
+ *  sense_contextを，インライン関数ではなくマクロ定義としているのは，
+ *  この時点ではPCBが定義されていないためである．
+ */
+#define sense_context(p_pcb) \
+				((p_pcb)->target_pcb.excpt_nest_count > 0U)
 
 #endif /* TOPPERS_MACRO_ONLY */
 
@@ -166,7 +204,7 @@ lock_cpu(void)
 #ifndef TOPPERS_SAFEG_SECURE
 	disable_irq();
 #else /* TOPPERS_SAFEG_SECURE */
-	disable_fiq()
+	disable_fiq();
 #endif /* TOPPERS_SAFEG_SECURE */
 
 	/*
@@ -194,7 +232,7 @@ unlock_cpu(void)
 #ifndef TOPPERS_SAFEG_SECURE
 	enable_irq();
 #else /* TOPPERS_SAFEG_SECURE */
-	enable_fiq()
+	enable_fiq();
 #endif /* TOPPERS_SAFEG_SECURE */
 }
 
@@ -224,7 +262,7 @@ delay_for_interrupt(void)
 {
 }
 
-/* 
+/*
  *  非タスクコンテキスト用のスタック初期値
  */
 #define TOPPERS_ISTKPT(istk, istksz)	((STK_T *)((char *)(istk) + (istksz)))
@@ -286,12 +324,21 @@ extern void call_exit_kernel(PCB *p_my_pcb) NoReturn;
 /*
  *  自タスクのマイグレーション（core_support.S）
  */
-extern void dispatch_and_migrate(PCB *p_my_pcb, TCB *p_selftsk, PCB *p_new_pcb);
+extern void dispatch_and_migrate(PCB *p_my_pcb, TCB *p_selftsk);
 
 /*
  *  現在のコンテキストを捨てマイグレーション（core_support.S）
  */
 extern void exit_and_migrate(PCB *p_my_pcb, TCB *p_selftsk);
+
+/*
+ *  メモリバリア操作
+ */
+Inline void
+memory_barrier(void)
+{
+	data_memory_barrier();
+}
 
 /*
  *  タスクコンテキストの初期化
@@ -304,12 +351,19 @@ extern void exit_and_migrate(PCB *p_my_pcb, TCB *p_selftsk);
  */
 extern void start_r(void);
 
-#define activate_context(p_tcb, p_pcb)									\
+#define activate_context(p_tcb)											\
 {																		\
 	(p_tcb)->tskctxb.sp = (void *)((char *)((p_tcb)->p_tinib->stk)		\
 										+ (p_tcb)->p_tinib->stksz);		\
 	(p_tcb)->tskctxb.pc = (FP) start_r;									\
 }
+
+/*
+ *  ディスパッチハンドラを呼ばない場合はコードから除外する
+ */
+#ifdef USE_BYPASS_IPI_DISPATCH_HANDER
+#define OMIT_DISPATCH_HANDLER
+#endif /* USE_BYPASS_IPI_DISPATCH_HANDER */
 
 /*
  *  アイドル処理用のスタック値アクセステーブル（kernel_cfg.c）
@@ -383,7 +437,6 @@ exc_sense_lock(void *p_excinf)
 {
 #ifndef TOPPERS_SAFEG_SECURE
 	return(((((T_EXCINF *)(p_excinf))->cpsr) & CPSR_INT_MASK) != 0U);
-#define CPSR_UNLOCK			UINT_C(0x00)
 #else /* TOPPERS_SAFEG_SECURE */
 	return(((((T_EXCINF *)(p_excinf))->cpsr) & CPSR_FIQ_BIT) != 0U);
 #endif /* TOPPERS_SAFEG_SECURE */

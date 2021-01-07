@@ -1,7 +1,7 @@
 #
 #		Makefileのターゲット依存部（ZYBO_Z7用）
 #
-#  $Id: Makefile.target 166 2019-08-28 07:54:41Z ertl-honda $
+#  $Id: Makefile.target 209 2020-01-30 09:59:08Z ertl-honda $
 # 
 
 #
@@ -40,11 +40,6 @@ TOOL = gcc
 INCLUDES := $(INCLUDES) -I$(TARGETDIR)
 COPTS := $(COPTS) -mlittle-endian
 LDFLAGS := $(LDFLAGS) -mlittle-endian
-CDEFS := $(CDEFS)
-
-#
-#  ディスパッチ要求のバイパス処理
-#
 CDEFS := $(CDEFS) -DUSE_BYPASS_IPI_DISPATCH_HANDER
 
 #
@@ -120,7 +115,7 @@ ifeq ($(TARGET_UNAME),Cygwin)
    QEMU = cygstart qemu-system-arm
 else
 ifeq ($(TARGET_UNAME),WSL)
-   XSCT = cmd.exe /c C:/Xilinx/SDK/2018.2/bin/xsct.bat
+   XSCT = cmd.exe /c C:/Xilinx/SDK/2019.1/bin/xsct.bat
    QEMU = qemu-system-arm
 else
    XSCT = xsct

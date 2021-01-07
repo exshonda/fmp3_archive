@@ -1,11 +1,8 @@
 /*
- *  TOPPERS/FMP Kernel
- *      Toyohashi Open Platform for Embedded Real-Time Systems/
- *      Flexible MultiProcessor Kernel
+ *  TOPPERS Software
+ *      Toyohashi Open Platform for Embedded Real-Time Systems
  * 
- *  Copyright (C) 2000-2003 by Embedded and Real-Time Systems Laboratory
- *                              Toyohashi Univ. of Technology, JAPAN
- *  Copyright (C) 2004-2019 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2007-2019 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  * 
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -37,76 +34,44 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: core_kernel.h 263 2021-01-08 06:08:59Z ertl-honda $
+ *  $Id: arm_cpuexc1.h 263 2021-01-08 06:08:59Z ertl-honda $
  */
 
-/*
- *		kernel.hのコア依存部（ARM用）
- *
- *  このヘッダファイルは，target_kernel.h（または，そこからインクルード
- *  されるファイル）のみからインクルードされる．他のファイルから直接イ
- *  ンクルードしてはならない．
+/* 
+ *		ARM向けCPU例外処理のテスト
  */
 
-#ifndef TOPPERS_CORE_KERNEL_H
-#define TOPPERS_CORE_KERNEL_H
+#include <kernel.h>
 
 /*
- *  ターゲット定義のタスク属性
+ *  ターゲット依存の定義
  */
-#define TA_FPU		UINT_C(0x08)	/* FPUレジスタをコンテキストに含める */
+#include "target_test.h"
 
 /*
- *  スタックの型
- *
- *  ARMでは，スタックを8バイト境界に配置する必要がある．
+ *  各タスクの優先度の定義
  */
-#define TOPPERS_STK_T	long long
+#define HIGH_PRIORITY	9		/* 高優先度 */
+#define MID_PRIORITY	10		/* 中優先度 */
 
 /*
- *  CPU例外ハンドラ番号の数
- */  
-#define TNUM_EXCNO		7
-
-/*
- *  CPU例外ハンドラ番号の定義
+ *  ターゲットに依存する可能性のある定数の定義
  */
-#define EXCNO_UNDEF		UINT_C(0)		/* 未定義命令 */
-#define EXCNO_SVC		UINT_C(1)		/* スーパバイザコール */
-#define EXCNO_PABORT	UINT_C(2)		/* プリフェッチアボート */
-#define EXCNO_DABORT	UINT_C(3)		/* データアボート */
-#define EXCNO_IRQ		UINT_C(4)		/* IRQ割込み */
-#define EXCNO_FIQ		UINT_C(5)		/* FIQ割込み */
-#define EXCNO_FATAL		UINT_C(6)		/* フェイタルデータアボート */
+#ifndef STACK_SIZE
+#define	STACK_SIZE		4096		/* タスクのスタックサイズ */
+#endif /* STACK_SIZE */
 
+/*
+ *  関数のプロトタイプ宣言
+ */
 #ifndef TOPPERS_MACRO_ONLY
 
-/*
- *  CPU例外の情報を記憶しているメモリ領域の構造
- */
-typedef struct t_excinf {
-	uint32_t	nest_count;				/* 例外ネストカウント */
-	int32_t	intpri;						/* 割込み優先度マスク */
-	uint32_t	r0;
-	uint32_t	r1;
-	uint32_t	r2;
-	uint32_t	r3;
-	uint32_t	r4;
-	uint32_t	r5;
-	uint32_t	r12;
-	uint32_t	lr;
-	uint32_t	pc;						/* 戻り番地 */
-	uint32_t	cpsr;					/* CPU例外発生時のCPSR */
-} T_EXCINF;
-
-/*
- *  CPSRに常にセットするパターン
- */
-#ifdef TOPPERS_SAFEG_SECURE
-#define CPSR_ALWAYS_SET  CPSR_IRQ_BIT
-#else  /* !TOPPERS_SAFEG_SECURE */
-#define CPSR_ALWAYS_SET  0x00
-#endif /* TOPPERS_SAFEG_SECURE */
+extern void	task1(intptr_t exinf);
+extern void	task2(intptr_t exinf);
+extern void	cpuexc1_handler(void *p_excinf);
+extern void	cpuexc2_handler(void *p_excinf);
+extern void	cpuexc3_handler(void *p_excinf);
+extern void	cpuexc4_handler(void *p_excinf);
+extern void	cpuexc5_handler(void *p_excinf);
 
 #endif /* TOPPERS_MACRO_ONLY */
-#endif /* TOPPERS_CORE_KERNEL_H */

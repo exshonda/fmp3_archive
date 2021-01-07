@@ -1,5 +1,5 @@
 /*
- *  $Id: zybo.ld 1074 2018-11-25 01:32:04Z ertl-hiro $
+ *  $Id: zybo_z7_gcov.ld 265 2021-01-08 06:17:00Z ertl-honda $
  */
 
 OUTPUT_FORMAT("elf32-littlearm", "elf32-bigarm", "elf32-littlearm") 

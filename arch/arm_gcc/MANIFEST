@@ -1,5 +1,5 @@
 PACKAGE fmp3_arch_arm_gcc
-VERSION 3.1.0
+VERSION 3.2.0
 
 E_PACKAGE
 MANIFEST
@@ -15,7 +15,6 @@ common/core_kernel_impl.c
 common/core_kernel_impl.h
 common/core_kernel.trb
 common/core_offset.trb
-common/core_pcb.h
 common/core_rename.def
 common/core_rename.h
 common/core_sil.h
@@ -42,6 +41,8 @@ common/pl310.c
 common/pl310.h
 common/start.S
 
-test/arm_cpuexc.c
-test/arm_cpuexc.cfg
-test/arm_cpuexc.h
+test/arm_cpuexc1.h
+test/arm_cpuexc1.c
+test/arm_cpuexc1.cfg
+test/arm_fpu1.c
+test/arm_fpu1.cfg

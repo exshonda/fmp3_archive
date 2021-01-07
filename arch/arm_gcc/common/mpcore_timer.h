@@ -5,7 +5,7 @@
  * 
  *  Copyright (C) 2000-2003 by Embedded and Real-Time Systems Laboratory
  *                              Toyohashi Univ. of Technology, JAPAN
- *  Copyright (C) 2005-2019 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2005-2020 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  * 
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: mpcore_timer.h 178 2019-10-08 13:55:00Z ertl-honda $
+ *  $Id: mpcore_timer.h 263 2021-01-08 06:08:59Z ertl-honda $
  */
 
 /*
@@ -147,12 +147,12 @@ mpcore_gtc_set_cvr(uint64_t cvr)
 /*
  *  高分解能タイマの起動処理
  */
-extern void	target_hrt_initialize(intptr_t exinf);
+extern void	target_hrt_initialize(EXINF exinf);
 
 /*
  *  高分解能タイマの停止処理
  */
-extern void	target_hrt_terminate(intptr_t exinf);
+extern void	target_hrt_terminate(EXINF exinf);
 
 /*
  *  高分解能タイマの現在のカウント値の読出し
@@ -172,6 +172,9 @@ target_hrt_get_current(void)
  *
  *  高分解能タイマを，hrtcntで指定した値カウントアップしたら割込みを発
  *  生させるように設定する．
+ *
+ *  TOPPERS_SUPPORT_CONTROL_OTHER_HRTを定義していないため，prcidは必ず
+ *  自プロセッサとなる．
  */
 Inline void
 target_hrt_set_event(ID prcid, HRTCNT hrtcnt)
@@ -186,6 +189,9 @@ target_hrt_set_event(ID prcid, HRTCNT hrtcnt)
 
 /*
  *  高分解能タイマへの割込みタイミングのクリア
+ *
+ *  TOPPERS_SUPPORT_CONTROL_OTHER_HRTを定義していないため，prcidは必ず
+ *  自プロセッサとなる．
  */
 Inline void
 target_hrt_clear_event(ID prcid)
@@ -201,12 +207,14 @@ target_hrt_clear_event(ID prcid)
 
 /*
  *  高分解能タイマ割込みの要求
+ *
+ *  TOPPERS_SUPPORT_CONTROL_OTHER_HRTを定義していないため，prcidは必ず
+ *  自プロセッサとなる．
  */
 Inline void
 target_hrt_raise_event(ID prcid)
 {
-//	raise_int(INTNO_TIMER);
-	target_hrt_set_event(prcid, 1U);
+	raise_int(MPCORE_IRQNO_GTC);
 }
 
 /*
@@ -261,12 +269,12 @@ extern void	target_hrt_handler(void);
 /*
  *  オーバランタイマの初期化処理
  */
-extern void target_ovrtimer_initialize(intptr_t exinf);
+extern void target_ovrtimer_initialize(EXINF exinf);
 
 /*
  *  オーバランタイマの終了処理
  */
-extern void target_ovrtimer_terminate(intptr_t exinf);
+extern void target_ovrtimer_terminate(EXINF exinf);
 
 /*
  *  オーバランタイマの動作開始

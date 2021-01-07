@@ -2,8 +2,8 @@
 		TOPPERS/FMP3カーネル
 		ZYBO_Z7依存部 ユーザーズマニュアル
 
-		対応バージョン: Release 3.0
-		最終更新: 2019年8月28日
+		対応バージョン: Release 3.2
+		最終更新: 2021年1月6日
 
 このドキュメントは，TOPPERS/FMP3カーネルのZYBO_Z7ターゲット依存部を使用す
 るために必要な事項を説明するものである．
@@ -13,7 +13,7 @@
       Toyohashi Open Platform for Embedded Real-Time Systems/
       Flexible MultiProcessor Kernel
 
- Copyright (C) 2008-2019 by Embedded and Real-Time Systems Laboratory
+ Copyright (C) 2008-2021 by Embedded and Real-Time Systems Laboratory
              Graduate School of Information Science, Nagoya Univ., JAPAN
  
  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -45,7 +45,7 @@
  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  の責任を負わない．
  
- $Id: target_user.txt 1074 2018-11-25 01:32:04Z ertl-hiro $
+ $Id: target_user.txt 265 2021-01-08 06:17:00Z ertl-honda $
 ----------------------------------------------------------------------
 
 ○目次

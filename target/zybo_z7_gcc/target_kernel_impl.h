@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: target_kernel_impl.h 166 2019-08-28 07:54:41Z ertl-honda $
+ *  $Id: target_kernel_impl.h 263 2021-01-08 06:08:59Z ertl-honda $
  */
 
 /*
@@ -59,6 +59,11 @@
  *  タイムマスタプロセッサ
  */
 #define TOPPERS_TMASTER_PRCID	PRC1
+
+/*
+ *  スレッドIDレジスタに自プロセッサPCBへのポインタを格納する
+ */
+#define USE_THREAD_ID_PCB
 
 /*
  *  微少時間待ちのための定義（本来はSILのターゲット依存部）
