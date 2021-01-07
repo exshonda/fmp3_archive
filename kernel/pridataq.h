@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: pridataq.h 178 2019-10-08 13:55:00Z ertl-honda $
+ *  $Id: pridataq.h 263 2021-01-08 06:08:59Z ertl-honda $
  */
 
 /*
@@ -56,11 +56,11 @@
  */
 typedef struct pridata_management_block PDQMB;
 
-struct pridata_management_block {
+typedef struct pridata_management_block {
 	PDQMB		*p_next;		/* 次のデータ */
 	intptr_t	data;			/* データ本体 */
 	PRI			datapri;		/* データ優先度 */
-};
+} PDQMB;
 
 /*
  *  優先度データキュー初期化ブロック

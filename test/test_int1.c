@@ -34,7 +34,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: test_int1.c 33 2018-07-30 03:21:03Z ertl-honda $
+ *  $Id: test_int1.c 263 2021-01-08 06:08:59Z ertl-honda $
  */
 
 /* 
@@ -122,7 +122,7 @@
 static uint_t	isr1_count = 0;
 
 void
-isr1(intptr_t exinf)
+isr1(EXINF exinf)
 {
 
 	switch (++isr1_count) {
@@ -149,7 +149,7 @@ isr1(intptr_t exinf)
 }
 
 void
-task1(intptr_t exinf)
+task1(EXINF exinf)
 {
 	ER_UINT	ercd;
 

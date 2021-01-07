@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: mempfix.c 145 2019-03-10 15:27:01Z ertl-honda $
+ *  $Id: mempfix.c 263 2021-01-08 06:08:59Z ertl-honda $
  */
 
 /*
@@ -130,7 +130,7 @@ initialize_mempfix(PCB *p_my_pcb)
 	uint_t	i;
 	MPFCB	*p_mpfcb;
 
-	if (is_mprc(p_my_pcb)) {
+	if (p_my_pcb->prcid == TOPPERS_MASTER_PRCID) {
 		for (i = 0; i < tnum_mpf; i++) {
 			p_mpfcb = p_mpfcb_table[i];
 			queue_initialize(&(p_mpfcb->wait_queue));
@@ -184,14 +184,13 @@ get_mpf(ID mpfid, void **p_blk)
 	PCB			*p_my_pcb;
 
 	LOG_GET_MPF_ENTER(mpfid, p_blk);
-	CHECK_DISPATCH();
+	CHECK_DISPATCH_MYSTATE(&p_selftsk);
 	CHECK_ID(VALID_MPFID(mpfid));
 	p_mpfcb = get_mpfcb(mpfid);
 
 	lock_cpu_dsp();
 	acquire_glock();
 	p_my_pcb = get_my_pcb();
-	p_selftsk = p_my_pcb->p_runtsk;
 	if (p_selftsk->raster) {
 		ercd = E_RASTER;
 	}
@@ -269,7 +268,7 @@ tget_mpf(ID mpfid, void **p_blk, TMO tmout)
 	PCB			*p_my_pcb;
 
 	LOG_TGET_MPF_ENTER(mpfid, p_blk, tmout);
-	CHECK_DISPATCH();
+	CHECK_DISPATCH_MYSTATE(&p_selftsk);
 	CHECK_ID(VALID_MPFID(mpfid));
 	CHECK_PAR(VALID_TMOUT(tmout));
 	p_mpfcb = get_mpfcb(mpfid);
@@ -277,7 +276,6 @@ tget_mpf(ID mpfid, void **p_blk, TMO tmout)
 	lock_cpu_dsp();
 	acquire_glock();
 	p_my_pcb = get_my_pcb();
-	p_selftsk = p_my_pcb->p_runtsk;
 	if (p_selftsk->raster) {
 		ercd = E_RASTER;
 	}
@@ -323,10 +321,11 @@ rel_mpf(ID mpfid, void *blk)
 	uint_t	blkidx;
 	TCB		*p_tcb;
 	ER		ercd;
+	TCB		*p_selftsk;
 	PCB		*p_my_pcb;
 
 	LOG_REL_MPF_ENTER(mpfid, blk);
-	CHECK_TSKCTX_UNL();
+	CHECK_TSKCTX_UNL_MYSTATE(&p_selftsk);
 	CHECK_ID(VALID_MPFID(mpfid));
 	p_mpfcb = get_mpfcb(mpfid);
 	CHECK_PAR(p_mpfcb->p_mpfinib->mpf <= blk);
@@ -343,7 +342,7 @@ rel_mpf(ID mpfid, void *blk)
 		p_tcb = (TCB *) queue_delete_next(&(p_mpfcb->wait_queue));
 		p_tcb->winfo_obj.mpf.blk = blk;
 		wait_complete(p_my_pcb, p_tcb);
-		if (p_my_pcb->p_runtsk != p_my_pcb->p_schedtsk) {
+		if (p_selftsk != p_my_pcb->p_schedtsk) {
 			release_glock();
 			dispatch();
 			ercd = E_OK;
@@ -378,10 +377,11 @@ ini_mpf(ID mpfid)
 {
 	MPFCB	*p_mpfcb;
 	ER		ercd;
+	TCB		*p_selftsk;
 	PCB		*p_my_pcb;
 
 	LOG_INI_MPF_ENTER(mpfid);
-	CHECK_TSKCTX_UNL();
+	CHECK_TSKCTX_UNL_MYSTATE(&p_selftsk);
 	CHECK_ID(VALID_MPFID(mpfid));
 	p_mpfcb = get_mpfcb(mpfid);
 
@@ -392,7 +392,7 @@ ini_mpf(ID mpfid)
 	p_mpfcb->fblkcnt = p_mpfcb->p_mpfinib->blkcnt;
 	p_mpfcb->unused = 0U;
 	p_mpfcb->freelist = INDEX_NULL;
-	if (p_my_pcb->p_runtsk != p_my_pcb->p_schedtsk) {
+	if (p_selftsk != p_my_pcb->p_schedtsk) {
 		release_glock();
 		dispatch();
 		ercd = E_OK;

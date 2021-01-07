@@ -2,8 +2,8 @@
 		TOPPERS/FMP3カーネル
 		ユーザーズマニュアル
 
-		対応バージョン: Release 3.1.1
-		最終更新: 2020年7月9日
+		対応バージョン: Release 3.2.0
+		最終更新: 2021年1月7日
 
 このドキュメントは，TOPPERS/FMP3カーネルを使用するために必要な事項を説
 明するものである．
@@ -13,7 +13,7 @@
      Toyohashi Open Platform for Embedded Real-Time Systems/
      Flexible MultiProcessor Kernel
 
- Copyright (C) 2005-2020 by Embedded and Real-Time Systems Laboratory
+ Copyright (C) 2005-2021 by Embedded and Real-Time Systems Laboratory
              Graduate School of Information Science, Nagoya Univ., JAPAN
  
  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -45,7 +45,7 @@
  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  の責任を負わない．
  
- $Id: user.txt 250 2020-07-09 07:03:05Z ertl-honda $
+ $Id: user.txt 263 2021-01-08 06:08:59Z ertl-honda $
 ----------------------------------------------------------------------
 
 ○目次
@@ -54,7 +54,7 @@
 	1.1 TOPPERS/FMP3カーネルの位置付け
 	1.2 TOPPERS/FMP3カーネルの仕様
 	1.3 マイグレーションガイド
-	1.4 既知の問題
+	1.4 既知の問題と制限事項
 	1.5 Cygwin環境における注意事項
 ２．ターゲット依存部
 	2.1 ターゲット依存部の概要
@@ -156,7 +156,7 @@ FMP3カーネルでは，タスクを実行するプロセッサを静的に決�
 FMP3カーネルの仕様の概要については，「TOPPERS/FMP3カーネルの仕様概要」
 を参照すること．また，FMP3カーネルを含むTOPPERS第3世代カーネル（ITRON系）
 の仕様の詳細については，別途PDFファイルの形で配布している「TOPPERS第3世
-代カーネル（ITRON系）統合仕様書（Release 3.3.0）」を参照すること．
+代カーネル（ITRON系）統合仕様書（Release 3.5.0）」を参照すること．
 
 カーネル仕様の中で，ターゲット定義事項については，ターゲット依存部ディ
 レクトリにあるターゲット依存部のユーザーズマニュアルを参照すること．
@@ -168,7 +168,7 @@ TOPPERS/ASPカーネルや従来のTOPPERSカーネル，他のμITRON4.0仕様�
 「TOPPERS/FMP3カーネルへのマイグレーションガイド」を用意している．必要
 に応じて参照すること．
 
-1.4 既知の問題
+1.4 既知の問題と制限事項
 
 割込みサービスルーチンの先頭番地（CRE_ISRのisr），割込みハンドラの先頭
 番地（DEF_INHのinthdr），CPU例外ハンドラの先頭番地（DEF_EXCのexchdr），
@@ -275,18 +275,18 @@ FMP3カーネルを用いたシステム構築には，以下のツールが必�
 
 	ホストシステム用のツール
 		GNU Make	動作確認：4.2.1
-		ruby		動作確認：2.3.6
+		ruby		動作確認：2.6.4
 
 	TOPPERS第3世代カーネル向け Ruby版コンフィギュレータ
-		cfg			動作確認：1.5.0
-					※ 1.4.0より古いバージョンでは動作しないので注意す
+		cfg			動作確認：1.6.0
+					※ これより古いバージョンでは動作しないので注意す
 					   ること．
 
 	ターゲットシステム用のツール（クロス開発環境）
 		標準規格に準拠したCコンパイラ
 		アセンブラ，リンカ，ライブラリアン
 		シンボルファイル出力ツール，ヘキサファイル出力ツール
-		標準Cライブラリ（必須ではない）
+		標準Cライブラリ
 
 ターゲットシステム用のツールにGNU開発環境を用いる場合には，以下のツール
 が必要である．
@@ -489,6 +489,7 @@ sample1.c，sample1.cfg，sample1.cdl）は，FMP3カーネルの基本的な動
 	allfunc.h			すべての関数をコンパイルするための定義
 	check.h				エラーチェック用マクロ
 	startup.c			カーネルの初期化と終了処理
+	pcb.h				プロセッサ管理ブロックの定義
 	task.h				タスク管理モジュール関連の定義
 	task.c				タスク管理モジュール
 	task.trb			タスク管理モジュールの生成スクリプト
@@ -496,8 +497,10 @@ sample1.c，sample1.cfg，sample1.cdl）は，FMP3カーネルの基本的な動
 	taskhook.c			タスク管理に関連するフックルーチン
 	wait.h				待ち状態管理モジュール関連の定義
 	wait.c				待ち状態管理モジュール
+	winfo.h				待ち情報ブロックの定義
 	time_event.h		タイムイベント管理モジュール関連の定義
-	time_event.c		タイムイベント管理モジュール
+	time_event.c		タイムイベント管理
+	tmevt.h				タイムイベントブロックの定義
 	task_manage.c		タスク管理機能
 	task_refer.c		タスクの状態参照機能
 	task_sync.c			タスク付属同期機能
@@ -517,6 +520,9 @@ sample1.c，sample1.cfg，sample1.cdl）は，FMP3カーネルの基本的な動
 	mutex.h				ミューテックス機能関連の定義
 	mutex.c				ミューテックス機能
 	mutex.trb			ミューテックス機能の生成スクリプト
+	spin_lock.h			スピンロック機能関連の定義
+	spin_lock.c			スピンロック機能
+	spin_lock.trb		スピンロック機能の生成スクリプト
 	mempfix.h			固定長メモリプール機能関連の定義
 	mempfix.c			固定長メモリプール機能
 	mempfix.trb			固定長メモリプール機能の生成スクリプト
@@ -534,28 +540,30 @@ sample1.c，sample1.cfg，sample1.cdl）は，FMP3カーネルの基本的な動
 	exception.h			CPU例外管理機能関連の定義
 	exception.c			CPU例外管理機能
 	exception.trb		CPU例外管理機能の生成スクリプト
-	pcb.h				プロセッサコントロールブロックモジュール
-	spin_lock.h			スピンロック関連機能の定義
-	spin_lock.c			スピンロック関連機能
-	spin_lock.trb		スピンロック関連機能の生成スクリプト
-	winfo.h				待ち情報関連の定義
+
+
 
   syssvc/
+	syslog.h		システムログ機能を使用するための定義
+	syslog.c		システムログ機能
+	syslog.cfg		システムログ機能のコンフィギュレーションファイル
+	serial.h		シリアルインタフェースドライバを使用するための定義
+	serial.c		シリアルインタフェースドライバ
+	serial.cfg		シリアルドライバのコンフィギュレーションファイル
+	logtask.h		システムログタスクを使用するための定義
+	logtask.c		システムログタスク
+	logtask.cfg		システムログタスクのコンフィギュレーションファイル	  
+	test_svc.h			テストプログラム用サービスを使用するための定義
+	test_svc.c			テストプログラム用サービス
+	histogram.h		実行時間分布集計サービスを使用するための定義
+	histogram.c		実行時間分布集計サービス
 	banner.h		カーネル起動メッセージの出力のための定義
 	banner.c		カーネル起動メッセージの出力
 	banner.cfg		カーネル起動メッセージの出力のコンフィギュレー
 					ションファイル
-	logtask.h		システムログタスクを使用するための定義
-	logtask.c		システムログタスク
-	logtask.cfg		システムログタスクのコンフィギュレーションファイル
-	serial.h		シリアルインタフェースドライバを使用するための定義
-	serial.c		シリアルインタフェースドライバ
-	serial.cfg		シリアルドライバのコンフィギュレーションファイル
-	syslog.h		システムログ機能を使用するための定義
-	syslog.c		システムログ機能
-	syslog.cfg		システムログ機能のコンフィギュレーションファイル
-	histogram.h		実行時間分布集計サービスを使用するための定義
-	histogram.c		実行時間分布集計サービス
+
+
+
 
   library/
 	log_output.c		システムログのフォーマット出力
@@ -1464,13 +1472,13 @@ histidで指定されたデータ構造を初期化する．
 
 カーネル起動メッセージの出力は，次の関数で構成される．
 
-(1) void print_banner(intptr_t exinf)
+(1) void print_banner(EXINF exinf)
 
 システムログ機能を用いて，カーネル起動メッセージとしてプロセッサIDを出
 力する．banner.cfgによって，カーネルに初期化ルーチンとして登録される．
 exinfは無視される．
 
-(2) void print_banner_copyright(intptr_t exinf)
+(2) void print_banner_copyright(EXINF exinf)
 
 システムログ機能を用いて，カーネル起動メッセージとしてコピーライトを出
 力する．banner.cfgによって，カーネルに初期化ルーチンとして登録される．
@@ -2262,7 +2270,7 @@ TOPPERSプロジェクトでは，何からの形でプロジェクトに貢献�
 	ER ercd = get_tst(ID tskid, STAT *p_tskstat)
 	ER ercd = chg_pri(ID tskid, PRI tskpri)
 	ER ercd = get_pri(ID tskid, PRI *p_tskpri)
-	ER ercd = get_inf(intptr_t *p_exinf)
+	ER ercd = get_inf(EXINF *p_exinf)
 	ER ercd = chg_spr(ID tskid, uint_t subpri)
 	ER ercd = ref_tsk(ID tskid, T_RTSK *pk_rtsk)
 
@@ -2402,7 +2410,7 @@ TOPPERSプロジェクトでは，何からの形でプロジェクトに貢献�
 
 (1) タスク管理機能
 
-	CRE_TSK(ID tskid, { ATR tskatr, intptr_t exinf, TASK task,
+	CRE_TSK(ID tskid, { ATR tskatr, EXINF exinf, TASK task,
 								PRI itskpri, size_t stksz, STK_T *stk })
 
 (4) 同期・通信機能
@@ -2428,7 +2436,7 @@ TOPPERSプロジェクトでは，何からの形でプロジェクトに貢献�
 (8) 割込み管理機能
 
 	CFG_INT(INTNO intno, { ATR intatr, PRI intpri })
-	CRE_ISR(ID isrid, { ATR isratr, intptr_t exinf,
+	CRE_ISR(ID isrid, { ATR isratr, EXINF exinf,
 								INTNO intno, ISR isr, PRI isrpri })
 	DEF_INH(INHNO inhno, { ATR inhatr, INTHDR inthdr })
 
@@ -2450,6 +2458,6 @@ TOPPERSプロジェクトでは，何からの形でプロジェクトに貢献�
 
 	2019年03月30日	Release 3.0.0		最初の早期リリース
 	2019年10月09日	Release 3.1.0
-	2020年07月09日	Release 3.1.1		不具合修正
+	2020年01月07日	Release 3.2.0
 
 以上

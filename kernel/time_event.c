@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: time_event.c 207 2020-01-30 09:31:28Z ertl-honda $
+ *  $Id: time_event.c 263 2021-01-08 06:08:59Z ertl-honda $
  */
 
 /*
@@ -488,11 +488,24 @@ set_hrt_event(PCB *p_pcb)
 #ifndef TOPPERS_SUPPORT_CONTROL_OTHER_HRT
 /*
  *  高分解能タイマ設定ハンドラ
+ *
+ *  非タスクコンテキストで実行されるため，他のプロセッサへマイグレート
+ *  することはなく，CPUロック状態にせずに自プロセッサのPCBにアクセスし
+ *  てよい．
  */
 void
 set_hrt_event_handler(void)
 {
-	set_hrt_event(get_my_pcb());
+	PCB		*p_my_pcb = get_my_pcb();
+
+	assert(sense_context(p_my_pcb));
+	assert(!sense_lock());
+
+	lock_cpu();
+	acquire_glock();
+	set_hrt_event(p_my_pcb);
+	release_glock();
+	unlock_cpu();
 }
 
 #endif /* TOPPERS_SUPPORT_CONTROL_OTHER_HRT */
@@ -733,7 +746,7 @@ signal_time(void)
 		while (p_last_tmevtn(p_my_pcb->p_tevtcb->p_tmevt_heap) >= p_top_tmevtn(p_my_pcb->p_tevtcb->p_tmevt_heap)
 							&& EVTTIM_LE(top_evttim(p_my_pcb->p_tevtcb->p_tmevt_heap), current_evttim)) {
 			p_tmevtb = tmevtb_delete_top(p_my_pcb->p_tevtcb->p_tmevt_heap);
-			(*(p_tmevtb->callback))(p_tmevtb->arg);
+			(*(p_tmevtb->callback))(p_my_pcb, p_tmevtb->arg);
 			callflag = true;
 #ifndef TOPPERS_OMIT_SYSLOG
 			nocall += 1;

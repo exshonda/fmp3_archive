@@ -34,7 +34,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: test_subprio1.c 37 2018-07-30 10:25:48Z ertl-honda $
+ *  $Id: test_subprio1.c 263 2021-01-08 06:08:59Z ertl-honda $
  */
 
 /* 
@@ -189,7 +189,7 @@
 /* DO NOT DELETE THIS LINE -- gentest depends on it. */
 
 void
-task1(intptr_t exinf)
+task1(EXINF exinf)
 {
 	ER_UINT	ercd;
 	T_RTSK	rtsk;
@@ -283,7 +283,7 @@ task1(intptr_t exinf)
 static uint_t	task2_count = 0;
 
 void
-task2(intptr_t exinf)
+task2(EXINF exinf)
 {
 	ER_UINT	ercd;
 
@@ -343,7 +343,7 @@ task2(intptr_t exinf)
 static uint_t	task3_count = 0;
 
 void
-task3(intptr_t exinf)
+task3(EXINF exinf)
 {
 	ER_UINT	ercd;
 
@@ -399,7 +399,7 @@ task3(intptr_t exinf)
 static uint_t	task4_count = 0;
 
 void
-task4(intptr_t exinf)
+task4(EXINF exinf)
 {
 	ER_UINT	ercd;
 
@@ -436,7 +436,7 @@ task4(intptr_t exinf)
 }
 
 void
-task5(intptr_t exinf)
+task5(EXINF exinf)
 {
 	ER_UINT	ercd;
 

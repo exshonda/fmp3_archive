@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: task_term.c 207 2020-01-30 09:31:28Z ertl-honda $
+ *  $Id: task_term.c 263 2021-01-08 06:08:59Z ertl-honda $
  */
 
 /*
@@ -48,6 +48,7 @@
 #include "check.h"
 #include "task.h"
 #include "wait.h"
+#include "spin_lock.h"
 
 /*
  *  トレースログマクロのデフォルト定義
@@ -121,6 +122,11 @@ ext_tsk(void)
 		 *  てからタスクを終了する．実装上は，サービスコール内でのCPU
 		 *  ロックを省略すればよいだけ．［NGKI1168］
 		 */
+
+		/*
+		 *  スピンロックを取得している場合は，スピンロックを解放する．
+		 */
+		force_unlock_spin(get_my_pcb());
 	}
 	else {
 		lock_cpu();
@@ -196,7 +202,7 @@ ras_ter(ID tskid)
 	}
 	else if (p_tcb->enater) {
 		(void) task_terminate(p_my_pcb, p_tcb);		/*［NGKI3477］*/
-		if (p_my_pcb->p_runtsk != p_my_pcb->p_schedtsk) {
+		if (p_selftsk != p_my_pcb->p_schedtsk) {
 			release_glock();
 			dispatch();
 			ercd = E_OK;
@@ -209,13 +215,13 @@ ras_ter(ID tskid)
 		if (!TSTAT_RUNNABLE(p_tcb->tstat)) {
 			if (TSTAT_WAITING(p_tcb->tstat)) {
 				wait_dequeue_wobj(p_my_pcb, p_tcb);		/*［NGKI3479］*/
-				wait_dequeue_tmevtb(p_tcb, p_my_pcb);
+				wait_dequeue_tmevtb(p_tcb);
 				p_tcb->winfo.wercd = E_RASTER;		/*［NGKI3480］*/
 			}
 			p_tcb->tstat = TS_RUNNABLE;			/*［NGKI3606］*/
 			LOG_TSKSTAT(p_tcb);
-			make_runnable(p_my_pcb, p_tcb, p_my_pcb);
-			if (p_my_pcb->p_runtsk != p_my_pcb->p_schedtsk) {
+			make_runnable(p_my_pcb, p_tcb);
+			if (p_selftsk != p_my_pcb->p_schedtsk) {
 				release_glock();
 				dispatch();
 				ercd = E_OK;
@@ -247,11 +253,10 @@ dis_ter(void)
 	TCB		*p_selftsk;
 
 	LOG_DIS_TER_ENTER();
-	CHECK_TSKCTX_UNL();							/*［NGKI3483］［NGKI3484］*/
+	CHECK_TSKCTX_UNL_MYSTATE(&p_selftsk);	/*［NGKI3483］［NGKI3484］*/
 
 	lock_cpu();
 	acquire_glock();
-	p_selftsk = get_my_pcb()->p_runtsk;
 	p_selftsk->enater = false;					/*［NGKI3486］*/
 	ercd = E_OK;
 	release_glock();
@@ -277,12 +282,11 @@ ena_ter(void)
 	TCB		*p_selftsk;
 
 	LOG_ENA_TER_ENTER();
-	CHECK_TSKCTX_UNL();					/*［NGKI3488］［NGKI3489］*/
+	CHECK_TSKCTX_UNL_MYSTATE(&p_selftsk);	/*［NGKI3488］［NGKI3489］*/
 
 	lock_cpu();
 	acquire_glock();
 	p_my_pcb = get_my_pcb();
-	p_selftsk = p_my_pcb->p_runtsk;
 	if (p_selftsk->raster && p_my_pcb->dspflg) {
 		if (task_terminate(p_my_pcb, p_selftsk)) {
 			exit_and_migrate(p_my_pcb, p_selftsk);
@@ -319,14 +323,8 @@ sns_ter(void)
 	TCB		*p_selftsk;
 
 	LOG_SNS_TER_ENTER();
-	if (!sense_lock()) {
-		lock_cpu();
-		p_selftsk = get_my_pcb()->p_runtsk;
-		unlock_cpu();
-	}
-	else {
-		p_selftsk = get_my_pcb()->p_runtsk;
-	}
+	p_selftsk = get_p_selftsk();
+
 	/*
 	 *  enaterを変更できるのは自タスクのみであるため，排他制御せずに読
 	 *  んでも問題ない．
@@ -370,7 +368,7 @@ ter_tsk(ID tskid)
 	}
 	else {
 		(void) task_terminate(p_my_pcb, p_tcb);		/*［NGKI3450］*/
-		if (p_my_pcb->p_runtsk != p_my_pcb->p_schedtsk) {
+		if (p_selftsk != p_my_pcb->p_schedtsk) {
 			release_glock();
 			dispatch();
 			ercd = E_OK;

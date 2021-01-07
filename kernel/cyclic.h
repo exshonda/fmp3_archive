@@ -5,7 +5,7 @@
  * 
  *  Copyright (C) 2000-2003 by Embedded and Real-Time Systems Laboratory
  *                              Toyohashi Univ. of Technology, JAPAN
- *  Copyright (C) 2005-2019 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2005-2021 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  * 
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: cyclic.h 145 2019-03-10 15:27:01Z ertl-honda $
+ *  $Id: cyclic.h 263 2021-01-08 06:08:59Z ertl-honda $
  */
 
 /*
@@ -55,7 +55,7 @@
  */
 typedef struct cyclic_handler_initialization_block {
 	ATR			cycatr;			/* 周期通知属性 */
-	intptr_t	exinf;			/* 通知ハンドラの拡張情報 */
+	EXINF		exinf;			/* 通知ハンドラの拡張情報 */
 	NFYHDR		nfyhdr;			/* 通知ハンドラの起動番地 */
 	RELTIM		cyctim;			/* 周期通知の起動周期 */
 	RELTIM		cycphs;			/* 周期通知の起動位相 */
@@ -99,6 +99,6 @@ extern void	initialize_cyclic(PCB *p_my_pcb);
 /*
  *  周期通知起動ルーチン
  */
-extern void	call_cyclic(CYCCB *p_cyccb);
+extern void	call_cyclic(PCB *p_my_pcb, CYCCB *p_cyccb);
 
 #endif /* TOPPERS_CYCLIC_H */

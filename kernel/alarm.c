@@ -5,7 +5,7 @@
  * 
  *  Copyright (C) 2000-2003 by Embedded and Real-Time Systems Laboratory
  *                              Toyohashi Univ. of Technology, JAPAN
- *  Copyright (C) 2005-2020 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2005-2021 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  * 
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: alarm.c 207 2020-01-30 09:31:28Z ertl-honda $
+ *  $Id: alarm.c 263 2021-01-08 06:08:59Z ertl-honda $
  */
 
 /*
@@ -296,7 +296,7 @@ ref_alm(ID almid, T_RALM *pk_ralm)
 #ifdef TOPPERS_almcal
 
 void
-call_alarm(ALMCB *p_almcb)
+call_alarm(PCB *p_my_pcb, ALMCB *p_almcb)
 {
 	/*
 	 *  アラーム通知を停止状態にする．
@@ -313,8 +313,10 @@ call_alarm(ALMCB *p_almcb)
 	(*(p_almcb->p_alminib->nfyhdr))(p_almcb->p_alminib->exinf);
 	LOG_ALM_LEAVE(p_almcb);
 
-	force_unlock_spin(get_my_pcb());
-	if (!sense_lock()) {
+	if (sense_lock()) {
+		force_unlock_spin(p_my_pcb);
+	}
+	else {
 		lock_cpu();
 	}
 	acquire_glock();

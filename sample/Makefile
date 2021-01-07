@@ -37,7 +37,7 @@
 #  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
 #  の責任を負わない．
 # 
-#  $Id: Makefile 178 2019-10-08 13:55:00Z ertl-honda $
+#  $Id: Makefile 263 2021-01-08 06:08:59Z ertl-honda $
 # 
 
 #
@@ -375,7 +375,7 @@ endif
 #
 #  tecsgenからCプリプロセッサを呼び出す際のオプションの定義
 #
-TECS_CPP = $(CC) $(CDEFS) $(INCLUDES) $(SYSSVC_CFLAGS) -D TECSGEN -E
+TECS_CPP = $(CC) $(CDEFS) $(INCLUDES) -D TECSGEN -E
 
 #
 #  tecsgenの呼出し

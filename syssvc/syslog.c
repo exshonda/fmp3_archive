@@ -5,7 +5,7 @@
  * 
  *  Copyright (C) 2000-2003 by Embedded and Real-Time Systems Laboratory
  *                              Toyohashi Univ. of Technology, JAPAN
- *  Copyright (C) 2005-2019 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2005-2021 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  * 
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: syslog.c 148 2019-03-29 16:36:07Z ertl-honda $
+ *  $Id: syslog.c 263 2021-01-08 06:08:59Z ertl-honda $
  */
 
 /*
@@ -101,7 +101,7 @@ static uint_t	syslog_lowmask_not;		/* 低レベル出力すべき重要度（反
  *  システムログ機能の初期化
  */
 void
-syslog_initialize(intptr_t exinf)
+syslog_initialize(EXINF exinf)
 {
 	syslog_count = 0U;
 	syslog_head = 0U;
@@ -125,20 +125,13 @@ syslog_wri_log(uint_t prio, const SYSLOG *p_syslog)
 	SIL_LOC_SPN();
 
 	/*
-	 *  ログ時刻の設定
-	 */
-	SYSLOG_GET_LOGTIM(&(((SYSLOG *) p_syslog)->logtim));
-
-	/*
-	 *  プロセッサIDの設定
-	 */
-	sil_get_pid(&(((SYSLOG *) p_syslog)->prcid));
-
-	/*
 	 *  ログバッファに記録
 	 */
 	if ((syslog_logmask & LOG_MASK(prio)) != 0U) {
 		syslog_buffer[syslog_tail] = *p_syslog;
+		SYSLOG_GET_LOGTIM(&(syslog_buffer[syslog_tail].logtim));
+		sil_get_pid(&(syslog_buffer[syslog_tail].prcid));
+
 		syslog_tail++;
 		if (syslog_tail >= TCNT_SYSLOG_BUFFER) {
 			syslog_tail = 0U;
@@ -156,7 +149,13 @@ syslog_wri_log(uint_t prio, const SYSLOG *p_syslog)
 	 *  低レベル出力
 	 */
 	if (((~syslog_lowmask_not) & LOG_MASK(prio)) != 0U) {
-		syslog_print(p_syslog, target_fput_log);
+		SYSLOG	logbuf;
+
+		logbuf = *p_syslog;
+		SYSLOG_GET_LOGTIM(&(logbuf.logtim));
+		sil_get_pid(&(logbuf.prcid));
+
+		syslog_print(&logbuf, target_fput_log);
 	}
 
 	SIL_UNL_SPN();

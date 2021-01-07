@@ -34,7 +34,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  @(#) $Id: test_spin1.h 38 2018-07-31 06:36:28Z ertl-honda $
+ *  @(#) $Id: test_spin1.h 263 2021-01-08 06:08:59Z ertl-honda $
  */
 
 
@@ -68,15 +68,15 @@
  */
 #ifndef TOPPERS_MACRO_ONLY
 
-extern void	task1_1(intptr_t exinf);
-extern void	task2_1(intptr_t exinf);
-extern void	task2_2(intptr_t exinf);
+extern void	task1_1(EXINF exinf);
+extern void	task2_1(EXINF exinf);
+extern void	task2_2(EXINF exinf);
 
-extern void	alarm_handler1_1(intptr_t exinf);
-extern void	alarm_handler1_2(intptr_t exinf);
-extern void	alarm_handler2_1(intptr_t exinf);
-extern void	alarm_handler2_2(intptr_t exinf);
-extern void	alarm_handler2_3(intptr_t exinf);
-extern void	alarm_handler2_4(intptr_t exinf);
+extern void	alarm_handler1_1(EXINF exinf);
+extern void	alarm_handler1_2(EXINF exinf);
+extern void	alarm_handler2_1(EXINF exinf);
+extern void	alarm_handler2_2(EXINF exinf);
+extern void	alarm_handler2_3(EXINF exinf);
+extern void	alarm_handler2_4(EXINF exinf);
 
 #endif /* TOPPERS_MACRO_ONLY */

@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: wait.h 135 2019-01-28 14:31:50Z ertl-honda $
+ *  $Id: wait.h 263 2021-01-08 06:08:59Z ertl-honda $
  */
 
 /*
@@ -85,7 +85,7 @@ make_wait(PCB *p_my_pcb, uint_t tstat, TCB *p_selftsk)
 {
 	if (!TSTAT_SUSPENDED(p_selftsk->tstat)) {
 		p_selftsk->tstat = tstat;
-		make_non_runnable(p_my_pcb, p_selftsk, p_my_pcb);
+		make_non_runnable(p_my_pcb, p_selftsk);
 	}
 	else {
 		/* 過渡状態で呼び出された場合 */
@@ -113,7 +113,7 @@ extern void	make_wait_tmout(PCB *p_my_pcb, uint_t tstat,
  *  ぐ．
  */
 Inline void
-make_non_wait(PCB *p_my_pcb, TCB *p_tcb, PCB *p_pcb)
+make_non_wait(PCB *p_my_pcb, TCB *p_tcb)
 {
 	assert(TSTAT_WAITING(p_tcb->tstat));
 
@@ -123,7 +123,7 @@ make_non_wait(PCB *p_my_pcb, TCB *p_tcb, PCB *p_pcb)
 		 */
 		p_tcb->tstat = TS_RUNNABLE;
 		LOG_TSKSTAT(p_tcb);
-		make_runnable(p_my_pcb, p_tcb, p_pcb);
+		make_runnable(p_my_pcb, p_tcb);
 	}
 	else {
 		/*
@@ -149,8 +149,10 @@ extern void	wait_dequeue_wobj(PCB *p_my_pcb, TCB *p_tcb);
  *  ロックが登録されていれば，それを登録解除する．
  */
 Inline void
-wait_dequeue_tmevtb(TCB *p_tcb, PCB *p_pcb)
+wait_dequeue_tmevtb(TCB *p_tcb)
 {
+	PCB		*p_pcb = p_tcb->p_pcb;
+
 	if (p_tcb->winfo.tmevtb.callback != NULL) {
 		tmevtb_dequeue(&(p_tcb->winfo.tmevtb), p_pcb);
 	}
@@ -179,8 +181,8 @@ extern void	wait_complete(PCB *p_my_pcb, TCB *p_tcb);
  *  いずれの関数も，タイムイベントのコールバック関数として用いるための
  *  もので，割込みハンドラから呼び出されることを想定している．
  */
-extern void	wait_tmout(TCB *p_tcb);
-extern void	wait_tmout_ok(TCB *p_tcb);
+extern void	wait_tmout(PCB *p_my_pcb, TCB *p_tcb);
+extern void	wait_tmout_ok(PCB *p_my_pcb, TCB *p_tcb);
 
 /*
  *  待ちキューの先頭のタスクID

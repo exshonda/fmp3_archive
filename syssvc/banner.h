@@ -2,7 +2,7 @@
  *  TOPPERS Software
  *      Toyohashi Open Platform for Embedded Real-Time Systems
  * 
- *  Copyright (C) 2008 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2008-2021 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  * 
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -34,7 +34,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: banner.h 178 2019-10-08 13:55:00Z ertl-honda $
+ *  $Id: banner.h 263 2021-01-08 06:08:59Z ertl-honda $
  */
 
 /*
@@ -49,11 +49,11 @@
 /*
  *  カーネル起動メッセージの出力（マスタプロセッサ用）
  */
-extern void	print_banner_copyright(intptr_t exinf);
+extern void	print_banner_copyright(EXINF exinf);
 
 /*
  *  カーネル起動メッセージの出力
  */
-extern void	print_banner(intptr_t exinf);
+extern void	print_banner(EXINF exinf);
 
 #endif /* TOPPERS_BANNER_H */

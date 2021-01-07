@@ -35,7 +35,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: mutex.c 145 2019-03-10 15:27:01Z ertl-honda $
+ *  $Id: mutex.c 263 2021-01-08 06:08:59Z ertl-honda $
  */
 
 /*
@@ -129,7 +129,7 @@ initialize_mutex(PCB *p_my_pcb)
 	uint_t	i;
 	MTXCB	*p_mtxcb;
 
-	if (is_mprc(p_my_pcb)) {
+	if (p_my_pcb->prcid == TOPPERS_MASTER_PRCID) {
 		mtxhook_check_ceilpri = mutex_check_ceilpri;
 		mtxhook_scan_ceilmtx = mutex_scan_ceilmtx;
 		mtxhook_release_all = mutex_release_all;
@@ -236,7 +236,7 @@ mutex_calc_priority(TCB *p_tcb)
 #ifdef TOPPERS_mtxdrop
 
 void
-mutex_drop_priority(PCB *p_my_pcb, TCB *p_tcb, PCB *p_pcb, MTXCB *p_mtxcb)
+mutex_drop_priority(PCB *p_my_pcb, TCB *p_tcb, MTXCB *p_mtxcb)
 {
 	uint_t	newpri;
 
@@ -244,7 +244,7 @@ mutex_drop_priority(PCB *p_my_pcb, TCB *p_tcb, PCB *p_pcb, MTXCB *p_mtxcb)
 					&& p_mtxcb->p_mtxinib->ceilpri == p_tcb->priority) {
 		newpri = mutex_calc_priority(p_tcb);
 		if (newpri != p_tcb->priority) {
-			change_priority(p_my_pcb, p_tcb, p_pcb, newpri, true);
+			change_priority(p_my_pcb, p_tcb, newpri, true);
 		}
 	}
 }
@@ -264,8 +264,7 @@ mutex_acquire(PCB *p_my_pcb, TCB *p_selftsk, MTXCB *p_mtxcb)
 	p_selftsk->p_lastmtx = p_mtxcb;
 	if (MTX_CEILING(p_mtxcb)
 					&& p_mtxcb->p_mtxinib->ceilpri < p_selftsk->priority) {
-		change_priority(p_my_pcb, p_selftsk, p_my_pcb,
-										p_mtxcb->p_mtxinib->ceilpri, true);
+		change_priority(p_my_pcb, p_selftsk, p_mtxcb->p_mtxinib->ceilpri, true);
 	}
 }
 
@@ -290,7 +289,7 @@ mutex_release(PCB *p_my_pcb, MTXCB *p_mtxcb)
 		 *  クスをロックさせる．
 		 */
 		p_tcb = (TCB *) queue_delete_next(&(p_mtxcb->wait_queue));
-		wait_dequeue_tmevtb(p_tcb, p_tcb->p_pcb);
+		wait_dequeue_tmevtb(p_tcb);
 		p_tcb->winfo.wercd = E_OK;
 
 		p_mtxcb->p_loctsk = p_tcb;
@@ -301,7 +300,7 @@ mutex_release(PCB *p_my_pcb, MTXCB *p_mtxcb)
 				p_tcb->priority = p_mtxcb->p_mtxinib->ceilpri;
 			}
 		}
-		make_non_wait(p_my_pcb, p_tcb, p_tcb->p_pcb);
+		make_non_wait(p_my_pcb, p_tcb);
 	}
 }
 
@@ -339,14 +338,13 @@ loc_mtx(ID mtxid)
 	PCB			*p_my_pcb;
 
 	LOG_LOC_MTX_ENTER(mtxid);
-	CHECK_DISPATCH();
+	CHECK_DISPATCH_MYSTATE(&p_selftsk);
 	CHECK_ID(VALID_MTXID(mtxid));
 	p_mtxcb = get_mtxcb(mtxid);
 
 	lock_cpu_dsp();
 	acquire_glock();
 	p_my_pcb = get_my_pcb();
-	p_selftsk = p_my_pcb->p_runtsk;
 	if (p_selftsk->raster) {
 		ercd = E_RASTER;
 	}
@@ -399,14 +397,13 @@ ploc_mtx(ID mtxid)
 	PCB		*p_my_pcb;
 
 	LOG_PLOC_MTX_ENTER(mtxid);
-	CHECK_TSKCTX_UNL();
+	CHECK_TSKCTX_UNL_MYSTATE(&p_selftsk);
 	CHECK_ID(VALID_MTXID(mtxid));
 	p_mtxcb = get_mtxcb(mtxid);
 
 	lock_cpu();
 	acquire_glock();
 	p_my_pcb = get_my_pcb();
-	p_selftsk = p_my_pcb->p_runtsk;
 	if (MTX_CEILING(p_mtxcb)
 				&& p_selftsk->bpriority < p_mtxcb->p_mtxinib->ceilpri) {
 		ercd = E_ILUSE;
@@ -451,7 +448,7 @@ tloc_mtx(ID mtxid, TMO tmout)
 	PCB		*p_my_pcb;
 
 	LOG_TLOC_MTX_ENTER(mtxid, tmout);
-	CHECK_DISPATCH();
+	CHECK_DISPATCH_MYSTATE(&p_selftsk);
 	CHECK_ID(VALID_MTXID(mtxid));
 	CHECK_PAR(VALID_TMOUT(tmout));
 	p_mtxcb = get_mtxcb(mtxid);
@@ -459,7 +456,6 @@ tloc_mtx(ID mtxid, TMO tmout)
 	lock_cpu_dsp();
 	acquire_glock();
 	p_my_pcb = get_my_pcb();
-	p_selftsk = p_my_pcb->p_runtsk;
 	if (p_selftsk->raster) {
 		ercd = E_RASTER;
 	}
@@ -516,22 +512,21 @@ unl_mtx(ID mtxid)
 	PCB		*p_my_pcb;
 
 	LOG_UNL_MTX_ENTER(mtxid);
-	CHECK_TSKCTX_UNL();
+	CHECK_TSKCTX_UNL_MYSTATE(&p_selftsk);
 	CHECK_ID(VALID_MTXID(mtxid));
 	p_mtxcb = get_mtxcb(mtxid);
 
 	lock_cpu();
 	acquire_glock();
 	p_my_pcb = get_my_pcb();
-	p_selftsk = p_my_pcb->p_runtsk;
 	if (p_mtxcb != p_selftsk->p_lastmtx) {
 		ercd = E_OBJ;
 	}
 	else {
 		p_selftsk->p_lastmtx = p_mtxcb->p_prevmtx;
-		mutex_drop_priority(p_my_pcb, p_selftsk, p_my_pcb, p_mtxcb);
+		mutex_drop_priority(p_my_pcb, p_selftsk, p_mtxcb);
 		mutex_release(p_my_pcb, p_mtxcb);
-		if (p_my_pcb->p_runtsk != p_my_pcb->p_schedtsk) {
+		if (p_selftsk != p_my_pcb->p_schedtsk) {
 			release_glock();
 			dispatch();
 			ercd = E_OK;
@@ -561,10 +556,11 @@ ini_mtx(ID mtxid)
 	MTXCB	*p_mtxcb, **pp_prevmtx;
 	TCB		*p_loctsk;
 	ER		ercd;
+	TCB		*p_selftsk;
 	PCB		*p_my_pcb;
 
 	LOG_INI_MTX_ENTER(mtxid);
-	CHECK_TSKCTX_UNL();
+	CHECK_TSKCTX_UNL_MYSTATE(&p_selftsk);
 	CHECK_ID(VALID_MTXID(mtxid));
 	p_mtxcb = get_mtxcb(mtxid);
 
@@ -583,9 +579,9 @@ ini_mtx(ID mtxid)
 			}
 			pp_prevmtx = &((*pp_prevmtx)->p_prevmtx);
 		}
-		mutex_drop_priority(p_my_pcb, p_loctsk, p_loctsk->p_pcb, p_mtxcb);
+		mutex_drop_priority(p_my_pcb, p_loctsk, p_mtxcb);
 	}
-	if (p_my_pcb->p_runtsk != p_my_pcb->p_schedtsk) {
+	if (p_selftsk != p_my_pcb->p_schedtsk) {
 		release_glock();
 		dispatch();
 		ercd = E_OK;

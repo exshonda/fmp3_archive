@@ -17,7 +17,7 @@
  */
 #undef initialize_task
 #undef search_schedtsk
-#undef update_schedtsk
+#undef update_schedtsk_dsp
 #undef make_runnable
 #undef make_non_runnable
 #undef make_dormant
@@ -27,6 +27,7 @@
 #undef rotate_ready_queue
 #undef task_terminate
 #undef migrate_self
+#undef migrate_activate_self
 
 /*
  *  taskhook.c
@@ -60,7 +61,6 @@
 #undef tmevt_down
 #undef update_current_evttim
 #undef set_hrt_event
-#undef set_my_hrt_event
 #undef set_hrt_event_handler
 #undef tmevtb_register
 #undef tmevtb_enqueue
@@ -149,6 +149,7 @@
 /*
  *  kernel_cfg.c
  */
+#undef kerflg_table
 #undef p_pcb_table
 #undef initialize_object
 #undef inirtnbb_table
@@ -196,6 +197,8 @@
 #undef istksz_table
 #undef istk_table
 #undef istkpt_table
+#undef idstk_table
+#undef idstkpt_table
 
 
 #include "target_unrename.h"

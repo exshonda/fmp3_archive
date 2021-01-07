@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: interrupt.c 207 2020-01-30 09:31:28Z ertl-honda $
+ *  $Id: interrupt.c 263 2021-01-08 06:08:59Z ertl-honda $
  */
 
 /*
@@ -151,14 +151,13 @@ initialize_interrupt(PCB *p_my_pcb)
 	for (i = 0; i < tnum_def_inhno; i++) {
 		p_inhinib = &(inhinib_table[i]);
 		if (p_inhinib->iprcid == p_my_pcb->prcid) {
-			define_inh(p_inhinib->inhno, p_inhinib->int_entry,
-												p_inhinib->affinity);
+			define_inh(p_my_pcb, p_inhinib->inhno, p_inhinib->int_entry);
 		}
 	}
 	for (i = 0; i < tnum_cfg_intno; i++) {
 		p_intinib = &(intinib_table[i]);
 		if (p_intinib->iprcid == p_my_pcb->prcid) {
-			config_int(p_intinib->intno, p_intinib->intatr,
+			config_int(p_my_pcb, p_intinib->intno, p_intinib->intatr,
 							p_intinib->intpri, p_intinib->affinity);
 		}
 	}
@@ -385,7 +384,6 @@ chg_ipm(PRI intpri)
 		dispatch();
 		goto retry;
 	}
-	p_selftsk = p_my_pcb->p_runtsk;
 	if (intpri == TIPM_ENAALL && p_my_pcb->enadsp) {
 		/* set_dspflgは，割込み優先度マスクをTIPM_ENAALLにする．*/
 		set_dspflg(p_my_pcb);
@@ -401,7 +399,7 @@ chg_ipm(PRI intpri)
 			goto unlock_and_exit;
 		}
 		else {
-			if (p_my_pcb->p_runtsk != p_my_pcb->p_schedtsk) {
+			if (p_selftsk != p_my_pcb->p_schedtsk) {
 				release_glock();
 				dispatch();
 				ercd = E_OK;

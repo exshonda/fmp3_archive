@@ -6,7 +6,7 @@
 # 
 #  Copyright (C) 2001-2003 by Embedded and Real-Time Systems Laboratory
 #                              Toyohashi Univ. of Technology, JAPAN
-#  Copyright (C) 2006-2019 by Embedded and Real-Time Systems Laboratory
+#  Copyright (C) 2006-2020 by Embedded and Real-Time Systems Laboratory
 #              Graduate School of Information Science, Nagoya Univ., JAPAN
 # 
 #  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -38,13 +38,12 @@
 #  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
 #  の責任を負わない．
 # 
-#  $Id: configure.rb 207 2020-01-30 09:31:28Z ertl-honda $
+#  $Id: configure.rb 263 2021-01-08 06:08:59Z ertl-honda $
 # 
 
 Encoding.default_external = 'utf-8'
 require "optparse"
 require "fileutils"
-require "shell"
 
 #  オプションの定義
 #
@@ -168,7 +167,7 @@ OptionParser.new(nil, 22) do |opt|
   opt.on("-L kernel_lib",	"directory of built kernel library") do |val|
     $kernel_lib = val
   end
-  opt.on("-f", "each function is complied separately in kernel") do |val|
+  opt.on("-f", "each function is compiled separately in kernel") do |val|
     $kernel_funcobjs = "true"
   end
   opt.on("-D srcdir",		"path of source code directory") do |val|
@@ -243,16 +242,16 @@ $applobjs.unshift($applname + ".o") if !$option_t
 $bannerobj ||= ($omit_tecs == "") ? "tBannerMain.o" : "banner.o"
 if $srcdir.nil?
   # ソースディレクトリ名を取り出す
-  if /(.*)\/configure/ =~ $0
+  if /^(.*)\/configure/ =~ $0
     $srcdir = $1
   else
-    $srcdir = Shell.new.cwd
+    $srcdir = Dir.pwd
   end
 end
 if /^\// =~ $srcdir
   $srcabsdir = $srcdir
 else
-  $srcabsdir = Shell.new.cwd + "/" + $srcdir
+  $srcabsdir = Dir.pwd + "/" + $srcdir
 end
 $tempmakefile ||= $srcdir + "/sample/Makefile"
 $tecsdir ||= "\$(SRCDIR)/tecsgen"
@@ -349,7 +348,7 @@ end
 convert($tempmakefile, "Makefile")
 
 #
-#  依存関係ファイルのディレクトリの作成
+#  中間オブジェクトファイルと依存関係ファイルを置くディレクトリの作成
 #
 if !File.directory?($objdir)
   Dir.mkdir($objdir)

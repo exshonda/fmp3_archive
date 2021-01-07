@@ -5,7 +5,7 @@
  * 
  *  Copyright (C) 2000-2003 by Embedded and Real-Time Systems Laboratory
  *                              Toyohashi Univ. of Technology, JAPAN
- *  Copyright (C) 2005-2019 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2005-2021 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  * 
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: alarm.h 178 2019-10-08 13:55:00Z ertl-honda $
+ *  $Id: alarm.h 263 2021-01-08 06:08:59Z ertl-honda $
  */
 
 /*
@@ -55,7 +55,7 @@
  */
 typedef struct alarm_handler_initialization_block {
 	ATR			almatr;			/* アラーム通知属性 */
-	intptr_t	exinf;			/* 通知ハンドラの拡張情報 */
+	EXINF		exinf;			/* 通知ハンドラの拡張情報 */
 	NFYHDR		nfyhdr;			/* 通知ハンドラの起動番地 */
 	ID			iprcid;			/* 通知ハンドラの初期割付けプロセッサ */
 	uint_t		affinity;		/* 通知ハンドラの割付け可能プロセッサ */
@@ -94,6 +94,6 @@ extern void	initialize_alarm(PCB *p_my_pcb);
 /*
  *  アラーム通知起動ルーチン
  */
-extern void	call_alarm(ALMCB *p_almcb);
+extern void	call_alarm(PCB *p_my_pcb, ALMCB *p_almcb);
 
 #endif /* TOPPERS_ALARM_H */

@@ -5,7 +5,7 @@
  * 
  *  Copyright (C) 2000-2003 by Embedded and Real-Time Systems Laboratory
  *                              Toyohashi Univ. of Technology, JAPAN
- *  Copyright (C) 2006-2019 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2006-2021 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  * 
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: serial.c 145 2019-03-10 15:27:01Z ertl-honda $
+ *  $Id: serial.c 263 2021-01-08 06:08:59Z ertl-honda $
  */
 
 /*
@@ -251,7 +251,7 @@ gen_ercd_wait(ER rercd, SPCB *p_spcb)
  *  シリアルインタフェースドライバの初期化ルーチン
  */
 void
-serial_initialize(intptr_t exinf)
+serial_initialize(EXINF exinf)
 {
 	uint_t	i;
 	SPCB	*p_spcb;
@@ -312,7 +312,7 @@ serial_opn_por(ID portid)
 		/*
 		 *  ハードウェア依存のオープン処理
 		 */
-		p_spcb->p_siopcb = sio_opn_por(portid, (intptr_t) p_spcb);
+		p_spcb->p_siopcb = sio_opn_por(portid, (EXINF) p_spcb);
 
 		/*
 		 *  受信通知コールバックを許可する．
@@ -668,7 +668,7 @@ serial_ref_por(ID portid, T_SERIAL_RPOR *pk_rpor)
  *  シリアルポートからの送信可能コールバック
  */
 void
-sio_irdy_snd(intptr_t exinf)
+sio_irdy_snd(EXINF exinf)
 {
 	SPCB	*p_spcb;
 
@@ -706,7 +706,7 @@ sio_irdy_snd(intptr_t exinf)
  *  シリアルポートからの受信通知コールバック
  */
 void
-sio_irdy_rcv(intptr_t exinf)
+sio_irdy_rcv(EXINF exinf)
 {
 	SPCB	*p_spcb;
 	char	c;

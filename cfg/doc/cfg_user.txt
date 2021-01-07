@@ -2,8 +2,8 @@
 		TOPPERS第3世代カーネル向け Ruby版コンフィギュレータ
 		ユーザーズマニュアル
 
-		対応バージョン: Release 1.5.0
-		最終更新: 2019年10月3日
+		対応バージョン: Release 1.6.0
+		最終更新: 2020年9月16日
 
 このドキュメントは，TOPPERS第3世代カーネル向けRuby版コンフィギュレータ
 を使用するために必要な事項を説明するものである．Rubyについての知識があ
@@ -45,7 +45,7 @@
  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  の責任を負わない．
  
- $Id: cfg_user.txt 180 2019-10-02 23:32:02Z ertl-hiro $
+ $Id: cfg_user.txt 189 2020-12-20 04:54:05Z ertl-hiro $
 ----------------------------------------------------------------------
 
 ○目次
@@ -471,7 +471,9 @@ USE_TSKINICTXBがマクロ定義されているか否かを，変数$USE_TSKINIC
 NumStrクラスは，プリントするなど文字列に変換する場合以外は，数値として
 扱うことができる．具体的には，四則演算などの数値に対するメソッドについ
 ては，NumStrオブジェクトの値に対して適用される．プリントするなど文字列
-に変換する場合には，NumStrオブジェクトの文字列が用いられる．
+に変換する場合には，NumStrオブジェクトの文字列が用いられる．明示的に数
+値として扱う場合（例えば，数値としてプリントする場合）にはvalメソッド，
+文字列として扱う場合にはstrメソッドを用いる．
 
 5.2 コンフィギュレータから生成スクリプトに渡される変数
 
@@ -670,45 +672,54 @@ messageとlocationから作成したエラーメッセージを出力する．er
 理を中断する．warningは，そのまま処理を継続する．locationを省略した場合
 には，エラー発生箇所は出力されない．
 
-(5-5-1-4) error_api(params, message)
-(5-5-1-5) warning_api(params, message)
+(5-5-1-4) warning_api(params, message)
 
 paramsに静的APIのパラメータ情報を渡すと，静的APIが記述されているファイ
 ル名と行番号と，messageに渡したメッセージを出力する．
 
-(5-5-1-6) error_ercd(errorCode, params, message)
+(5-5-1-5) error_ercd(errorCode, params, message)
 
 errorCodeにエラーコードの文字列，paramsに静的APIのパラメータ情報を渡す
 と，静的APIが記述されているファイル名と行番号と，エラーコード，message
-に渡したメッセージを出力する．
+に渡したメッセージを出力する．errorCodeにnilを渡すと，エラーコードは出
+力されない．
 
-(5-5-1-7) error_wrong(errorCode, params, symbol, wrong)
-(5-5-1-8) error_wrong_id(errorCode, params, symbol, objid, wrong)
-(5-5-1-9) error_wrong_sym(errorCode, params, symbol, symbol2, wrong)
+(5-5-1-6) error_sapi(errorCode, params, message,
+										objid=nil, objlabel=false)
 
-パラメータに関するエラーメッセージを出力する．errorCodeにエラーコードの
-文字列，paramsに静的APIのパラメータ情報，symbolにエラーを起こしたパラメー
-タ名をシンボル化したもの，wrongにエラーの理由を渡す．
+errorCodeにエラーコードの文字列，paramsに静的APIのパラメータ情報を渡す
+と，静的APIが記述されているファイル名と行番号と，エラーコード，message
+に渡したメッセージ，静的API名を出力する．errorCodeにnilを渡すと，エラー
+コードは出力されない．
 
-エラーを起こした静的APIを識別するために，オブジェクトIDを出力したい場合
-には，error_wrong_idを用い，objidにオブジェクトIDを表すパラメータ名をシ
-ンボル化したものを渡す．オブジェクト番号を出力したい場合には，
-error_wrong_symを用い，symbol2にオブジェクト番号を表すパラメータ名をシ
-ンボル化したものを渡す．
+エラーを起こした静的APIの識別を容易にするために，オブジェクトIDなど，
+オブジェクトを識別するパラメータを出力したい場合には，objidに出力した
+いパラメータ名をシンボル化したものを渡す．objlabelにtrueを渡すと，パラ
+メータ名とパラメータ（の値）を出力する．
 
-(5-5-1-10) error_illegal(errorCode, params, symbol)
-(5-5-1-11) error_illegal_id(errorCode, params, symbol, objid)
-(5-5-1-12) error_illegal_sym(errorCode, params, symbol, symbol2)
+(5-5-1-7) error_wrong(errorCode, params, symbol, wrong,
+										objid=nil, objlabel=false)
 
-不正パラメータのエラーメッセージを出力する．errorCodeにエラーコードの文
-字列，paramsに静的APIのパラメータ情報，symbolに不正なパラメータ名をシン
-ボル化したものを渡す．
+パラメータに関するエラーメッセージを出力する．errorCodeにエラーコード
+の文字列，paramsに静的APIのパラメータ情報，symbolにエラーを起こしたパ
+ラメータ名をシンボル化したもの，wrongにエラーの理由を渡す．オブジェク
+トを識別するパラメータの出力方法は，error_sapiと同様．
 
-エラーを起こした静的APIを識別するために，オブジェクトIDを出力したい場合
-には，error_illegal_idを用い，objidにオブジェクトIDを表すパラメータ名を
-シンボル化したものを渡す．オブジェクト番号を出力したい場合には，
-error_illegal_symを用い，symbol2にオブジェクト番号を表すパラメータ名を
-シンボル化したものを渡す．
+(5-5-1-8) error_illegal(errorCode, params, symbol,
+										objid=nil, objlabel=false)
+
+不正パラメータのエラーメッセージを出力する．errorCodeにエラーコードの
+文字列，paramsに静的APIのパラメータ情報，symbolに不正なパラメータ名を
+シンボル化したものを渡す．オブジェクトを識別するパラメータの出力方法は，
+error_sapiと同様．
+
+(5-5-1-9) error_api(params, message)
+(5-5-1-10) error_wrong_id(errorCode, params, symbol, objid, wrong)
+(5-5-1-11) error_wrong_sym(errorCode, params, symbol, symbol2, wrong)
+(5-5-1-12) error_illegal_id(errorCode, params, symbol, objid)
+(5-5-1-13) error_illegal_sym(errorCode, params, symbol, symbol2)
+
+過去のバージョンとの互換性のための関数．
 
 5.5.2 GenFileクラス
 
@@ -758,11 +769,13 @@ Stringクラスに次の2つのメソッドを追加している．また，NumS
 --rom-imageオプションと--rom-symbolオプションで指定したロードモジュール
 を操作するためのライブラリ関数を用意している．
 
-(5-5-4-1) SYMBOL(<シンボル>)
+(5-5-4-1) SYMBOL(<シンボル>[, <実行継続フラグ>])
 
 --rom-symbolオプションで指定したシンボルファイルから，指定したシンボル
-のアドレスを返す．シンボルファイル中に指定したシンボルがない場合には
-nilを返す．
+のアドレスを返す．シンボルファイル中に指定したシンボルがない場合には，
+その旨のエラーメッセージを出力して，コンフィギュレータの処理を中断する．
+ただし，実行継続フラグにtrueを渡した場合には，エラーメッセージを出力せ
+ず，nilを返す．
 
 (5-5-4-2) BCOPY(<コピー元先頭アドレス>, <コピー先先頭アドレス>, <サイズ>)
 
@@ -866,10 +879,11 @@ $cfgFileInfo.push(cfgInfo)
 
 上の処理でcfgInfoに登録する情報は，オブジェクト識別名（上の例では
 "semid"）については文字列，整数定数式パラメータについてはNumStrクラス
-のオブジェクトまたは整数値（上の例では"isemcnt"，"maxsem"，"sematr"），
-一般定数式パラメータと文字列パラメータについては文字列とする．整数定数
-式パラメータは，コンフィギュレータが生成するファイル中に，NumStrクラス
-のオブジェクトが保持する文字列で出力される．
+のオブジェクト（上の例では"sematr"）または整数値（上の例では"isemcnt"
+と"maxsem"），一般定数式パラメータと文字列パラメータについては文字列と
+する．整数定数式パラメータに整数値を指定した場合，その整数値を値とし，
+それを10進数の文字列に変換したものを文字列に持つNumStrクラスのオブジェ
+クトを代入したのと同等に扱う．
 
 なお，この方法で静的APIの情報を登録できるのは，後続の処理フェーズで処理
 される静的APIのみである．
@@ -891,5 +905,6 @@ $cfgFileInfo.push(cfgInfo)
 	2019年3月20日	Release	1.4.0		ASP3 R3.4.0等に同梱してリリース
 	2019年6月19日	Release	1.4.1		不具合対応
 	2019年10月3日	Release	1.5.0		長期サポートバージョン
+	20__年__月_日	Release	1.6.0
 
 以上

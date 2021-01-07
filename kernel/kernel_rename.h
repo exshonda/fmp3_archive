@@ -16,7 +16,7 @@
  */
 #define initialize_task				_kernel_initialize_task
 #define search_schedtsk				_kernel_search_schedtsk
-#define update_schedtsk				_kernel_update_schedtsk
+#define update_schedtsk_dsp			_kernel_update_schedtsk_dsp
 #define make_runnable				_kernel_make_runnable
 #define make_non_runnable			_kernel_make_non_runnable
 #define make_dormant				_kernel_make_dormant
@@ -26,6 +26,7 @@
 #define rotate_ready_queue			_kernel_rotate_ready_queue
 #define task_terminate				_kernel_task_terminate
 #define migrate_self				_kernel_migrate_self
+#define migrate_activate_self		_kernel_migrate_activate_self
 
 /*
  *  taskhook.c
@@ -59,7 +60,6 @@
 #define tmevt_down					_kernel_tmevt_down
 #define update_current_evttim		_kernel_update_current_evttim
 #define set_hrt_event				_kernel_set_hrt_event
-#define set_my_hrt_event			_kernel_set_my_hrt_event
 #define set_hrt_event_handler		_kernel_set_hrt_event_handler
 #define tmevtb_register				_kernel_tmevtb_register
 #define tmevtb_enqueue				_kernel_tmevtb_enqueue
@@ -148,6 +148,7 @@
 /*
  *  kernel_cfg.c
  */
+#define kerflg_table				_kernel_kerflg_table
 #define p_pcb_table					_kernel_p_pcb_table
 #define initialize_object			_kernel_initialize_object
 #define inirtnbb_table				_kernel_inirtnbb_table
@@ -195,6 +196,8 @@
 #define istksz_table				_kernel_istksz_table
 #define istk_table					_kernel_istk_table
 #define istkpt_table				_kernel_istkpt_table
+#define idstk_table					_kernel_idstk_table
+#define idstkpt_table				_kernel_idstkpt_table
 
 
 #include "target_rename.h"

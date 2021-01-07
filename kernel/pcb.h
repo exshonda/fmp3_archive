@@ -35,7 +35,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  @(#) $Id: pcb.h 207 2020-01-30 09:31:28Z ertl-honda $
+ *  @(#) $Id: pcb.h 263 2021-01-08 06:08:59Z ertl-honda $
  */
 
 /*
@@ -45,31 +45,22 @@
 #ifndef TOPPERS_PCB_H
 #define TOPPERS_PCB_H
 
-#ifndef TOPPERS_MACRO_ONLY
-/*
- *  PCBの前方参照（ターゲット依存部用）
- */
-typedef struct processor_control_block PCB;
-
-#endif /* TOPPERS_MACRO_ONLY */
-
-#include "target_pcb.h"
-
-#ifndef TOPPERS_MACRO_ONLY
-
 #include <queue.h>
+
+/*
+ *  タイムイベントブロックの定義
+ */
+#include "tmevt.h"
 
 /*
  *  PCB定義のための前方参照
  */
-typedef struct task_control_block TCB;
 typedef struct spin_lock_initialization_block SPNINIB;
-typedef struct time_event_control_block TEVTCB;
 
 /*
  *  プロセッサ管理ブロック（PCB）の定義
  */
-struct processor_control_block {
+typedef struct processor_control_block {
 	/*
 	 *  プロセッサID
 	 */
@@ -123,6 +114,23 @@ struct processor_control_block {
 	bool_t	dspflg;
 
 	/*
+	 *  取得しているスピンロック
+	 *
+	 *  取得しているスピンロックのスピンロック初期化ブロックを指すポイ
+	 *  ンタ．取得しているスピンロックがない場合はNULLにする．このフィー
+	 *  ルドにアクセスするのは，自プロセッサのみであるため，ジャイアン
+	 *  トロックを取らずにアクセスして良い．
+	 */
+	const SPNINIB	*p_locspn;
+
+#ifndef OMIT_TARGET_PCB
+	/*
+	 *  プロセッサ管理ブロックのターゲット依存部
+	 */
+	TPCB	target_pcb;
+#endif /* OMIT_TARGET_PCB */
+
+	/*
 	 *  レディキュー
 	 *
 	 *  レディキューは，実行できる状態のタスクを管理するためのキューである．
@@ -150,35 +158,10 @@ struct processor_control_block {
 	uint16_t	ready_primap;
 
 	/*
-	 *  取得しているスピンロック
-	 *
-	 *  取得しているスピンロックのスピンロック初期化ブロックを指すポイ
-	 *  ンタ．取得しているスピンロックがない場合はNULLにする．このフィー
-	 *  ルドにアクセスするのは，自プロセッサのみであるため，ジャイアン
-	 *  トロックを取らずにアクセスして良い．
-	 */
-	const SPNINIB	*p_locspn;
-
-	/*
 	 *  タイムイベントコントロールブロックへのポインタ
 	 */ 
 	TEVTCB   *p_tevtcb;
-
-#ifndef OMIT_TARGET_PCB
-	/*
-	 *  プロセッサ管理ブロックのターゲット依存部
-	 */
-	TPCB	target_pcb;
-#endif /* OMIT_TARGET_PCB */
-
-	/*
-	 *  カーネル動作状態フラグ
-	 *
-	 *  スタートアップルーチンで，false（＝0）に初期化されることを期待
-	 *  している．
-	 */
-	bool_t	 kerflg;
-};
+} PCB;
 
 /*
  *  PCBへのアクセステーブル（kernel_cfg.c）
@@ -202,13 +185,6 @@ extern PCB *const	p_pcb_table[];
 #endif /* get_my_pcb */
 
 /*
- *  マスタプロセッサの判定
- */
-#ifndef is_mprc
-#define is_mprc(p_my_pcb)	(p_my_pcb->prcid == TOPPERS_MASTER_PRCID)
-#endif /* is_mprc */
-
-/*
  *  プロセッサのインデックス値からプロセッサIDを取り出すためのマクロ
  */
 #define ID_PRC(prcidx)		((ID)((prcidx) + TMIN_PRCID))
@@ -218,5 +194,4 @@ extern PCB *const	p_pcb_table[];
  */
 #define P_TM_PCB	p_pcb_table[TOPPERS_TMASTER_PRCID - 1]
 
-#endif /* TOPPERS_MACRO_ONLY */
 #endif /* TOPPERS_PCB_H */

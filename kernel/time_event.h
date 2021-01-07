@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: time_event.h 207 2020-01-30 09:31:28Z ertl-honda $
+ *  $Id: time_event.h 263 2021-01-08 06:08:59Z ertl-honda $
  */
 
 /*
@@ -49,44 +49,6 @@
 
 #include "kernel_impl.h"
 #include "target_timer.h"
-
-/*
- *  イベント時刻のデータ型の定義［ASPD1001］
- *
- *  タイムイベントヒープに登録するタイムイベントの発生時刻を表現するた
- *  めのデータ型．オーバヘッド低減のために，32ビットで扱う．
- */
-typedef uint32_t	EVTTIM;
-
-/*
- *  タイムイベントヒープ中のノードのデータ型の前方参照
- */
-typedef union time_event_node TMEVTN;
-
-/*
- *  タイムイベントブロックのデータ型の定義
- */
-typedef void	(*CBACK)(void *);	/* コールバック関数の型 */
-
-typedef struct time_event_block {
-	EVTTIM	evttim;			/* タイムイベントの発生時刻 */
-	TMEVTN	*p_tmevtn;		/* タイムイベントヒープ中での位置 */
-	CBACK	callback;		/* コールバック関数 */
-	void	*arg;			/* コールバック関数へ渡す引数 */
-} TMEVTB;
-
-/*
- *  タイムイベントヒープ中のノードのデータ型の定義
- *
- *  タイムイベントヒープの先頭のノード（*p_tmevt_heap）に，最後の使用領
- *  域を指すポインタ（p_last）を格納し，それ以降をタイムイベントヒープ
- *  として使用する．(p_tmevt_heap->p_last - p_tmevt_heap) が，タイムイ
- *  ベントヒープに登録されているタイムイベントの数となる．
- */
-union time_event_node {
-	TMEVTB	*p_tmevtb;		/* 対応するタイムイベントブロック */
-	TMEVTN	*p_last;		/* タイムイベントヒープの最後の使用領域 */
-};
 
 /*
  *  境界イベント時刻［ASPD1008］
@@ -119,21 +81,6 @@ extern EVTTIM	monotonic_evttim;
  *  get_timで参照するシステム時刻とmonotonic_evttimの差を保持する．
  */
 extern SYSTIM	systim_offset;
-
-/*
- *  タイムイベントコントロールブロック
- */
-struct time_event_control_block{
-	/*
-	 *  高分解能タイマ割込みの処理中であることを示すフラグ［ASPD1032］
-	 */
-	bool_t	in_signal_time;
-
-	/*
-	 *  タイムイベントヒープへのポインタ
-	 */
-	TMEVTN  *p_tmevt_heap;
-};
 
 /*
  *  タイムイベントヒープへのアクセステーブル（kernel_cfg.c）

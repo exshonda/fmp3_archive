@@ -34,7 +34,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: test_mtrans4.c 208 2020-01-30 09:46:12Z ertl-honda $
+ *  $Id: test_mtrans4.c 265 2021-01-08 06:17:00Z ertl-honda $
  */
 
 /* 
@@ -85,7 +85,7 @@ volatile bool_t	task1_flag;
 volatile bool_t	task2_flag;
 
 void
-task1(intptr_t exinf)
+task1(EXINF exinf)
 {
 	ER_UINT	ercd;
 	T_RTSK	rtsk;
@@ -157,7 +157,7 @@ task1(intptr_t exinf)
 }
 
 void
-task2(intptr_t exinf)
+task2(EXINF exinf)
 {
 	ER_UINT	ercd;
 
@@ -176,7 +176,7 @@ task2(intptr_t exinf)
 }
 
 void
-task3(intptr_t exinf)
+task3(EXINF exinf)
 {
 	ER_UINT	ercd;
 	T_RTSK	rtsk;
@@ -207,7 +207,7 @@ task3(intptr_t exinf)
 }
 
 void
-task4(intptr_t exinf)
+task4(EXINF exinf)
 {
 	ER_UINT	ercd;
 	T_RTSK	rtsk;

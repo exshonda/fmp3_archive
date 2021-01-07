@@ -34,7 +34,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  @(#) $Id: test_spin1.c 195 2019-12-04 02:06:38Z ertl-honda $
+ *  @(#) $Id: test_spin1.c 263 2021-01-08 06:08:59Z ertl-honda $
  */
 
 /* 
@@ -128,7 +128,7 @@ wait_test(void) {
  *  PE1で動作するテストのメインタスク
  */
 void
-task1_1(intptr_t exinf)
+task1_1(EXINF exinf)
 {
 	ER	ercd;
 	uint_t  i;
@@ -271,7 +271,7 @@ task1_1(intptr_t exinf)
  * (1) loc_spnによるタスク間の排他制御用のタスク
  */
 void
-task2_1(intptr_t exinf)
+task2_1(EXINF exinf)
 {
 	ER	ercd;
 	uint_t i;
@@ -298,7 +298,7 @@ task2_1(intptr_t exinf)
  * (2) try_spnによるタスク間の排他制御用のタスク
  */
 void
-task2_2(intptr_t exinf)
+task2_2(EXINF exinf)
 {
 	ER	ercd;
 	uint_t i;
@@ -327,7 +327,7 @@ task2_2(intptr_t exinf)
  * (3) loc_spnによるアラームハンドラ間の排他制御
  */
 void
-alarm_handler1_1(intptr_t exinf)
+alarm_handler1_1(EXINF exinf)
 {
 	ER	ercd;
 	uint_t i;
@@ -351,7 +351,7 @@ alarm_handler1_1(intptr_t exinf)
 }
 
 void
-alarm_handler2_1(intptr_t exinf)
+alarm_handler2_1(EXINF exinf)
 {
 	ER	ercd;
 	uint_t i;
@@ -379,7 +379,7 @@ alarm_handler2_1(intptr_t exinf)
  * (4) try_spnによるアラームハンドラ間の排他制御
  */
 void
-alarm_handler1_2(intptr_t exinf)
+alarm_handler1_2(EXINF exinf)
 {
 	ER	ercd;
 	uint_t i;
@@ -405,7 +405,7 @@ alarm_handler1_2(intptr_t exinf)
 }
 
 void
-alarm_handler2_2(intptr_t exinf)
+alarm_handler2_2(EXINF exinf)
 {
 	ER	ercd;
 	uint_t i;
@@ -435,7 +435,7 @@ alarm_handler2_2(intptr_t exinf)
  * (5) loc_spnとloc_spnによるタスクとアラームハンドラ間の排他制御
  */
 void
-alarm_handler2_3(intptr_t exinf)
+alarm_handler2_3(EXINF exinf)
 {
 	ER	ercd;
 	uint_t i;
@@ -462,7 +462,7 @@ alarm_handler2_3(intptr_t exinf)
  * (6) try_spnとtry_spnによるタスクとアラームハンドラ間の排他制御
  */
 void
-alarm_handler2_4(intptr_t exinf)
+alarm_handler2_4(EXINF exinf)
 {
 	ER	ercd;
 	uint_t i;

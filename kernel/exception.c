@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: exception.c 207 2020-01-30 09:31:28Z ertl-honda $
+ *  $Id: exception.c 263 2021-01-08 06:08:59Z ertl-honda $
  */
 
 /*
@@ -106,7 +106,8 @@ xsns_dpn(void *p_excinf)
 		 *  セッサのPCBにアクセスしてよい．
 		 */
 		p_my_pcb = get_my_pcb();
-		state = (p_my_pcb->kerflg && exc_sense_intmask(p_excinf)
+		state = (kerflg_table[INDEX_PRC(p_my_pcb->prcid)]
+						&& exc_sense_intmask(p_excinf)
 								&& p_my_pcb->enadsp
 								&& p_my_pcb->p_runtsk != NULL) ? false : true;
 	}

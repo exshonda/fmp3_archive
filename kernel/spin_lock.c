@@ -35,7 +35,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  @(#) $Id: spin_lock.c 207 2020-01-30 09:31:28Z ertl-honda $
+ *  @(#) $Id: spin_lock.c 263 2021-01-08 06:08:59Z ertl-honda $
  */
 
 /*
@@ -138,7 +138,7 @@ initialize_spin_lock(PCB *p_my_pcb)
 	uint_t			i;
 	const SPNINIB	*p_spninib;
 
-	if (is_mprc(p_my_pcb)) {
+	if (p_my_pcb->prcid == TOPPERS_MASTER_PRCID) {
 		for (i = 0; i < tnum_spn;  i++) {
 			p_spninib = &(spninib_table[i]);
 			if (IS_NATIVE(p_spninib->spnatr)) {
@@ -205,9 +205,8 @@ loc_spn(ID spnid)
 		lock_native_spn(p_spninib);
 	}
 	else {
-	  retry:
 		acquire_glock();
-		if (LOCKFLAG(p_spninib)) {
+		while (LOCKFLAG(p_spninib)) {
 			/* 取得されていた場合 */
 			release_glock();
 			unlock_cpu();
@@ -216,14 +215,12 @@ loc_spn(ID spnid)
 				delay_for_interrupt();
 			}
 			lock_cpu();
-			goto retry;
+			acquire_glock();
 		}
-		else {
 			/* 取得されていなかった場合 */
 			LOCKFLAG(p_spninib) = true;
 			release_glock();
 		}
-	}
 	get_my_pcb()->p_locspn = p_spninib;
 	ercd = E_OK;
 

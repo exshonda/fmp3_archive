@@ -36,7 +36,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: test_dlynse.c 207 2020-01-30 09:31:28Z ertl-honda $
+ *  $Id: test_dlynse.c 263 2021-01-08 06:08:59Z ertl-honda $
  */
 
 /*
@@ -109,7 +109,7 @@ test_dly_nse(ulong_t dlytim)
 }
 
 void
-main_task(intptr_t exinf)
+main_task(EXINF exinf)
 {
 	test_start(__FILE__);
 

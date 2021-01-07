@@ -2,7 +2,7 @@
  *  TOPPERS Software
  *      Toyohashi Open Platform for Embedded Real-Time Systems
  * 
- *  Copyright (C) 2006-2019 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2006-2021 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  * 
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -34,7 +34,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: test_common.h 208 2020-01-30 09:46:12Z ertl-honda $
+ *  $Id: test_common.h 265 2021-01-08 06:17:00Z ertl-honda $
  */
 
 /*
@@ -142,29 +142,29 @@
  */
 #ifndef TOPPERS_MACRO_ONLY
 
-extern void	task1(intptr_t exinf);
-extern void	task2(intptr_t exinf);
-extern void	task3(intptr_t exinf);
-extern void	task4(intptr_t exinf);
-extern void	task5(intptr_t exinf);
-extern void	task6(intptr_t exinf);
-extern void	task7(intptr_t exinf);
-extern void	task8(intptr_t exinf);
-extern void	task9(intptr_t exinf);
-extern void	task10(intptr_t exinf);
-extern void	task11(intptr_t exinf);
-extern void	task12(intptr_t exinf);
-extern void	task13(intptr_t exinf);
-extern void	task51(intptr_t exinf);
-extern void	task52(intptr_t exinf);
+extern void	task1(EXINF exinf);
+extern void	task2(EXINF exinf);
+extern void	task3(EXINF exinf);
+extern void	task4(EXINF exinf);
+extern void	task5(EXINF exinf);
+extern void	task6(EXINF exinf);
+extern void	task7(EXINF exinf);
+extern void	task8(EXINF exinf);
+extern void	task9(EXINF exinf);
+extern void	task10(EXINF exinf);
+extern void	task11(EXINF exinf);
+extern void	task12(EXINF exinf);
+extern void	task13(EXINF exinf);
+extern void	task51(EXINF exinf);
+extern void	task52(EXINF exinf);
 
-extern void	cyclic1_handler(intptr_t exinf);
+extern void	cyclic1_handler(EXINF exinf);
 
-extern void	alarm1_handler(intptr_t exinf);
-extern void	alarm2_handler(intptr_t exinf);
+extern void	alarm1_handler(EXINF exinf);
+extern void	alarm2_handler(EXINF exinf);
 
-extern void	isr1(intptr_t exinf);
-extern void	isr2(intptr_t exinf);
+extern void	isr1(EXINF exinf);
+extern void	isr2(EXINF exinf);
 
 extern void cpuexc1_handler(void *p_excinf);
 extern void	cpuexc2_handler(void *p_excinf);

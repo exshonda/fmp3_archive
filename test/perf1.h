@@ -34,7 +34,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: perf1.h 42 2018-07-31 07:29:20Z ertl-honda $
+ *  $Id: perf1.h 263 2021-01-08 06:08:59Z ertl-honda $
  */
 
 /*
@@ -65,6 +65,6 @@
 /*
  *  関数のプロトタイプ宣言
  */
-extern void	task1(intptr_t exinf);
-extern void	task2(intptr_t exinf);
-extern void	main_task(intptr_t exinf);
+extern void	task1(EXINF exinf);
+extern void	task2(EXINF exinf);
+extern void	main_task(EXINF exinf);

@@ -1,5 +1,5 @@
 PACKAGE fmp3
-VERSION 3.1.1
+VERSION 3.2.0
 
 configure.rb
 MANIFEST
@@ -83,6 +83,7 @@ kernel/task.trb
 kernel/time_event.c
 kernel/time_event.h
 kernel/time_manage.c
+kernel/tmevt.h
 kernel/wait.c
 kernel/wait.h
 kernel/winfo.h

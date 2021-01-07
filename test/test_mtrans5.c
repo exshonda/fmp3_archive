@@ -34,7 +34,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: test_mtrans5.c 208 2020-01-30 09:46:12Z ertl-honda $
+ *  $Id: test_mtrans5.c 265 2021-01-08 06:17:00Z ertl-honda $
  */
 
 /* 
@@ -129,7 +129,7 @@ delay_count(uint_t count)
 }
 
 void
-task1(intptr_t exinf)
+task1(EXINF exinf)
 {
 	ER_UINT	ercd;
 	uint_t	i;
@@ -257,14 +257,14 @@ task1(intptr_t exinf)
 }
 
 void
-task2(intptr_t exinf)
+task2(EXINF exinf)
 {
 	task2_count++;
 	ext_tsk();
 }
 
 void
-task3(intptr_t exinf)
+task3(EXINF exinf)
 {
 	ER_UINT	ercd;
 

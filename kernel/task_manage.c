@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: task_manage.c 207 2020-01-30 09:31:28Z ertl-honda $
+ *  $Id: task_manage.c 263 2021-01-08 06:08:59Z ertl-honda $
  */
 
 /*
@@ -153,8 +153,8 @@ act_tsk(ID tskid)
 	acquire_glock();
 	p_my_pcb = get_my_pcb();
 	if (TSTAT_DORMANT(p_tcb->tstat)) {
-		make_active(p_my_pcb, p_tcb, p_tcb->p_pcb);		/*［NGKI1118］*/
-		if (p_my_pcb->p_runtsk != p_my_pcb->p_schedtsk) {
+		make_active(p_my_pcb, p_tcb);		/*［NGKI1118］*/
+		if (p_selftsk != p_my_pcb->p_schedtsk) {
 			if (!context) {
 				release_glock();
 				dispatch();
@@ -224,8 +224,8 @@ mact_tsk(ID tskid, ID prcid)
 		LOG_TSKMIG(p_tcb, p_tcb->p_pcb->prcid, prcid);
 		p_new_pcb = get_pcb(prcid);
 		p_tcb->p_pcb = p_new_pcb;				/*［NGKI1132］*/
-		make_active(p_my_pcb, p_tcb, p_new_pcb);		/*［NGKI1132］*/
-		if (p_my_pcb->p_runtsk != p_my_pcb->p_schedtsk) {
+		make_active(p_my_pcb, p_tcb);			/*［NGKI1132］*/
+		if (p_selftsk != p_my_pcb->p_schedtsk) {
 			if (!context) {
 				release_glock();
 				dispatch();
@@ -346,13 +346,13 @@ mig_tsk(ID tskid, ID prcid)
 		/*
 		 *  対象タスクが，実行できる状態の場合
 		 */
-		make_non_runnable(p_my_pcb, p_tcb, p_my_pcb);
+		make_non_runnable(p_my_pcb, p_tcb);
 		LOG_TSKMIG(p_tcb, p_my_pcb->prcid, prcid);
 		p_tcb->p_pcb = p_new_pcb;
 
 		if (p_tcb == p_selftsk) {
 			/* 対象タスクが自タスク */
-			dispatch_and_migrate(p_my_pcb, p_selftsk, p_new_pcb);
+			dispatch_and_migrate(p_my_pcb, p_selftsk);
 			/* ここに戻ってくる時にはジャイアントロックは解放されている */
 			ercd = E_OK; 
 			goto unlock_and_exit;
@@ -360,7 +360,7 @@ mig_tsk(ID tskid, ID prcid)
 		else {
 			/* 対象タスクが他タスク */
 			/* マイグレート先のプロセッサでmake_runnableする */
-			make_runnable(p_my_pcb, p_tcb, p_new_pcb);
+			make_runnable(p_my_pcb, p_tcb);
 
 			/*
 			 *  マイグレート先が自プロセッサの場合，自タスクの方が優先
@@ -504,9 +504,9 @@ chg_pri(ID tskid, PRI tskpri)
 	else {
 		p_tcb->bpriority = newbpri;				/*［NGKI1192］*/
 		if (p_tcb->p_lastmtx == NULL || !((*mtxhook_scan_ceilmtx)(p_tcb))) {
-			change_priority(p_my_pcb, p_tcb, p_tcb->p_pcb, newbpri, false);
+			change_priority(p_my_pcb, p_tcb, newbpri, false);
 												/*［NGKI1193］*/
-			if (p_my_pcb->p_runtsk != p_my_pcb->p_schedtsk) {
+			if (p_selftsk != p_my_pcb->p_schedtsk) {
 				release_glock();
 				dispatch();
 				ercd = E_OK;
@@ -596,7 +596,7 @@ chg_spr(ID tskid, uint_t subpri)
 	p_my_pcb = get_my_pcb();
 	p_pcb = p_tcb->p_pcb;
 	change_subprio(p_my_pcb, p_tcb, subpri, p_pcb);
-	if (p_my_pcb->p_runtsk != p_my_pcb->p_schedtsk) {
+	if (p_selftsk != p_my_pcb->p_schedtsk) {
 		release_glock();
 		dispatch();
 		ercd = E_OK;
@@ -620,21 +620,16 @@ chg_spr(ID tskid, uint_t subpri)
 #ifdef TOPPERS_get_inf
 
 ER
-get_inf(intptr_t *p_exinf)
+get_inf(EXINF *p_exinf)
 {
 	ER		ercd;
 	TCB		*p_selftsk;
 
 	LOG_GET_INF_ENTER(p_exinf);
-	CHECK_TSKCTX_UNL();						/*［NGKI1213］［NGKI1214］*/
+	CHECK_TSKCTX_UNL_MYSTATE(&p_selftsk);						/*［NGKI1213］［NGKI1214］*/
 
-	lock_cpu();
-	acquire_glock();
-	p_selftsk = get_my_pcb()->p_runtsk;
 	*p_exinf = p_selftsk->p_tinib->exinf;		/*［NGKI1216］*/
 	ercd = E_OK;
-	release_glock();
-	unlock_cpu();
 
   error_exit:
 	LOG_GET_INF_LEAVE(ercd, p_exinf);

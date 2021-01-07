@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: task.c 237 2020-07-01 01:55:14Z ertl-honda $
+ *  $Id: task.c 263 2021-01-08 06:08:59Z ertl-honda $
  */
 
 /*
@@ -48,8 +48,6 @@
 #include "task.h"
 #include "taskhook.h"
 #include "wait.h"
-#include "spin_lock.h"
-#include "target_ipi.h"
 
 #ifdef TOPPERS_tskini
 
@@ -84,7 +82,7 @@ initialize_task(PCB *p_my_pcb)
 			make_dormant(p_tcb);
 			p_tcb->p_lastmtx = NULL;
 			if ((p_tcb->p_tinib->tskatr & TA_ACT) != 0U) {
-				make_active(p_my_pcb, p_tcb, p_my_pcb);
+				make_active(p_my_pcb, p_tcb);
 			}
 		}
 	}
@@ -191,30 +189,6 @@ search_schedtsk(PCB *p_pcb)
 
 #endif /* TOPPERS_tsksched */
 
-/*
- *  実行すべきタスクの更新
- *
- *  この関数を，他プロセッサのPCBをパラメータとして呼び出す場合には，
- *  呼び出す前にdata_memory_barrierを呼び出さなければならない．
- */
-#ifdef TOPPERS_schedtsk
-
-void
-update_schedtsk(PCB *p_my_pcb, PCB *p_pcb, TCB *p_new_schedtsk)
-{
-	TCB		*p_prev_schedtsk;
-
-	if (p_pcb->dspflg) {
-		p_prev_schedtsk = p_pcb->p_schedtsk;
-		memory_barrier();
-		p_pcb->p_schedtsk = p_new_schedtsk;
-		if ((p_pcb != p_my_pcb) && (p_prev_schedtsk != p_pcb->p_schedtsk)) {
-			request_dispatch_prc(p_pcb->prcid);
-		}
-	}
-}
-
-#endif /* TOPPERS_schedtsk */
 
 /*
  *  タスクのサブ優先度順のキューへの挿入
@@ -252,9 +226,10 @@ queue_insert_subprio(QUEUE *p_queue, TCB *p_tcb, bool_t mtxmode)
 #ifdef TOPPERS_tskrun
 
 void
-make_runnable(PCB *p_my_pcb, TCB *p_tcb, PCB *p_pcb)
+make_runnable(PCB *p_my_pcb, TCB *p_tcb)
 {
 	uint_t	pri = p_tcb->priority;
+	PCB *p_pcb = p_tcb->p_pcb;
 
 	if ((subprio_primap & PRIMAP_BIT(pri)) != 0U) {
 		queue_insert_subprio(&(p_pcb->ready_queue[pri]), p_tcb, false);
@@ -265,10 +240,10 @@ make_runnable(PCB *p_my_pcb, TCB *p_tcb, PCB *p_pcb)
 	primap_set(pri, p_pcb);
 
 	if (p_pcb->p_schedtsk == (TCB *) NULL || pri < p_pcb->p_schedtsk->priority) {
-		update_schedtsk(p_my_pcb, p_pcb, p_tcb);
+		update_schedtsk_dsp(p_my_pcb, p_pcb, p_tcb);
 	}
 	else if (pri == p_pcb->p_schedtsk->priority) {
-		update_schedtsk(p_my_pcb, p_pcb, (TCB *)(p_pcb->ready_queue[pri].p_next));
+		update_schedtsk_dsp(p_my_pcb, p_pcb, (TCB *)(p_pcb->ready_queue[pri].p_next));
 	}
 }
 
@@ -285,22 +260,23 @@ make_runnable(PCB *p_my_pcb, TCB *p_tcb, PCB *p_pcb)
 #ifdef TOPPERS_tsknrun
 
 void
-make_non_runnable(PCB *p_my_pcb, TCB *p_tcb, PCB *p_pcb)
+make_non_runnable(PCB *p_my_pcb, TCB *p_tcb)
 {
 	uint_t	pri = p_tcb->priority;
+	PCB 	*p_pcb = p_tcb->p_pcb;
 	QUEUE	*p_queue = &(p_pcb->ready_queue[pri]);
 
 	queue_delete(&(p_tcb->task_queue));
 	if (queue_empty(p_queue)) {
 		primap_clear(pri, p_pcb);
 		if (p_pcb->p_schedtsk == p_tcb) {
-			update_schedtsk(p_my_pcb, p_pcb, 
+			update_schedtsk_dsp(p_my_pcb, p_pcb, 
 							primap_empty(p_pcb) ? (TCB *) NULL : search_schedtsk(p_pcb));
 		}
 	}
 	else {
 		if (p_pcb->p_schedtsk == p_tcb) {
-			update_schedtsk(p_my_pcb, p_pcb, (TCB *)(p_queue->p_next));
+			update_schedtsk_dsp(p_my_pcb, p_pcb, (TCB *)(p_queue->p_next));
 		}
 	}
 }
@@ -332,12 +308,12 @@ make_dormant(TCB *p_tcb)
 #ifdef TOPPERS_tskact
 
 void
-make_active(PCB *p_my_pcb, TCB *p_tcb, PCB *p_pcb)
+make_active(PCB *p_my_pcb, TCB *p_tcb)
 {
-	activate_context(p_tcb, p_pcb);
+	activate_context(p_tcb);
 	p_tcb->tstat = TS_RUNNABLE;
 	LOG_TSKSTAT(p_tcb);
-	make_runnable(p_my_pcb, p_tcb, p_pcb);
+	make_runnable(p_my_pcb, p_tcb);
 }
 
 #endif /* TOPPERS_tskact */
@@ -359,9 +335,9 @@ make_active(PCB *p_my_pcb, TCB *p_tcb, PCB *p_pcb)
 #ifdef TOPPERS_tskpri
 
 void
-change_priority(PCB *p_my_pcb, TCB *p_tcb, PCB *p_pcb,
-									uint_t newpri, bool_t mtxmode)
+change_priority(PCB *p_my_pcb, TCB *p_tcb, uint_t newpri, bool_t mtxmode)
 {
+	PCB 	*p_pcb = p_tcb->p_pcb;
 	uint_t	oldpri;
 
 	oldpri = p_tcb->priority;
@@ -390,12 +366,12 @@ change_priority(PCB *p_my_pcb, TCB *p_tcb, PCB *p_pcb,
 
 		if (p_pcb->p_schedtsk == p_tcb) {
 			if (newpri >= oldpri) {
-				update_schedtsk(p_my_pcb, p_pcb, search_schedtsk(p_pcb));
+				update_schedtsk_dsp(p_my_pcb, p_pcb, search_schedtsk(p_pcb));
 			}
 		}
 		else {
 			if (newpri <= p_pcb->p_schedtsk->priority) {
-				update_schedtsk(p_my_pcb, p_pcb, (TCB *)(p_pcb->ready_queue[newpri].p_next));
+				update_schedtsk_dsp(p_my_pcb, p_pcb, (TCB *)(p_pcb->ready_queue[newpri].p_next));
 			}
 		}
 	}
@@ -436,7 +412,7 @@ change_subprio(PCB *p_my_pcb, TCB *p_tcb, uint_t subpri, PCB *p_pcb)
 			queue_insert_subprio(&(p_pcb->ready_queue[pri]), p_tcb, false);
 		}
 		if (pri == p_pcb->p_schedtsk->priority) {
-			update_schedtsk(p_my_pcb, p_pcb, (TCB *)(p_pcb->ready_queue[pri].p_next));
+			update_schedtsk_dsp(p_my_pcb, p_pcb, (TCB *)(p_pcb->ready_queue[pri].p_next));
 		}
 	}
 }
@@ -461,7 +437,7 @@ rotate_ready_queue(PCB *p_my_pcb, uint_t pri, PCB *p_pcb)
 		p_entry = queue_delete_next(p_queue);
 		queue_insert_prev(p_queue, p_entry);
 		if (p_pcb->p_schedtsk == (TCB *) p_entry) {
-			update_schedtsk(p_my_pcb, p_pcb, (TCB *)(p_queue->p_next));
+			update_schedtsk_dsp(p_my_pcb, p_pcb, (TCB *)(p_queue->p_next));
 		}
 	}
 }
@@ -478,22 +454,15 @@ task_terminate(PCB *p_my_pcb, TCB *p_tcb)
 {
 	PCB		*p_new_pcb;
 
-	if (p_tcb == p_my_pcb->p_runtsk) {
-		/*
-		 *  自タスクを対象としており，スピンロックを取得している場合は，
-		 *  スピンロックを解放する．
-		 */
-		force_unlock_spin(p_my_pcb);
-	}
 	if (p_tcb->p_lastmtx != NULL) {
 		(*mtxhook_release_all)(p_my_pcb, p_tcb);
 	}
 	if (TSTAT_RUNNABLE(p_tcb->tstat)) {
-		make_non_runnable(p_my_pcb, p_tcb, p_my_pcb);
+		make_non_runnable(p_my_pcb, p_tcb);
 	}
 	else if (TSTAT_WAITING(p_tcb->tstat)) {
 		wait_dequeue_wobj(p_my_pcb, p_tcb);
-		wait_dequeue_tmevtb(p_tcb, p_my_pcb);
+		wait_dequeue_tmevtb(p_tcb);
 	}
 	make_dormant(p_tcb);
 	if (p_tcb->actque) {
@@ -509,10 +478,7 @@ task_terminate(PCB *p_my_pcb, TCB *p_tcb)
 				return(true);
 			}
 		}
-		else {
-			p_new_pcb = p_my_pcb;
-		}
-		make_active(p_my_pcb, p_tcb, p_new_pcb);
+		make_active(p_my_pcb, p_tcb);
 	}
 	return(false);
 }
@@ -529,9 +495,9 @@ task_terminate(PCB *p_my_pcb, TCB *p_tcb)
  *  ロセッサであっても良い．
  */
 void
-migrate_self(PCB *p_my_pcb, TCB *p_selftsk, PCB *p_new_pcb)
+migrate_self(PCB *p_my_pcb, TCB *p_selftsk)
 {
-	make_runnable(p_my_pcb, p_selftsk, p_new_pcb);
+	make_runnable(p_my_pcb, p_selftsk);
 	release_glock();
 	exit_and_dispatch();
 	assert(0);
@@ -551,9 +517,7 @@ migrate_self(PCB *p_my_pcb, TCB *p_selftsk, PCB *p_new_pcb)
 void
 migrate_activate_self(PCB *p_my_pcb, TCB *p_selftsk)
 {
-	PCB		*p_new_pcb = p_selftsk->p_pcb;
-
-	make_active(p_my_pcb, p_selftsk, p_new_pcb);
+	make_active(p_my_pcb, p_selftsk);
 	release_glock();
 	exit_and_dispatch();
 	assert(0);

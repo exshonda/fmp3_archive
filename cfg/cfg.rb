@@ -36,7 +36,7 @@
 #  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
 #  の責任を負わない．
 #
-#  $Id: cfg.rb 180 2019-10-02 23:32:02Z ertl-hiro $
+#  $Id: cfg.rb 188 2020-06-14 09:52:45Z ertl-hiro $
 #
 
 if $0 == __FILE__
@@ -55,7 +55,7 @@ require "SRecord.rb"
 #  定数定義
 #
 # 共通
-VERSION = "1.5.0"
+VERSION = "1.6.0"
 
 # cfg1_out関係
 CFG1_PREFIX         = "TOPPERS_cfg_"
@@ -111,6 +111,9 @@ def parse_error(cfgFile, message)
     abort("too many errors emitted, stopping now")
   end
 end
+def parse_error_fatal(cfgFile, message)
+  error_exit(message, "#{cfgFile.getFileName}:#{cfgFile.getLineNo}:")
+end
 
 # システムコンフィギュレーションファイルの構文解析時の警告
 def parse_warning(cfgFile, message)
@@ -141,51 +144,53 @@ def expand_message(message, params)
   return(result)
 end
 
-# 静的API処理時のエラー
-def error_api(params, message)
-  error(expand_message(message, params), \
-			"#{params[:_file_]}:#{params[:_line_]}:")
-end
-
 # 静的API処理時の警告
 def warning_api(params, message)
-  warning(expand_message(message, params), \
+  warning(expand_message(message, params),
 			"#{params[:_file_]}:#{params[:_line_]}:")
 end
 
-# 静的API処理時のエラー（エラーコード付き）
+# 静的API処理時のエラー
 def error_ercd(errorCode, params, message)
-  error_api(params, "#{errorCode}: #{message}")
+  error(expand_message((errorCode.nil? ? "" : "#{errorCode}: ") + message,
+						params), "#{params[:_file_]}:#{params[:_line_]}:")
+end
+
+# 静的API処理時のエラー（静的API名付き）
+def error_sapi(errorCode, params, message, objid = nil, objlabel = false)
+  error_ercd(errorCode, params, message + " in %apiname" \
+		+ (objid.nil? ? "" : (objlabel ? " of %%#{objid}" : " of %#{objid}")))
 end
 
 # パラメータのエラー
-def error_wrong(errorCode, params, symbol, wrong)
-  error_ercd(errorCode, params, "%%#{symbol} is #{wrong} in %apiname")
-end
-
-def error_wrong_id(errorCode, params, symbol, objid, wrong)
-  error_ercd(errorCode, params, "%%#{symbol} is #{wrong} " \
-	             					"in %apiname of %#{objid}")
-end
-
-def error_wrong_sym(errorCode, params, symbol, symbol2, wrong)
-  error_ercd(errorCode, params, "%%#{symbol} is #{wrong} " \
-									"in %apiname of %%#{symbol2}")
+def error_wrong(errorCode, params, symbol, wrong, objid = nil, objlabel = false)
+  error_sapi(errorCode, params, "%%#{symbol} is #{wrong}", objid, objlabel)
 end
 
 # パラメータ不正のエラー
-def error_illegal(errorCode, params, symbol)
-  error_ercd(errorCode, params, "illegal %%#{symbol} in %apiname")
+def error_illegal(errorCode, params, symbol, objid = nil, objlabel = false)
+  error_sapi(errorCode, params, "illegal %%#{symbol}", objid, objlabel)
+end
+
+# 過去のバージョンと互換性のための関数
+def error_api(params, message)
+  error_ercd(nil, params, message)
+end
+
+def error_wrong_id(errorCode, params, symbol, objid, wrong)
+  error_wrong(errorCode, params, symbol, wrong, objid)
+end
+
+def error_wrong_sym(errorCode, params, symbol, symbol2, wrong)
+  error_wrong(errorCode, params, symbol, wrong, symbol2, true)
 end
 
 def error_illegal_id(errorCode, params, symbol, objid)
-  error_ercd(errorCode, params, "illegal %%#{symbol} " \
-	             					"in %apiname of %#{objid}")
+  error_illegal(errorCode, params, symbol, objid)
 end
 
 def error_illegal_sym(errorCode, params, symbol, symbol2)
-  error_ercd(errorCode, params, "illegal %%#{symbol} " \
-									"in %apiname of %%#{symbol2}")
+  error_illegal(errorCode, params, symbol, symbol2, true)
 end
 
 #
@@ -510,11 +515,13 @@ end
 #
 #  生成スクリプト（trbファイル）向けの関数
 #
-def SYMBOL(symbol)
+def SYMBOL(symbol, contFlag = false)
   if !$romSymbol.nil? && $romSymbol.has_key?($asmLabel + symbol)
     return $romSymbol[$asmLabel + symbol]
-  else
+  elsif contFlag
     return nil
+  else
+    error_exit("E_SYS: symbol `#{symbol}' not found")
   end
 end
 
@@ -572,7 +579,7 @@ OptionParser.new("Usage: cfg.rb [options] CONFIG-FILE", 40) do |opt|
     $pass = val
   end
   opt.on("-I DIRECTORY", "--include-directory DIRECTORY",
-										 "include directory") do |val|
+										"include directory") do |val|
     $includeDirectories.push(val)
   end
   opt.on("-T TRB-FILE", "--trb-file TRB-FILE",
@@ -605,10 +612,10 @@ OptionParser.new("Usage: cfg.rb [options] CONFIG-FILE", 40) do |opt|
     $omitOutputDb = true
   end
   opt.on("--enable-domain", "enable DOMAIN support") do
-	$supportDomain = true
+    $supportDomain = true
   end
   opt.on("--enable-class", "enable CLASS support") do
-	$supportClass = true
+    $supportClass = true
   end
   opt.on("-v", "--version", "show version number") do
     puts(opt.ver)
@@ -647,12 +654,12 @@ end
 #
 case $kernel
 when /^hrp/
-	$supportDomain = true
+  $supportDomain = true
 when /^fmp/
-	$supportClass = true
+  $supportClass = true
 when /^hrmp/
-	$supportDomain = true
-	$supportClass = true
+  $supportDomain = true
+  $supportClass = true
 end
 
 #

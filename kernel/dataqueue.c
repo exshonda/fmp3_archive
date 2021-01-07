@@ -5,7 +5,7 @@
  * 
  *  Copyright (C) 2000-2003 by Embedded and Real-Time Systems Laboratory
  *                              Toyohashi Univ. of Technology, JAPAN
- *  Copyright (C) 2005-2019 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2005-2021 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  * 
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: dataqueue.c 207 2020-01-30 09:31:28Z ertl-honda $
+ *  $Id: dataqueue.c 263 2021-01-08 06:08:59Z ertl-honda $
  */
 
 /*
@@ -147,7 +147,7 @@ initialize_dataqueue(PCB *p_my_pcb)
 	uint_t	i;
 	DTQCB	*p_dtqcb;
 
-	if (is_mprc(p_my_pcb)) {
+	if (p_my_pcb->prcid == TOPPERS_MASTER_PRCID) {
 		for (i = 0; i < tnum_dtq; i++) {
 			p_dtqcb = p_dtqcb_table[i];
 			queue_initialize(&(p_dtqcb->swait_queue));
@@ -330,7 +330,7 @@ snd_dtq(ID dtqid, intptr_t data)
 		ercd = E_RASTER;
 	}
 	else if (send_data(p_my_pcb, p_dtqcb, data)) {
-		if (p_my_pcb->p_runtsk != p_my_pcb->p_schedtsk) {
+		if (p_selftsk != p_my_pcb->p_schedtsk) {
 			release_glock();
 			dispatch();
 			ercd = E_OK;
@@ -368,10 +368,12 @@ psnd_dtq(ID dtqid, intptr_t data)
 {
 	DTQCB	*p_dtqcb;
 	ER		ercd;
+	TCB		*p_selftsk;
+	bool_t	context;
 	PCB		*p_my_pcb;
 
 	LOG_PSND_DTQ_ENTER(dtqid, data);
-	CHECK_UNL();
+	CHECK_UNL_MYSTATE(&p_selftsk, &context);
 	CHECK_ID(VALID_DTQID(dtqid));
 	p_dtqcb = get_dtqcb(dtqid);
 
@@ -379,8 +381,8 @@ psnd_dtq(ID dtqid, intptr_t data)
 	acquire_glock();
 	p_my_pcb = get_my_pcb();
 	if (send_data(p_my_pcb, p_dtqcb, data)) {
-		if (p_my_pcb->p_runtsk != p_my_pcb->p_schedtsk) {
-			if (!sense_context(p_my_pcb)) {
+		if (p_selftsk != p_my_pcb->p_schedtsk) {
+			if (!context) {
 				release_glock();
 				dispatch();
 				ercd = E_OK;
@@ -420,7 +422,7 @@ tsnd_dtq(ID dtqid, intptr_t data, TMO tmout)
 	PCB		*p_my_pcb;
 
 	LOG_TSND_DTQ_ENTER(dtqid, data, tmout);
-	CHECK_DISPATCH();
+	CHECK_DISPATCH_MYSTATE(&p_selftsk);
 	CHECK_ID(VALID_DTQID(dtqid));
 	CHECK_PAR(VALID_TMOUT(tmout));
 	p_dtqcb = get_dtqcb(dtqid);
@@ -428,12 +430,11 @@ tsnd_dtq(ID dtqid, intptr_t data, TMO tmout)
 	lock_cpu_dsp();
 	acquire_glock();
 	p_my_pcb = get_my_pcb();
-	p_selftsk = p_my_pcb->p_runtsk;
 	if (p_selftsk->raster) {
 		ercd = E_RASTER;
 	}
 	else if (send_data(p_my_pcb, p_dtqcb, data)) {
-		if (p_my_pcb->p_runtsk != p_my_pcb->p_schedtsk) {
+		if (p_selftsk != p_my_pcb->p_schedtsk) {
 			release_glock();
 			dispatch();
 			ercd = E_OK;
@@ -474,10 +475,12 @@ fsnd_dtq(ID dtqid, intptr_t data)
 {
 	DTQCB	*p_dtqcb;
 	ER		ercd;
+	TCB		*p_selftsk;
+	bool_t	context;
 	PCB		*p_my_pcb;
 
 	LOG_FSND_DTQ_ENTER(dtqid, data);
-	CHECK_UNL();
+	CHECK_UNL_MYSTATE(&p_selftsk, &context);
 	CHECK_ID(VALID_DTQID(dtqid));
 	p_dtqcb = get_dtqcb(dtqid);
 	CHECK_ILUSE(p_dtqcb->p_dtqinib->dtqcnt > 0U);
@@ -486,8 +489,8 @@ fsnd_dtq(ID dtqid, intptr_t data)
 	acquire_glock();
 	p_my_pcb = get_my_pcb();
 	force_send_data(p_my_pcb, p_dtqcb, data);
-	if (p_my_pcb->p_runtsk != p_my_pcb->p_schedtsk) {
-		if (!sense_context(p_my_pcb)) {
+	if (p_selftsk != p_my_pcb->p_schedtsk) {
+		if (!context) {
 			release_glock();
 			dispatch();
 			ercd = E_OK;
@@ -523,19 +526,18 @@ rcv_dtq(ID dtqid, intptr_t *p_data)
 	PCB		*p_my_pcb;
 
 	LOG_RCV_DTQ_ENTER(dtqid, p_data);
-	CHECK_DISPATCH();
+	CHECK_DISPATCH_MYSTATE(&p_selftsk);
 	CHECK_ID(VALID_DTQID(dtqid));
 	p_dtqcb = get_dtqcb(dtqid);
 
 	lock_cpu_dsp();
 	acquire_glock();
 	p_my_pcb = get_my_pcb();
-	p_selftsk = p_my_pcb->p_runtsk;
 	if (p_selftsk->raster) {
 		ercd = E_RASTER;
 	}
 	else if (receive_data(p_my_pcb, p_dtqcb, p_data)) {
-		if (p_my_pcb->p_runtsk != p_my_pcb->p_schedtsk) {
+		if (p_selftsk != p_my_pcb->p_schedtsk) {
 			release_glock();
 			dispatch();
 			ercd = E_OK;
@@ -577,10 +579,11 @@ prcv_dtq(ID dtqid, intptr_t *p_data)
 {
 	DTQCB	*p_dtqcb;
 	ER		ercd;
+	TCB		*p_selftsk;
 	PCB		*p_my_pcb;
 
 	LOG_PRCV_DTQ_ENTER(dtqid, p_data);
-	CHECK_TSKCTX_UNL();
+	CHECK_TSKCTX_UNL_MYSTATE(&p_selftsk);
 	CHECK_ID(VALID_DTQID(dtqid));
 	p_dtqcb = get_dtqcb(dtqid);
 
@@ -588,7 +591,7 @@ prcv_dtq(ID dtqid, intptr_t *p_data)
 	acquire_glock();
 	p_my_pcb = get_my_pcb();
 	if (receive_data(p_my_pcb, p_dtqcb, p_data)) {
-		if (p_my_pcb->p_runtsk != p_my_pcb->p_schedtsk) {
+		if (p_selftsk != p_my_pcb->p_schedtsk) {
 			release_glock();
 			dispatch();
 			ercd = E_OK;
@@ -624,7 +627,7 @@ trcv_dtq(ID dtqid, intptr_t *p_data, TMO tmout)
 	PCB		*p_my_pcb;
 
 	LOG_TRCV_DTQ_ENTER(dtqid, p_data, tmout);
-	CHECK_DISPATCH();
+	CHECK_DISPATCH_MYSTATE(&p_selftsk);
 	CHECK_ID(VALID_DTQID(dtqid));
 	CHECK_PAR(VALID_TMOUT(tmout));
 	p_dtqcb = get_dtqcb(dtqid);
@@ -632,12 +635,11 @@ trcv_dtq(ID dtqid, intptr_t *p_data, TMO tmout)
 	lock_cpu_dsp();
 	acquire_glock();
 	p_my_pcb = get_my_pcb();
-	p_selftsk = p_my_pcb->p_runtsk;
 	if (p_selftsk->raster) {
 		ercd = E_RASTER;
 	}
 	else if (receive_data(p_my_pcb, p_dtqcb, p_data)) {
-		if (p_my_pcb->p_runtsk != p_my_pcb->p_schedtsk) {
+		if (p_selftsk != p_my_pcb->p_schedtsk) {
 			release_glock();
 			dispatch();
 			ercd = E_OK;
@@ -682,10 +684,11 @@ ini_dtq(ID dtqid)
 {
 	DTQCB	*p_dtqcb;
 	ER		ercd;
+	TCB		*p_selftsk;
 	PCB		*p_my_pcb;
 
 	LOG_INI_DTQ_ENTER(dtqid);
-	CHECK_TSKCTX_UNL();
+	CHECK_TSKCTX_UNL_MYSTATE(&p_selftsk);
 	CHECK_ID(VALID_DTQID(dtqid));
 	p_dtqcb = get_dtqcb(dtqid);
 
@@ -697,7 +700,7 @@ ini_dtq(ID dtqid)
 	p_dtqcb->count = 0U;
 	p_dtqcb->head = 0U;
 	p_dtqcb->tail = 0U;
-	if (p_my_pcb->p_runtsk != p_my_pcb->p_schedtsk) {
+	if (p_selftsk != p_my_pcb->p_schedtsk) {
 		release_glock();
 		dispatch();
 		ercd = E_OK;

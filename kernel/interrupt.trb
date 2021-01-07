@@ -37,7 +37,7 @@
 #   アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
 #   の責任を負わない．
 # 
-#   $Id: interrupt.trb 207 2020-01-30 09:31:28Z ertl-honda $
+#   $Id: interrupt.trb 263 2021-01-08 06:08:59Z ertl-honda $
 # 
 
 #
@@ -118,7 +118,7 @@ $toIntnoVal = {}
 end
 
 #
-#  割込み要求ラインに関するエラーチェック
+#  割込み要求ラインに関するエラーチェック（1回目）
 #
 $cfgData[:CFG_INT].each do |_, params|
   # クラスの囲みの中に記述されていない場合（E_RSATR）［NGKI2971］
@@ -169,7 +169,7 @@ $cfgData[:CFG_INT].each do |_, params|
     end
   end
 
-  # ターゲット依存のエラーチェック［NGKI2985］［NGKI5184］
+  # ターゲット依存のエラーチェック［NGKI2985］
   if defined? TargetCheckCfgInt()
     TargetCheckCfgInt(params)
   end
@@ -190,25 +190,25 @@ $cfgData[:DEF_INH].each do |_, params|
     # 以降のエラーの抑止
     params[:class] = $TCLS_ERROR
   end
+  prcid = $clsData[params[:class]][:initPrc]
 
   # inhnoが有効範囲外の場合（E_PAR）［NGKI3055］
   if !$INHNO_VALID_ALL.include?(params[:inhno])
     error_illegal("E_PAR", params, :inhno)
+  else
+    # クラスの初期割付けプロセッサが，割込みが要求されるプロセッサでな
+    # い場合（E_RSATR）［NGKI3073］
+    if !$INHNO_VALID[prcid].include?(params[:inhno])
+      error_ercd("E_RSATR", params, "the initial assignment processor " \
+				"of the class in which %apiname of `%inhno' is described " \
+				"must be the processor to which the interrupt is requested")
+    end
   end
 
   # inhatrが無効の場合（E_RSATR）［NGKI3052］［NGKI2957］［NGKI2959］
   # （TARGET_INHATR以外のビットがセットされている場合）
   if (params[:inhatr] & ~($TARGET_INHATR)) != 0
     error_illegal_sym("E_RSATR", params, :inhatr, :inhno)
-  end
-
-  # クラスの初期割付けプロセッサが，割込みが要求されるプロセッサでない
-  # 場合（E_RSATR）［NGKI3073］
-  prcid = $clsData[params[:class]][:initPrc]
-  if !$INHNO_VALID[prcid].include?(params[:inhno])
-    error_ercd("E_RSATR", params, "The initial assignment processor " \
-				"of the class in which %apiname of `%inhno' is described " \
-				"must be the processor to which the interrupt is requested.")
   end
 
   # カーネル管理外に固定されているinhnoに対して，inhatrにTA_NONKERNELが
@@ -218,6 +218,8 @@ $cfgData[:DEF_INH].each do |_, params|
     if (params[:inhatr] & $TA_NONKERNEL) == 0
       error_ercd("E_RSATR", params, "%%inhno must be " \
 								"non-kernel interrupt in %apiname")
+      # 以降のエラーの抑止
+      next
     end
   end
 
@@ -228,6 +230,8 @@ $cfgData[:DEF_INH].each do |_, params|
     if (params[:inhatr] & $TA_NONKERNEL) != 0
       error_ercd("E_RSATR", params, "%%inhno must not be " \
 								"non-kernel interrupt in %apiname")
+      # 以降のエラーの抑止
+      next
     end
   end
 
@@ -241,6 +245,7 @@ $cfgData[:DEF_INH].each do |_, params|
 					"%%inhno in %apiname is not configured with CFG_INT")
     else
       intnoParams = $cfgData[:CFG_INT][intnoVal]
+      intnoParams[:affinity] = (1 << ($clsData[params[:class]][:initPrc] - 1))
 
       # CFG_INTとDEF_INHが異なるクラスの囲みの中にある場合（E_RSATR）
       # ［NGKI5141］
@@ -250,21 +255,21 @@ $cfgData[:DEF_INH].each do |_, params|
 								"the same class with CFG_INT")
       end
 
+      if intnoParams[:intpri] < $TMIN_INTPRI
+        # inhnoに対応するintnoに対してCFG_INTで設定された割込み優先度
+        # がTMIN_INTPRIよりも小さく，inhatrにTA_NONKERNELが指定されて
+        # いない場合（E_OBJ）［NGKI3065］
       if (params[:inhatr] & $TA_NONKERNEL) == 0
-        # inhatrにTA_NONKERNELが指定されておらず，inhnoに対応するintno
-        # に対してCFG_INTで設定された割込み優先度がTMIN_INTPRIよりも小
-        # さい場合（E_OBJ）［NGKI3065］
-        if intnoParams[:intpri] < $TMIN_INTPRI
-          error_ercd("E_OBJ", params, "intpri `#{intnoParams[:intpri]}' " \
-				"configured for %%inhno must be lower or equal to TMIN_INTPRI")
+          error_ercd("E_OBJ", params, "TA_NONKERNEL must be set for " \
+						"non-kernel interrupt handler in %apiname of %%inhno")
         end
       else
-        # inhatrにTA_NONKERNELが指定されており，inhnoに対応するintnoに
-        # 対してCFG_INTで設定された割込み優先度がTMIN_INTPRI以上である
-        # 場合（E_OBJ）［NGKI3066］
-        if intnoParams[:intpri] >= $TMIN_INTPRI
-          error_ercd("E_OBJ", params, "intpri `#{intnoParams[:intpri]}' " \
-					"configured for %%inhno must be higher than TMIN_INTPRI")
+		# inhnoに対応するintnoに対してCFG_INTで設定された割込み優先度
+		# がTMIN_INTPRI以上で，inhatrにTA_NONKERNELが指定されている場
+		# 合（E_OBJ）［NGKI3066］
+        if (params[:inhatr] & $TA_NONKERNEL) != 0
+          error_ercd("E_OBJ", params, "TA_NONKERNEL must not be set for " \
+						"kernel interrupt handler in %apiname of %%inhno")
         end
       end
     end
@@ -301,18 +306,18 @@ $cfgData[:CRE_ISR].sort.each do |_, params|
   # intnoが有効範囲外の場合（E_PAR）［NGKI3003］
   if !$INTNO_CREISR_VALID_ALL.include?(params[:intno])
     error_illegal("E_PAR", params, "intno")
-  end
-
+  else
   # クラスの割付け可能プロッサが，intnoで指定した割込み要求ラインが接
   # 続されたプロセッサの集合に含まれていない場合（E_RSATR）［NGKI3016］
   $clsData[params[:class]][:affinityPrcList].each do |prcid|
     if !$INTNO_CREISR_VALID[prcid].include?(params[:intno])
-      error_ercd("E_RSATR", params, "The assignable processors " \
+        error_ercd("E_RSATR", params, "the assignable processors " \
 				"of the class in which %apiname of `%intno' is described " \
 				"must be included in the set of processors " \
-				"to which the interrupt is requested.")
+				"to which the interrupt is requested")
       break
     end
+  end
   end
 
   # isrpriが有効範囲外の場合（E_PAR）［NGKI3005］
@@ -327,7 +332,6 @@ $cfgData[:CRE_ISR].sort.each do |_, params|
     if $cfgData[:DEF_INH].has_key?(inhnoVal)
       error_ercd("E_OBJ", params, "%%intno in %apiname is duplicated " \
 					"with inhno #{$cfgData[:DEF_INH][inhnoVal][:inhno]}")
-      break
     end
   end
 
@@ -337,6 +341,7 @@ $cfgData[:CRE_ISR].sort.each do |_, params|
 									"is not configured with CFG_INT")
   else
     intnoParams = $cfgData[:CFG_INT][params[:intno]]
+    intnoParams[:affinity] = $clsData[params[:class]][:affinityPrcBitmap]
 
     # CFG_INTとCRE_ISRが異なるクラスの囲みの中にある場合（E_RSATR）［NGKI5142］
     if params[:class] != intnoParams[:class]
@@ -344,19 +349,33 @@ $cfgData[:CRE_ISR].sort.each do |_, params|
 							"does not belong to the same class with CFG_INT")
     end
 
-    # intnoでカーネル管理外の割込みを指定した場合（E_OBJ）［NGKI3014］
-    #（intnoに対してCFG_INTで設定された割込み優先度がTMIN_INTPRIよりも小
-    #  さい場合）
+    # intnoでカーネル管理外の割込み（intnoに対してCFG_INTで設定された
+    # 割込み優先度がTMIN_INTPRIよりも小さい場合）を指定した場合（E_OBJ）
+    # ［NGKI3014］
     if intnoParams[:intpri] < $TMIN_INTPRI
-      error_ercd("E_OBJ", params,
-					"intpri `#{intnoParams[:intpri]}' configured for " \
-					"%%intno with CFG_INT in higher than TMIN_INTPRI")
+      error_ercd("E_OBJ", params, "interrupt service routine cannot handle " \
+								"non-kernel interrupt in %apiname of %isrid")
     end
   end
 
   # ターゲット依存のエラーチェック［NGKI3019］
   if defined? TargetCheckCreIsr()
     TargetCheckCreIsr(params)
+  end
+end
+
+#
+#  割込み要求ラインに関するエラーチェック（2回目）
+#
+$cfgData[:CFG_INT].each do |_, params|
+  # CFG_INTに対応するDEF_INH／CRE_ISRがない場合
+  if !params.has_key?(:affinity)
+    params[:affinity] = $clsData[params[:class]][:affinityPrcBitmap]
+  end
+
+  # ターゲット依存のエラーチェック［NGKI5184］
+  if defined? TargetCheckCfgInt2()
+    TargetCheckCfgInt2(params)
   end
 end
 
@@ -393,20 +412,28 @@ isr_flag = {}
         $kernelCfgC.add("void")
         $kernelCfgC.add("_kernel_inthdr_#{intnoVal}(void)")
         $kernelCfgC.add("{")
+        if isrParamsList.size > 1
+          $kernelCfgC.add2("\tPCB\t\t*p_my_pcb = get_my_pcb();")
+        end
+
         # 割込みサービスルーチンを優先度順に呼び出す
+        #
+        # 割込みハンドラは，他のプロセッサへマイグレートすることはない
+        # ため，CPUロック状態にせずに自プロセッサのPCBにアクセスしてよ
+        # い．
         i = 0		# stable sortを行うための変数
         isrParamsList.sort_by {|params| [ params[:isrpri].val, i += 1 ]} \
 										.each_with_index do |params, index|
           if index > 0
             $kernelCfgC.add
-            $kernelCfgC.add("\t_kernel_force_unlock_spin(get_my_pcb());")
             $kernelCfgC.add("\tif (sense_lock()) {")
+            $kernelCfgC.add("\t\t_kernel_force_unlock_spin(p_my_pcb);")
             $kernelCfgC.add("\t\tunlock_cpu();")
             $kernelCfgC.add2("\t}")
           end
           $kernelCfgC.add("\tLOG_ISR_ENTER(#{params[:isrid]});")
           $kernelCfgC.add("\t((ISR)(#{params[:isr]}))" \
-						  "((intptr_t)(#{params[:exinf]}));")
+						  "((EXINF)(#{params[:exinf]}));")
           $kernelCfgC.add("\tLOG_ISR_LEAVE(#{params[:isrid]});")
         end
         $kernelCfgC.add2("}")
@@ -454,8 +481,7 @@ EOS
       $kernelCfgC.append("\t{ (#{params[:inhno]}), " \
 				"(#{params[:inhatr]}), " \
 				"#{inthdr}, " \
-				"#{$clsData[params[:class]][:initPrc]}, " \
-				"0x#{$clsData[params[:class]][:affinityPrcBitmap].to_s(16)}U }")
+				"#{$clsData[params[:class]][:initPrc]} }")
     end
     $kernelCfgC.add
     $kernelCfgC.add2("};")
@@ -488,7 +514,7 @@ EOS
 				"(#{params[:intatr]}), " \
 				"(#{params[:intpri]}), " \
 				"#{$clsData[params[:class]][:initPrc]}, " \
-				"0x#{$clsData[params[:class]][:affinityPrcBitmap].to_s(16)}U }")
+				"0x#{params[:affinity].to_s(16)}U }")
     end
     $kernelCfgC.add
     $kernelCfgC.add2("};")

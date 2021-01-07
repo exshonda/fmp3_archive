@@ -1,5 +1,5 @@
 
-	TOPPERS/FMP3 Kernel（Release 3.1）without TECS
+	TOPPERS/FMP3 Kernel（Release 3.2）without TECS
 		Toyohashi Open Platform for Embedded Real-Time Systems/
 		Flexible MultiProcessor Kernel
 

@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: wait.c 207 2020-01-30 09:31:28Z ertl-honda $
+ *  $Id: wait.c 263 2021-01-08 06:08:59Z ertl-honda $
  */
 
 /*
@@ -94,9 +94,9 @@ wait_dequeue_wobj(PCB *p_my_pcb, TCB *p_tcb)
 void
 wait_complete(PCB *p_my_pcb, TCB *p_tcb)
 {
-	wait_dequeue_tmevtb(p_tcb, p_tcb->p_pcb);
+	wait_dequeue_tmevtb(p_tcb);
 	p_tcb->winfo.wercd = E_OK;
-	make_non_wait(p_my_pcb, p_tcb, p_tcb->p_pcb);
+	make_non_wait(p_my_pcb, p_tcb);
 }
 
 #endif /* TOPPERS_waicmp */
@@ -107,14 +107,11 @@ wait_complete(PCB *p_my_pcb, TCB *p_tcb)
 #ifdef TOPPERS_waitmo
 
 void
-wait_tmout(TCB *p_tcb)
+wait_tmout(PCB *p_my_pcb, TCB *p_tcb)
 {
-	PCB		*p_my_pcb = get_my_pcb();
-	PCB		*p_pcb = p_tcb->p_pcb;
-
 	wait_dequeue_wobj(p_my_pcb, p_tcb);
 	p_tcb->winfo.wercd = E_TMOUT;
-	make_non_wait(p_my_pcb, p_tcb, p_pcb);
+	make_non_wait(p_my_pcb, p_tcb);
 	if (p_my_pcb->p_runtsk != p_my_pcb->p_schedtsk) {
 		if (!sense_context(p_my_pcb)) {
 			assert(!p_my_pcb->dspflg);
@@ -139,13 +136,10 @@ wait_tmout(TCB *p_tcb)
 #ifdef TOPPERS_waitmook
 
 void
-wait_tmout_ok(TCB *p_tcb)
+wait_tmout_ok(PCB *p_my_pcb, TCB *p_tcb)
 {
-	PCB		*p_my_pcb = get_my_pcb();
-	PCB 	*p_pcb = p_tcb->p_pcb;
-
 	p_tcb->winfo.wercd = E_OK;
-	make_non_wait(p_my_pcb, p_tcb, p_pcb);
+	make_non_wait(p_my_pcb, p_tcb);
 	if (p_my_pcb->p_runtsk != p_my_pcb->p_schedtsk) {
 		if (!sense_context(p_my_pcb)) {
 			assert(!p_my_pcb->dspflg);
@@ -225,9 +219,9 @@ init_wait_queue(PCB *p_my_pcb, QUEUE *p_wait_queue)
 
 	while (!queue_empty(p_wait_queue)) {
 		p_tcb = (TCB *) queue_delete_next(p_wait_queue);
-		wait_dequeue_tmevtb(p_tcb, p_tcb->p_pcb);
+		wait_dequeue_tmevtb(p_tcb);
 		p_tcb->winfo.wercd = E_DLT;
-		make_non_wait(p_my_pcb, p_tcb, p_tcb->p_pcb);
+		make_non_wait(p_my_pcb, p_tcb);
 	}
 }
 

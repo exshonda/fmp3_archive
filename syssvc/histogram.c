@@ -35,7 +35,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: histogram.c 145 2019-03-10 15:27:01Z ertl-honda $
+ *  $Id: histogram.c 263 2021-01-08 06:08:59Z ertl-honda $
  */
 
 /*
@@ -76,7 +76,7 @@
 
 #ifndef HIST_BM_HOOK				/* 実行時間計測直前に行うべき処理 */
 #define HIST_BM_HOOK()			((void) 0)
-#endif
+#endif /* HIST_BM_HOOK */
 
 /*
  *  実行時間分布計測管理ブロック

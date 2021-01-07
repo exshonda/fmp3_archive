@@ -34,7 +34,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: test_sysstat1.h 33 2018-07-30 03:21:03Z ertl-honda $
+ *  $Id: test_sysstat1.h 263 2021-01-08 06:08:59Z ertl-honda $
  */
 
 /* 
@@ -66,7 +66,7 @@
  */
 #ifndef TOPPERS_MACRO_ONLY
 
-extern void	task1(intptr_t exinf);
-extern void	task2(intptr_t exinf);
+extern void	task1(EXINF exinf);
+extern void	task2(EXINF exinf);
 
 #endif /* TOPPERS_MACRO_ONLY */

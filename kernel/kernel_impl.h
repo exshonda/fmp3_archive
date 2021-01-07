@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: kernel_impl.h 207 2020-01-30 09:31:28Z ertl-honda $
+ *  $Id: kernel_impl.h 263 2021-01-08 06:08:59Z ertl-honda $
  */
 
 /*
@@ -107,6 +107,24 @@
  */
 #define EXCNO_PRCID(intno)		(intno >> 16U)
 
+#ifndef TOPPERS_MACRO_ONLY
+/*
+ *  プロセッサ管理ブロックの前方参照（pcb.h）
+ */
+typedef struct processor_control_block PCB;
+
+/*
+ *  タスク管理ブロックの型の前方参照（task.h）
+ */
+typedef struct task_control_block TCB;
+
+#endif /* TOPPERS_MACRO_ONLY */
+
+/*
+ *  ターゲット依存情報の定義
+ */
+#include "target_kernel_impl.h"
+
 /*
  *  優先度の段階数の定義
  */
@@ -114,15 +132,13 @@
 #define TNUM_DPRI		(TMAX_DPRI - TMIN_DPRI + 1)
 #define TNUM_INTPRI		(TMAX_INTPRI - TMIN_INTPRI + 1)
 
+#ifndef TOPPERS_MACRO_ONLY
 /*
  *  プロセッサ管理ブロックの定義
  */
 #include "pcb.h"
 
-/*
- *  ターゲット依存情報の定義
- */
-#include "target_kernel_impl.h"
+#endif /* TOPPERS_MACRO_ONLY */
 
 /*
  *  すべての関数をコンパイルするための定義
@@ -177,11 +193,6 @@
 #ifndef TOPPERS_MACRO_ONLY
 
 /*
- *  タスク管理ブロックの型の前方参照（task.h）
- */
-typedef struct task_control_block TCB;
-
-/*
  *  ヘッダファイルを持たないモジュールの関数・変数の宣言
  */
 
@@ -200,7 +211,7 @@ extern void initialize_object(PCB *p_my_pcb);
  */
 typedef struct initialization_routine_block {
 	INIRTN		inirtn;					/* 初期化ルーチンの先頭番地 */
-	intptr_t	exinf;					/* 初期化ルーチンの拡張情報 */
+	EXINF		exinf;					/* 初期化ルーチンの拡張情報 */
 } INIRTNB;
 
 typedef struct initialization_routine_block_table_block {
@@ -215,7 +226,7 @@ extern const INIRTNBB inirtnbb_table[];
  */
 typedef struct termination_routine_block {
 	TERRTN		terrtn;					/* 終了処理ルーチンの先頭番地 */
-	intptr_t	exinf;					/* 終了処理ルーチンの拡張情報 */
+	EXINF		exinf;					/* 終了処理ルーチンの拡張情報 */
 } TERRTNB;
 
 typedef struct termination_routine_block_table_block {
@@ -238,6 +249,11 @@ extern STK_T *const istk_table[];		/* スタック領域の先頭番地 */
 #ifdef TOPPERS_ISTKPT
 extern STK_T *const istkpt_table[];		/* スタックポインタの初期値 */
 #endif /* TOPPERS_ISTKPT */
+
+/*
+ *  カーネル動作状態フラグ（kernel_cfg.c）
+ */
+extern bool_t	kerflg_table[];
 
 /*
  *  カーネルの起動／終了に用いるバリア同期（startup.c）
@@ -267,7 +283,7 @@ extern void ext_ker_handler(void);
 /*
  *  通知ハンドラの型定義
  */
-typedef void	(*NFYHDR)(intptr_t exinf);
+typedef void	(*NFYHDR)(EXINF exinf);
 
 #endif /* TOPPERS_MACRO_ONLY */
 #endif /* TOPPERS_KERNEL_IMPL_H */

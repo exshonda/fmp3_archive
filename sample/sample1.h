@@ -5,7 +5,7 @@
  *
  *  Copyright (C) 2000-2003 by Embedded and Real-Time Systems Laboratory
  *                              Toyohashi Univ. of Technology, JAPAN
- *  Copyright (C) 2004-2020 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2004-2021 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  *
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  *
- *  $Id: sample1.h 207 2020-01-30 09:31:28Z ertl-honda $
+ *  $Id: sample1.h 263 2021-01-08 06:08:59Z ertl-honda $
  */
 
 /*
@@ -90,31 +90,31 @@
  */
 #ifndef TOPPERS_MACRO_ONLY
 
-extern void	task(intptr_t exinf);
-extern void	main_task(intptr_t exinf);
-extern void	server_task(intptr_t exinf);
-extern void exc_task(intptr_t exinf);
+extern void	task(EXINF exinf);
+extern void	main_task(EXINF exinf);
+extern void	server_task(EXINF exinf);
+extern void exc_task(EXINF exinf);
 #ifdef INTNO1
-extern void intno1_isr(intptr_t exinf);
+extern void intno1_isr(EXINF exinf);
 #endif /* INTNO1 */
 #ifdef INTNO2
-extern void intno2_isr(intptr_t exinf);
+extern void intno2_isr(EXINF exinf);
 #endif /* INTNO2 */
 #ifdef INTNO3
-extern void intno3_isr(intptr_t exinf);
+extern void intno3_isr(EXINF exinf);
 #endif /* INTNO3 */
 #ifdef INTNO4
-extern void intno4_isr(intptr_t exinf);
+extern void intno4_isr(EXINF exinf);
 #endif /* INTNO4 */
 #if defined(CPUEXC1_PRC1) || defined(CPUEXC1_PRC2) || defined(CPUEXC1_PRC3) || defined(CPUEXC1_PRC4)
 extern void	cpuexc_handler(void *p_excinf);
 #endif /* defined(CPUEXC1_PRC1) || defined(CPUEXC1_PRC2) || defined(CPUEXC1_PRC3) || defined(CPUEXC1_PRC4) */
-extern void	cyclic_handler(intptr_t exinf);
-extern void	alarm_handler(intptr_t exinf);
+extern void	cyclic_handler(EXINF exinf);
+extern void	alarm_handler(EXINF exinf);
 
-extern void global_inirtn(intptr_t exinf);
-extern void global_terrtn(intptr_t exinf);
-extern void local_inirtn(intptr_t exinf);
-extern void local_terrtn(intptr_t exinf);
+extern void global_inirtn(EXINF exinf);
+extern void global_terrtn(EXINF exinf);
+extern void local_inirtn(EXINF exinf);
+extern void local_terrtn(EXINF exinf);
 
 #endif /* TOPPERS_MACRO_ONLY */

@@ -5,7 +5,7 @@
  * 
  *  Copyright (C) 2000-2003 by Embedded and Real-Time Systems Laboratory
  *                              Toyohashi Univ. of Technology, JAPAN
- *  Copyright (C) 2004-2019 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2004-2021 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  * 
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: banner.c 145 2019-03-10 15:27:01Z ertl-honda $
+ *  $Id: banner.c 263 2021-01-08 06:08:59Z ertl-honda $
  */
 
 /*
@@ -75,7 +75,7 @@ static const char prc_banner[] = "Processor %d start.";
  *  カーネル起動メッセージの出力
  */
 void
-print_banner_copyright(intptr_t exinf)
+print_banner_copyright(EXINF exinf)
 {
 	syslog_5(LOG_NOTICE, banner,
 				(TKERNEL_PRVER >> 12) & 0x0fU,
@@ -86,7 +86,7 @@ print_banner_copyright(intptr_t exinf)
 }
 
 void
-print_banner(intptr_t exinf)
+print_banner(EXINF exinf)
 {
 	ID prcid;
 

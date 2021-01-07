@@ -34,7 +34,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: test_spinlock1.c 208 2020-01-30 09:46:12Z ertl-honda $
+ *  $Id: test_spinlock1.c 265 2021-01-08 06:17:00Z ertl-honda $
  */
 
 /* 
@@ -216,7 +216,7 @@ volatile bool_t	task2_flag = false;
 static uint_t	alarm1_count = 0;
 
 void
-alarm1_handler(intptr_t exinf)
+alarm1_handler(EXINF exinf)
 {
 
 	switch (++alarm1_count) {
@@ -253,7 +253,7 @@ alarm1_handler(intptr_t exinf)
 static uint_t	alarm2_count = 0;
 
 void
-alarm2_handler(intptr_t exinf)
+alarm2_handler(EXINF exinf)
 {
 
 	switch (++alarm2_count) {
@@ -296,7 +296,7 @@ alarm2_handler(intptr_t exinf)
 }
 
 void
-task1(intptr_t exinf)
+task1(EXINF exinf)
 {
 	ER_UINT	ercd;
 	T_RSPN	rspn;
@@ -422,7 +422,7 @@ task1(intptr_t exinf)
 }
 
 void
-task2(intptr_t exinf)
+task2(EXINF exinf)
 {
 	ER_UINT	ercd;
 	T_RSPN	rspn;
@@ -550,7 +550,7 @@ task2(intptr_t exinf)
 }
 
 void
-task3(intptr_t exinf)
+task3(EXINF exinf)
 {
 	ER_UINT	ercd;
 

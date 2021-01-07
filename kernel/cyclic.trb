@@ -5,7 +5,7 @@
 #       Flexible MultiProcessor Kernel
 # 
 #   Copyright (C) 2015 by FUJI SOFT INCORPORATED, JAPAN
-#   Copyright (C) 2015-2019 by Embedded and Real-Time Systems Laboratory
+#   Copyright (C) 2015-2021 by Embedded and Real-Time Systems Laboratory
 #               Graduate School of Information Science, Nagoya Univ., JAPAN
 # 
 #   上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -37,7 +37,7 @@
 #   アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
 #   の責任を負わない．
 # 
-#   $Id: cyclic.trb 145 2019-03-10 15:27:01Z ertl-honda $
+#   $Id: cyclic.trb 263 2021-01-08 06:08:59Z ertl-honda $
 # 
 
 #
@@ -69,7 +69,8 @@ class CyclicObject < KernelObject
     end
 
     # 通知情報の処理
-    params[:nfyhdr] = generateNotifyHandler(key, params, :cycid)
+    params[:nfyhdr] = "_kernel_cychdr_#{params[:cycid]}"
+    generateNotifyHandler(key, params, :cycid)
 
     # 割り付け可能プロセッサが時刻管理プロッサのみでない場合（E_RSATR）
     if ($clsData[params[:class]][:affinityPrcBitmap] | $TOPPERS_TEPP_PRC) != $TOPPERS_TEPP_PRC

@@ -34,7 +34,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: test_subprio2.h 37 2018-07-30 10:25:48Z ertl-honda $
+ *  $Id: test_subprio2.h 263 2021-01-08 06:08:59Z ertl-honda $
  */
 
 /* 
@@ -73,11 +73,11 @@
  */
 #ifndef TOPPERS_MACRO_ONLY
 
-extern void	task1(intptr_t exinf);
-extern void	task2(intptr_t exinf);
-extern void	task3(intptr_t exinf);
-extern void	task4(intptr_t exinf);
-extern void	task5(intptr_t exinf);
-extern void	alarm1_handler(intptr_t exinf);
+extern void	task1(EXINF exinf);
+extern void	task2(EXINF exinf);
+extern void	task3(EXINF exinf);
+extern void	task4(EXINF exinf);
+extern void	task5(EXINF exinf);
+extern void	alarm1_handler(EXINF exinf);
 
 #endif /* TOPPERS_MACRO_ONLY */

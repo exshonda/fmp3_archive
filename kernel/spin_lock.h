@@ -35,7 +35,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  @(#) $Id: spin_lock.h 207 2020-01-30 09:31:28Z ertl-honda $
+ *  @(#) $Id: spin_lock.h 263 2021-01-08 06:08:59Z ertl-honda $
  */
 
 /*
@@ -57,10 +57,10 @@
  *  エミュレートされたスピンロックの場合は，スピンロック状態を表す
  *  bool_t型の変数へのポインタを格納する．
  */
-struct spin_lock_initialization_block {
+typedef struct spin_lock_initialization_block {
 	ATR			spnatr;			/* スピンロック属性 */
 	intptr_t	lock;			/* ロック状態のためのデータ構造 */
-};
+} SPNINIB;
 
 /*
  *  スピンロックIDの最大値（kernel_cfg.c）

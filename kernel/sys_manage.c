@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: sys_manage.c 207 2020-01-30 09:31:28Z ertl-honda $
+ *  $Id: sys_manage.c 263 2021-01-08 06:08:59Z ertl-honda $
  */
 
 /*
@@ -216,7 +216,7 @@ rot_rdq(PRI tskpri)
 	acquire_glock();
 	p_my_pcb = get_my_pcb();
 	rotate_ready_queue(p_my_pcb, pri, p_my_pcb);
-	if (p_my_pcb->p_runtsk != p_my_pcb->p_schedtsk) {
+	if (p_selftsk != p_my_pcb->p_schedtsk) {
 		if (!context) {
 			release_glock();
 			dispatch();
@@ -270,7 +270,7 @@ mrot_rdq(ID schedno, PRI tskpri)
 	acquire_glock();
 	p_my_pcb = get_my_pcb();
 	rotate_ready_queue(p_my_pcb, pri, get_pcb(prcid));
-	if (p_my_pcb->p_runtsk != p_my_pcb->p_schedtsk) {
+	if (p_selftsk != p_my_pcb->p_schedtsk) {
 		if (!context) {
 			release_glock();
 			dispatch();
@@ -303,15 +303,13 @@ get_tid(ID *p_tskid)
 {
 	ER		ercd;
 	TCB		*p_selftsk;
+	bool_t	context;
 
 	LOG_GET_TID_ENTER(p_tskid);
-	CHECK_UNL();								/*［NGKI2707］*/
+	CHECK_UNL_MYSTATE(&p_selftsk, &context);	/*［NGKI2707］*/
 
-	lock_cpu();
-	p_selftsk = get_my_pcb()->p_runtsk;
 	*p_tskid = (p_selftsk == NULL) ? TSK_NONE : TSKID(p_selftsk);
 	ercd = E_OK;								/*［NGKI2710］［NGKI2709］*/
-	unlock_cpu();
 
   error_exit:
 	LOG_GET_TID_LEAVE(ercd, p_tskid);
@@ -592,17 +590,16 @@ ER
 dis_dsp(void)
 {
 	ER		ercd;
-	PCB		*p_my_pcb;
 	TCB		*p_selftsk;
+	PCB		*p_my_pcb;
 
 	LOG_DIS_DSP_ENTER();
-	CHECK_TSKCTX_UNL();							/*［NGKI2741］［NGKI2742］*/
+	CHECK_TSKCTX_UNL_MYSTATE(&p_selftsk);	/*［NGKI2741］［NGKI2742］*/
 
 	lock_cpu();
   retry:
 	acquire_glock();
 	p_my_pcb = get_my_pcb();
-	p_selftsk = p_my_pcb->p_runtsk;
 	if (p_selftsk != p_my_pcb->p_schedtsk) {
 		release_glock();
 		dispatch();
@@ -634,12 +631,11 @@ ena_dsp(void)
 	TCB		*p_selftsk;
 
 	LOG_ENA_DSP_ENTER();
-	CHECK_TSKCTX_UNL();							/*［NGKI2747］［NGKI2748］*/
+	CHECK_TSKCTX_UNL_MYSTATE(&p_selftsk);	/*［NGKI2747］［NGKI2748］*/
 
 	lock_cpu();
 	acquire_glock();
 	p_my_pcb = get_my_pcb();
-	p_selftsk = p_my_pcb->p_runtsk;
 	p_my_pcb->enadsp = true;
 	if (t_get_ipm() == TIPM_ENAALL) {
 		set_dspflg(p_my_pcb);
@@ -655,7 +651,7 @@ ena_dsp(void)
 			goto unlock_and_exit;
 		}
 		else {
-			if (p_my_pcb->p_runtsk != p_my_pcb->p_schedtsk) {
+			if (p_selftsk != p_my_pcb->p_schedtsk) {
 				release_glock();
 				dispatch();
 				ercd = E_OK;
@@ -687,17 +683,9 @@ bool_t
 sns_ctx(void)
 {
 	bool_t	state;
-	bool_t	locked;
 
 	LOG_SNS_CTX_ENTER();
-	locked = sense_lock();
-	if (!locked) {
-		lock_cpu();
-	}
-	state = sense_context(get_my_pcb()) ? true : false;
-	if (!locked) {
-		unlock_cpu();
-	}
+	state = check_tskctx() ? true : false;
 	LOG_SNS_CTX_LEAVE(state);
 	return(state);
 }
@@ -731,17 +719,9 @@ bool_t
 sns_dsp(void)
 {
 	bool_t	state;
-	bool_t	locked;
 
 	LOG_SNS_DSP_ENTER();
-	locked = sense_lock();
-	if (!locked) {
-		lock_cpu();
-	}
-	state = !(get_my_pcb()->enadsp);
-	if (!locked) {
-		unlock_cpu();
-	}
+	state = check_disdsp() ? true : false;
 	LOG_SNS_DSP_LEAVE(state);
 	return(state);
 }
@@ -757,20 +737,9 @@ bool_t
 sns_dpn(void)
 {
 	bool_t	state;
-	bool_t	locked;
-	PCB		*p_my_pcb;
 
 	LOG_SNS_DPN_ENTER();
-	locked = sense_lock();
-	if (!locked) {
-		lock_cpu();
-	}
-	p_my_pcb = get_my_pcb();
-	state = (sense_context(p_my_pcb) || locked || !(p_my_pcb->dspflg))
-														? true : false;
-	if (!locked) {
-		unlock_cpu();
-	}
+	state = check_dispatch() ? true : false;
 	LOG_SNS_DPN_LEAVE(state);
 	return(state);
 }
@@ -795,7 +764,7 @@ sns_ker(void)
 	 *  ク状態で呼び出される場合があるため，SILを用いる．
 	 */
 	SIL_LOC_INT();
-	state = get_my_pcb()->kerflg ? false : true;
+	state = kerflg_table[INDEX_PRC(get_my_pcb()->prcid)] ? false : true;
 	SIL_UNL_INT();
 
 	LOG_SNS_KER_LEAVE(state);

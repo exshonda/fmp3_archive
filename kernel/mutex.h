@@ -35,7 +35,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: mutex.h 178 2019-10-08 13:55:00Z ertl-honda $
+ *  $Id: mutex.h 263 2021-01-08 06:08:59Z ertl-honda $
  */
 
 /*
@@ -68,12 +68,14 @@ typedef struct mutex_initialization_block {
  *  を拡張（オブジェクト指向言語の継承に相当）したもので，最初の2つの
  *  フィールドが共通になっている．
  */
-struct mutex_control_block {
+typedef struct mutex_control_block MTXCB;
+
+typedef struct mutex_control_block {
 	QUEUE		wait_queue;		/* ミューテックス待ちキュー */
 	const MTXINIB *p_mtxinib;	/* 初期化ブロックへのポインタ */
 	TCB			*p_loctsk;		/* ミューテックスをロックしているタスク */
 	MTXCB		*p_prevmtx;		/* この前にロックしたミューテックス */
-};
+} MTXCB;
 
 /*
  *  ミューテックスIDの最大値（kernel_cfg.c）
@@ -125,8 +127,7 @@ extern bool_t	mutex_scan_ceilmtx(TCB *p_tcb);
  *  p_tcbで指定されるタスクが，p_mtxcbで指定されるミューテックスをロッ
  *  ク解除した際の現在優先度変更処理を行う．
  */
-extern void	mutex_drop_priority(PCB *p_my_pcb, TCB *p_tcb,
-										PCB *p_pcb, MTXCB *p_mtxcb);
+extern void	mutex_drop_priority(PCB *p_my_pcb, TCB *p_tcb, MTXCB *p_mtxcb);
 
 /*
  *  ミューテックスのロック

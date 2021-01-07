@@ -34,7 +34,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: test_notify1.c 207 2020-01-30 09:31:28Z ertl-honda $
+ *  $Id: test_notify1.c 263 2021-01-08 06:08:59Z ertl-honda $
  */
 
 /* 
@@ -259,7 +259,7 @@ wait_error(void)
 /* DO NOT DELETE THIS LINE -- gentest depends on it. */
 
 void
-task1(intptr_t exinf)
+task1(EXINF exinf)
 {
 	ER_UINT	ercd;
 	T_RALM	ralm;
@@ -575,7 +575,7 @@ task1(intptr_t exinf)
 static uint_t	task2_count = 0;
 
 void
-task2(intptr_t exinf)
+task2(EXINF exinf)
 {
 	ER_UINT	ercd;
 	T_RALM	ralm;

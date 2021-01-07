@@ -34,7 +34,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: test_flg1.c 33 2018-07-30 03:21:03Z ertl-honda $
+ *  $Id: test_flg1.c 263 2021-01-08 06:08:59Z ertl-honda $
  */
 
 /* 
@@ -285,7 +285,7 @@
 /* DO NOT DELETE THIS LINE -- gentest depends on it. */
 
 void
-alarm1_handler(intptr_t exinf)
+alarm1_handler(EXINF exinf)
 {
 	ER_UINT	ercd;
 	FLGPTN	flgptn;
@@ -304,7 +304,7 @@ alarm1_handler(intptr_t exinf)
 }
 
 void
-task1(intptr_t exinf)
+task1(EXINF exinf)
 {
 	ER_UINT	ercd;
 	T_RFLG	rflg;
@@ -539,7 +539,7 @@ task1(intptr_t exinf)
 }
 
 void
-task2(intptr_t exinf)
+task2(EXINF exinf)
 {
 	ER_UINT	ercd;
 	FLGPTN	flgptn;
@@ -658,7 +658,7 @@ task2(intptr_t exinf)
 }
 
 void
-task3(intptr_t exinf)
+task3(EXINF exinf)
 {
 	ER_UINT	ercd;
 	FLGPTN	flgptn;

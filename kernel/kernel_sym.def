@@ -11,9 +11,9 @@ TA_CLR
 TA_CEILING
 TA_NATIVE
 TA_STA
+TA_NONKERNEL
 TA_ENAINT
 TA_EDGE
-TA_NONKERNEL
 TNFY_HANDLER
 TNFY_SETVAR
 TNFY_INCVAR
@@ -83,6 +83,7 @@ sizeof_uint_t,sizeof(uint_t)
 sizeof_size_t,sizeof(size_t)
 sizeof_intptr_t,sizeof(intptr_t)
 sizeof_ID,sizeof(ID)
+sizeof_EXINF,sizeof(EXINF)
 sizeof_FP,sizeof(FP)
 sizeof_INTNO,sizeof(INTNO)
 sizeof_INHNO,sizeof(INHNO)

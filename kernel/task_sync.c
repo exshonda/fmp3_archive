@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: task_sync.c 178 2019-10-08 13:55:00Z ertl-honda $
+ *  $Id: task_sync.c 263 2021-01-08 06:08:59Z ertl-honda $
  */
 
 /*
@@ -242,7 +242,7 @@ wup_tsk(ID tskid)
 	}
 	else if (TSTAT_WAIT_SLP(p_tcb->tstat)) {
 		wait_complete(p_my_pcb, p_tcb);			/*［NGKI1271］*/
-		if (p_my_pcb->p_runtsk != p_my_pcb->p_schedtsk) {
+		if (p_selftsk != p_my_pcb->p_schedtsk) {
 			if (!context) {
 				release_glock();
 				dispatch();
@@ -324,10 +324,12 @@ rel_wai(ID tskid)
 {
 	TCB		*p_tcb;
 	ER		ercd;
+	TCB		*p_selftsk;
+	bool_t	context;
 	PCB		*p_my_pcb;
 
 	LOG_REL_WAI_ENTER(tskid);
-	CHECK_UNL();						/*［NGKI1290］*/
+	CHECK_UNL_MYSTATE(&p_selftsk, &context);	/*［NGKI1290］*/
 	CHECK_ID(VALID_TSKID(tskid));				/*［NGKI1292］*/
 	p_tcb = get_tcb(tskid);
 
@@ -339,11 +341,11 @@ rel_wai(ID tskid)
 	}
 	else {
 		wait_dequeue_wobj(p_my_pcb, p_tcb);		/*［NGKI1296］*/
-		wait_dequeue_tmevtb(p_tcb, p_tcb->p_pcb);
+		wait_dequeue_tmevtb(p_tcb);
 		p_tcb->winfo.wercd = E_RLWAI;			/*［NGKI1297］*/
-		make_non_wait(p_my_pcb, p_tcb, p_tcb->p_pcb);
-		if (p_my_pcb->p_runtsk != p_my_pcb->p_schedtsk) {
-			if (!sense_context(p_my_pcb)) {
+		make_non_wait(p_my_pcb, p_tcb);
+		if (p_selftsk != p_my_pcb->p_schedtsk) {
+			if (!context) {
 				release_glock();
 				dispatch();
 				ercd = E_OK;
@@ -412,8 +414,8 @@ sus_tsk(ID tskid)
 		 */
 		p_tcb->tstat = TS_SUSPENDED;
 		LOG_TSKSTAT(p_tcb);
-		make_non_runnable(p_my_pcb, p_tcb, p_tcb->p_pcb);
-		if (p_my_pcb->p_runtsk != p_my_pcb->p_schedtsk) {
+		make_non_runnable(p_my_pcb, p_tcb);
+		if (p_selftsk != p_my_pcb->p_schedtsk) {
 			release_glock();
 			dispatch();
 			ercd = E_OK;
@@ -453,10 +455,11 @@ rsm_tsk(ID tskid)
 {
 	TCB		*p_tcb;
 	ER		ercd;
+	TCB		*p_selftsk;
 	PCB		*p_my_pcb;
 
 	LOG_RSM_TSK_ENTER(tskid);
-	CHECK_TSKCTX_UNL();				/*［NGKI1313］［NGKI1314］*/
+	CHECK_TSKCTX_UNL_MYSTATE(&p_selftsk);	/*［NGKI1313］［NGKI1314］*/
 	CHECK_ID(VALID_TSKID(tskid));				/*［NGKI1316］*/
 	p_tcb = get_tcb(tskid);
 
@@ -473,8 +476,8 @@ rsm_tsk(ID tskid)
 		if (!TSTAT_WAITING(p_tcb->tstat)) {
 			p_tcb->tstat = TS_RUNNABLE;
 			LOG_TSKSTAT(p_tcb);
-			make_runnable(p_my_pcb, p_tcb, p_tcb->p_pcb);
-			if (p_my_pcb->p_runtsk != p_my_pcb->p_schedtsk) {
+			make_runnable(p_my_pcb, p_tcb);
+			if (p_selftsk != p_my_pcb->p_schedtsk) {
 				release_glock();
 				dispatch();
 				ercd = E_OK;

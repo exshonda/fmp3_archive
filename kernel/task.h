@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: task.h 207 2020-01-30 09:31:28Z ertl-honda $
+ *  $Id: task.h 263 2021-01-08 06:08:59Z ertl-honda $
  */
 
 /*
@@ -51,6 +51,7 @@
 #include <queue.h>
 #include "time_event.h"
 #include "winfo.h"
+#include "target_ipi.h"
 
 /*
  *  トレースログマクロのデフォルト定義
@@ -151,7 +152,7 @@ typedef struct mutex_control_block MTXCB;
  */
 typedef struct task_initialization_block {
 	ATR			tskatr;			/* タスク属性 */
-	intptr_t	exinf;			/* タスクの拡張情報 */
+	EXINF		exinf;			/* タスクの拡張情報 */
 	TASK		task;			/* タスクの起動番地 */
 	uint_t		ipriority;		/* タスクの起動時優先度（内部表現） */
 
@@ -189,7 +190,7 @@ typedef struct task_initialization_block {
  *  ・実行可能状態，待ち状態，強制待ち状態，二重待ち状態で有効：
  *  		tskctxb
  */
-struct task_control_block {
+typedef struct task_control_block {
 	QUEUE			task_queue;		/* タスクキュー */
 	const TINIB		*p_tinib;		/* 初期化ブロックへのポインタ */
 
@@ -256,7 +257,7 @@ struct task_control_block {
 	} winfo;
 	WOBJCB		*p_wobjcb;			/* 待ちオブジェクトの管理ブロック */
 	WINFO_OBJ	winfo_obj;			/* オブジェクト毎の待ち情報ブロック */
-};
+} TCB;
 
 /*
  *  指定した優先度に対応するビットマップ中でのビット位置
@@ -322,16 +323,26 @@ extern void	initialize_task(PCB *p_my_pcb);
 extern TCB	*search_schedtsk(PCB *p_pcb);
 
 /*
- *  実行すべきタスクの更新
+ *  実行すべきタスクの更新とディスパッチの要求
  *
- *  カーネルドメイン，実行中のタイムウィンドウを割り当てられているユー
- *  ザドメイン，アイドルドメインのそれぞれの中で実行すべきタスクの中か
- *  ら，システム全体で実行すべきタスクを選択する．
- *
- *  その結果，他プロセッサでのタスクディスパッチが必要になる場合には，
- *  他プロセッサに割込みをかけてディスパッチを要求する．
+ *  実行すべきタスクを更新し，その結果，他プロセッサでのタスクディスパッ
+ *  チが必要になる場合には，他プロセッサに割込みをかけてディスパッチを
+ *  要求する．
  */
-extern void update_schedtsk(PCB *p_my_pcb, PCB *p_pcb, TCB* p_new_schedtsk);
+Inline void
+update_schedtsk_dsp(PCB *p_my_pcb, PCB *p_pcb, TCB *p_new_schedtsk)
+{
+	TCB		*p_prev_schedtsk;
+
+	if (p_pcb->dspflg) {
+		p_prev_schedtsk = p_pcb->p_schedtsk;
+		memory_barrier();
+		p_pcb->p_schedtsk = p_new_schedtsk;
+		if ((p_pcb != p_my_pcb) && (p_prev_schedtsk != p_pcb->p_schedtsk)) {
+			request_dispatch_prc(p_pcb->prcid);
+		}
+	}
+}
 
 /*
  *  実行できる状態への遷移
@@ -339,7 +350,7 @@ extern void update_schedtsk(PCB *p_my_pcb, PCB *p_pcb, TCB* p_new_schedtsk);
  *  p_tcbで指定されるタスクをレディキューに挿入する．また，必要な場合
  *  には，実行すべきタスクを更新する．
  */
-extern void	make_runnable(PCB *p_my_pcb, TCB *p_tcb, PCB *p_pcb);
+extern void	make_runnable(PCB *p_my_pcb, TCB *p_tcb);
 
 /*
  *  実行できる状態から他の状態への遷移
@@ -348,7 +359,7 @@ extern void	make_runnable(PCB *p_my_pcb, TCB *p_tcb, PCB *p_pcb);
  *  タスクが実行すべきタスクであった場合には，実行すべきタスクを更新す
  *  る．
  */
-extern void	make_non_runnable(PCB *p_my_pcb, TCB *p_tcb, PCB *p_pcb);
+extern void	make_non_runnable(PCB *p_my_pcb, TCB *p_tcb);
 
 /*
  *  タスクディスパッチ可能状態への遷移
@@ -364,7 +375,7 @@ set_dspflg(PCB *p_my_pcb)
 	 */
 	t_set_ipm(TIPM_ENAALL);
 	p_my_pcb->dspflg = true;
-	update_schedtsk(p_my_pcb, p_my_pcb, search_schedtsk(p_my_pcb));
+	p_my_pcb->p_schedtsk = search_schedtsk(p_my_pcb);
 }
 
 /*
@@ -381,7 +392,7 @@ extern void	make_dormant(TCB *p_tcb);
  *
  *  p_tcbで指定されるタスクの状態を休止状態から実行できる状態とする．
  */
-extern void	make_active(PCB *p_my_pcb, TCB *p_tcb, PCB *p_pcb);
+extern void	make_active(PCB *p_my_pcb, TCB *p_tcb);
 
 /*
  *  タスクの優先度の変更
@@ -393,7 +404,7 @@ extern void	make_active(PCB *p_my_pcb, TCB *p_tcb, PCB *p_pcb);
  *  優先度が同じタスクの中で，mtxmodeがfalseの時は最低，mtxmodeがtrue
  *  の時は最高とする．
  */
-extern void	change_priority(PCB *p_my_pcb, TCB *p_tcb, PCB *p_pcb,
+extern void	change_priority(PCB *p_my_pcb, TCB *p_tcb,
 									uint_t newpri, bool_t mtxmode);
 
 /*
@@ -430,7 +441,7 @@ extern bool_t task_terminate(PCB *p_my_pcb, TCB *p_tcb);
 /*
  *  自タスクのマイグレート
  */
-extern void migrate_self(PCB *p_my_pcb, TCB *p_selftsk, PCB *p_new_pcb);
+extern void migrate_self(PCB *p_my_pcb, TCB *p_selftsk);
 
 /*
  *  自タスクのマイグレートと起動

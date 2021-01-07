@@ -1,8 +1,11 @@
 /*
- *  TOPPERS Software
- *      Toyohashi Open Platform for Embedded Real-Time Systems
+ *  TOPPERS/FMP Kernel
+ *      Toyohashi Open Platform for Embedded Real-Time Systems/
+ *      Flexible MultiProcessor Kernel
  * 
- *  Copyright (C) 2007-2014 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2000-2003 by Embedded and Real-Time Systems Laboratory
+ *                              Toyohashi Univ. of Technology, JAPAN
+ *  Copyright (C) 2005-2020 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  * 
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -34,43 +37,69 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: test_mutex4.h 263 2021-01-08 06:08:59Z ertl-honda $
+ *  $Id: tmevt.h 265 2021-01-08 06:17:00Z ertl-honda $
  */
-
-/* 
- *		ミューテックスのテスト(4)
- */
-
-#include <kernel.h>
 
 /*
- *  ターゲット依存の定義
+ *		タイムイベントブロックの定義
+ *
+ *  このインクルードファイルは，pcb.hのみでインクルードされる．
  */
-#include "target_test.h"
+
+#ifndef TOPPERS_TMEVT_H
+#define TOPPERS_TMEVT_H
 
 /*
- *  優先度の定義
+ *  イベント時刻のデータ型の定義［ASPD1001］
+ *
+ *  タイムイベントヒープに登録するタイムイベントの発生時刻を表現するた
+ *  めのデータ型．オーバヘッド低減のために，32ビットで扱う．
  */
-#define HIGH_PRIORITY	9		/* 高優先度 */
-#define MID_PRIORITY	10		/* 中優先度 */
-#define LOW_PRIORITY	11		/* 低優先度 */
+typedef uint32_t	EVTTIM;
 
 /*
- *  ターゲットに依存する可能性のある定数の定義
+ *  タイムイベントヒープ中のノードのデータ型の前方参照
  */
-#ifndef STACK_SIZE
-#define	STACK_SIZE		4096		/* タスクのスタックサイズ */
-#endif /* STACK_SIZE */
+typedef union time_event_node TMEVTN;
 
 /*
- *  関数のプロトタイプ宣言
+ *  タイムイベントブロックのデータ型の定義
  */
-#ifndef TOPPERS_MACRO_ONLY
+typedef void	(*CBACK)(PCB *, void *);	/* コールバック関数の型 */
 
-extern void	task1(EXINF exinf);
-extern void	task2(EXINF exinf);
-extern void	task3(EXINF exinf);
-extern void	task4(EXINF exinf);
-extern void	task5(EXINF exinf);
+typedef struct time_event_block {
+	EVTTIM	evttim;			/* タイムイベントの発生時刻 */
+	TMEVTN	*p_tmevtn;		/* タイムイベントヒープ中での位置 */
+	CBACK	callback;		/* コールバック関数 */
+	void	*arg;			/* コールバック関数へ渡す引数 */
+} TMEVTB;
 
-#endif /* TOPPERS_MACRO_ONLY */
+/*
+ *  タイムイベントヒープ中のノードのデータ型の定義
+ *
+ *  タイムイベントヒープの先頭のノード（*p_tmevt_heap）に，最後の使用領
+ *  域を指すポインタ（p_last）を格納し，それ以降をタイムイベントヒープ
+ *  として使用する．(p_tmevt_heap->p_last - p_tmevt_heap) が，タイムイ
+ *  ベントヒープに登録されているタイムイベントの数となる．
+ */
+typedef union time_event_node {
+	TMEVTB	*p_tmevtb;		/* 対応するタイムイベントブロック */
+	TMEVTN	*p_last;		/* タイムイベントヒープの最後の使用領域 */
+} TMEVTN;
+
+/*
+ *  タイムイベントコントロールブロック
+ */
+typedef struct time_event_control_block{
+	/*
+	 *  高分解能タイマ割込みの処理中であることを示すフラグ［ASPD1032］
+	 */
+	bool_t	in_signal_time;
+
+	/*
+	 *  タイムイベントヒープへのポインタ
+	 */
+	TMEVTN  *p_tmevt_heap;
+} TEVTCB;
+
+#endif /* TOPPERS_TMEVT_H */

@@ -5,7 +5,7 @@
  * 
  *  Copyright (C) 2000-2003 by Embedded and Real-Time Systems Laboratory
  *                              Toyohashi Univ. of Technology, JAPAN
- *  Copyright (C) 2005-2019 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2005-2021 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  * 
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: check.h 207 2020-01-30 09:31:28Z ertl-honda $
+ *  $Id: check.h 263 2021-01-08 06:08:59Z ertl-honda $
  */
 
 /*
@@ -146,34 +146,6 @@ check_unl_mystate(TCB **pp_selftsk, bool_t *p_context)
 /*
  *  呼出しコンテキストとCPUロック状態のチェック（E_CTX）
  */
-#ifndef OMIT_CHECK_TSKCTX_UNL_MYSTATE
-
-Inline bool_t
-check_tskctx_unl_mystate(TCB **pp_selftsk)
-{
-	bool_t	context;
-	PCB		*p_my_pcb;
-	SIL_PRE_LOC;
-
-	SIL_LOC_INT();
-	p_my_pcb = get_my_pcb();
-	context = sense_context(p_my_pcb);
-	*pp_selftsk = p_my_pcb->p_runtsk;
-	SIL_UNL_INT();
-	return(context || sense_lock());
-}
-#endif /* OMIT_CHECK_TSKCTX_UNL_MYSTATE */
-
-#define CHECK_TSKCTX_UNL_MYSTATE(pp_selftsk) do {			\
-	if (check_tskctx_unl_mystate(pp_selftsk)) {				\
-		ercd = E_CTX;										\
-		goto error_exit;									\
-	}														\
-} while (false)
-
-/*
- *  呼出しコンテキストとCPUロック状態のチェック（E_CTX）
- */
 #ifndef OMIT_CHECK_TSKCTX_UNL
 
 Inline bool_t
@@ -192,6 +164,35 @@ check_tskctx_unl(void)
 
 #define CHECK_TSKCTX_UNL() do {								\
 	if (check_tskctx_unl()) {								\
+		ercd = E_CTX;										\
+		goto error_exit;									\
+	}														\
+} while (false)
+
+/*
+ *  呼出しコンテキストとCPUロック状態のチェック（E_CTX）
+ */
+#ifndef OMIT_CHECK_TSKCTX_UNL_MYSTATE
+
+Inline bool_t
+check_tskctx_unl_mystate(TCB **pp_selftsk)
+{
+	bool_t	context;
+	PCB		*p_my_pcb;
+	SIL_PRE_LOC;
+
+	SIL_LOC_INT();
+	p_my_pcb = get_my_pcb();
+	context = sense_context(p_my_pcb);
+	*pp_selftsk = p_my_pcb->p_runtsk;
+	SIL_UNL_INT();
+	return(context || sense_lock());
+}
+
+#endif /* OMIT_CHECK_TSKCTX_UNL_MYSTATE */
+
+#define CHECK_TSKCTX_UNL_MYSTATE(pp_selftsk) do {			\
+	if (check_tskctx_unl_mystate(pp_selftsk)) {				\
 		ercd = E_CTX;										\
 		goto error_exit;									\
 	}														\
@@ -220,6 +221,35 @@ check_dispatch(void)
 
 #define CHECK_DISPATCH() do {								\
 	if (check_dispatch()) {									\
+		ercd = E_CTX;										\
+		goto error_exit;									\
+	}														\
+} while (false)
+
+/*
+ *  ディスパッチ保留状態でないかのチェック（E_CTX）
+ */
+#ifndef OMIT_CHECK_DISPATCH_MYSTATE
+
+Inline bool_t
+check_dispatch_mystate(TCB **pp_selftsk)
+{
+	bool_t	state;
+	PCB		*p_my_pcb;
+	SIL_PRE_LOC;
+
+	SIL_LOC_INT();
+	p_my_pcb = get_my_pcb();
+	state = (sense_context(p_my_pcb) || !(p_my_pcb->dspflg));
+	*pp_selftsk = p_my_pcb->p_runtsk;
+	SIL_UNL_INT();
+	return(state || sense_lock());
+}
+
+#endif /* OMIT_CHECK_DISPATCH_MYSTATE */
+
+#define CHECK_DISPATCH_MYSTATE(pp_selftsk) do {	\
+	if (check_dispatch_mystate(pp_selftsk)) {	\
 		ercd = E_CTX;										\
 		goto error_exit;									\
 	}														\
@@ -296,5 +326,43 @@ check_dispatch(void)
 		goto error_exit;									\
 	}														\
 } while (false)
+
+/*
+ *  ディスパッチ禁止状態のチェック
+ */
+#ifndef OMIT_CHECK_DISDSP
+
+Inline bool_t
+check_disdsp(void)
+{
+	bool_t	disdsp;
+	SIL_PRE_LOC;
+
+	SIL_LOC_INT();
+	disdsp = !(get_my_pcb()->enadsp);
+	SIL_UNL_INT();
+	return(disdsp);
+}
+
+#endif /* OMIT_CHECK_DISDSP */
+
+/*
+ *  自タスクのTCBへのポインタの取得
+ */
+#ifndef OMIT_GET_P_SELFTSK
+
+Inline TCB *
+get_p_selftsk(void)
+{
+	TCB		*p_selftsk;
+	SIL_PRE_LOC;
+
+	SIL_LOC_INT();
+	p_selftsk = get_my_pcb()->p_runtsk;
+	SIL_UNL_INT();
+	return(p_selftsk);
+}
+
+#endif /* OMIT_GET_P_SELFTSK */
 
 #endif /* TOPPERS_CHECK_H */

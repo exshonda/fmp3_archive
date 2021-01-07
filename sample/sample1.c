@@ -5,7 +5,7 @@
  * 
  *  Copyright (C) 2000-2003 by Embedded and Real-Time Systems Laboratory
  *                              Toyohashi Univ. of Technology, JAPAN
- *  Copyright (C) 2004-2020 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2004-2021 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  * 
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: sample1.c 207 2020-01-30 09:31:28Z ertl-honda $
+ *  $Id: sample1.c 263 2021-01-08 06:08:59Z ertl-honda $
  */
 
 /* 
@@ -294,9 +294,9 @@ const INTNO inthd_no[TNUM_PRCID] = {
  *  SERVERタスク
  *  他のタスクからの要求を受けて mig_tsk()/ter_tsk() を実行する． 
  */
-void server_task(intptr_t exinf)
+void server_task(EXINF exinf)
 {
-	intptr_t req;
+	EXINF req;
 	ID		tskid;
 	ID		prcid;
 	uint8_t syscall;
@@ -346,7 +346,7 @@ ulong_t	task_loop;		/* タスク内でのループ回数 */
  *  並行実行されるタスク
  */
 void
-task(intptr_t exinf)
+task(EXINF exinf)
 {
 	int_t		n = 0;
 	int_t		tskno = (int_t) (exinf & 0xffff);
@@ -421,13 +421,13 @@ task(intptr_t exinf)
 /*
  *  割込みサービスルーチン
  *
- *  DOM1のHIGH_PRIORITY，MID_PRIORITY，LOW_PRIORITY の各優先度のレディ
- *  キューを回転させる．
+ *  HIGH_PRIORITY，MID_PRIORITY，LOW_PRIORITY の各優先度のレディキュー
+ *  を回転させる．
  */
 #ifdef INTNO1
 
 void
-intno1_isr(intptr_t exinf)
+intno1_isr(EXINF exinf)
 {
 	intno1_clear();
 	syslog(LOG_NOTICE, "intno1_isr %d start!", exinf);
@@ -441,7 +441,7 @@ intno1_isr(intptr_t exinf)
 #ifdef INTNO2
 
 void
-intno2_isr(intptr_t exinf)
+intno2_isr(EXINF exinf)
 {
 	intno2_clear();
 	syslog(LOG_NOTICE, "intno2_isr %d start!", exinf);
@@ -455,7 +455,7 @@ intno2_isr(intptr_t exinf)
 #ifdef INTNO3
 
 void 
-intno3_isr(intptr_t exinf)
+intno3_isr(EXINF exinf)
 {
 	intno3_clear();
 	syslog(LOG_NOTICE, "intno3_isr %d start!", exinf);
@@ -469,7 +469,7 @@ intno3_isr(intptr_t exinf)
 #ifdef INTNO4
 
 void 
-intno4_isr(intptr_t exinf)
+intno4_isr(EXINF exinf)
 {
 	intno4_clear();
 	syslog(LOG_NOTICE, "intno4_isr %d start!", exinf);
@@ -548,7 +548,7 @@ cpuexc_handler(void *p_excinf)
  *  を回転させる．
  */
 void
-cyclic_handler(intptr_t exinf)
+cyclic_handler(EXINF exinf)
 {
 	ID	prcid = (ID) exinf;
 
@@ -565,7 +565,7 @@ cyclic_handler(intptr_t exinf)
  *  を回転させる．
  */
 void
-alarm_handler(intptr_t exinf)
+alarm_handler(EXINF exinf)
 {
 	ID	prcid = (ID) exinf;
 
@@ -579,7 +579,7 @@ alarm_handler(intptr_t exinf)
  *  例外処理タスク
  */
 void
-exc_task(intptr_t exinf)
+exc_task(EXINF exinf)
 {
 	ID	prcid;
 
@@ -614,7 +614,7 @@ static uint_t counter;
  *  グローバル初期化ルーチン
  */
 void
-global_inirtn(intptr_t exinf)
+global_inirtn(EXINF exinf)
 {
 	counter = 1;
 }
@@ -623,7 +623,7 @@ global_inirtn(intptr_t exinf)
  *  グローバル終了ルーチン
  */
 void
-global_terrtn(intptr_t exinf)
+global_terrtn(EXINF exinf)
 {
 	syslog(LOG_EMERG, "global_terrtn exinf = %d, counter = %d", exinf, counter++);
 }
@@ -632,7 +632,7 @@ global_terrtn(intptr_t exinf)
  *  ローカル初期化ルーチン
  */
 void
-local_inirtn(intptr_t exinf)
+local_inirtn(EXINF exinf)
 {
 	syslog(LOG_NOTICE, "local_inirtn exinf = %d, counter = %d", exinf, counter++);
 }
@@ -641,7 +641,7 @@ local_inirtn(intptr_t exinf)
  *  ローカル終了ルーチン
  */
 void
-local_terrtn(intptr_t exinf)
+local_terrtn(EXINF exinf)
 {
 	syslog(LOG_NOTICE, "local_terrtn exinf = %d, counter = %d", exinf, counter++);
 }
@@ -650,7 +650,7 @@ local_terrtn(intptr_t exinf)
  *  メインタスク
  */
 void 
-main_task(intptr_t exinf)
+main_task(EXINF exinf)
 {
 	ER_UINT		ercd;
 	PRI			tskpri;
@@ -698,9 +698,9 @@ main_task(intptr_t exinf)
  	 *  ループ回数の設定
 	 *
 	 *  並行実行されるタスク内でのループの回数（task_loop）は，ループ
-	 *  の実行時間が約0.2秒になるように設定する．この設定のために，
+	 *  の実行時間が約0.4秒になるように設定する．この設定のために，
 	 *  LOOP_REF回のループの実行時間を，その前後でget_timを呼ぶことで
-	 *  測定し，その測定結果から空ループの実行時間が0.2秒になるループ
+	 *  測定し，その測定結果から空ループの実行時間が0.4秒になるループ
 	 *  回数を求め，task_loopに設定する．
 	 *
 	 *  LOOP_REFは，デフォルトでは1,000,000に設定しているが，想定した
@@ -733,7 +733,7 @@ main_task(intptr_t exinf)
 	SVC_PERROR(get_tim(&stime1));
 	consume_time(LOOP_REF);
 	SVC_PERROR(get_tim(&stime2));
-	task_loop = LOOP_REF * 200LU / (ulong_t)(stime2 - stime1) * 1000LU;
+	task_loop = LOOP_REF * 400LU / (ulong_t)(stime2 - stime1) * 1000LU;
 
 #endif /* TASK_LOOP */
 

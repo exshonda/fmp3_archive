@@ -37,12 +37,17 @@
 #   アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
 #   の責任を負わない．
 # 
-#   $Id: kernel.trb 207 2020-01-30 09:31:28Z ertl-honda $
+#   $Id: kernel.trb 263 2021-01-08 06:08:59Z ertl-honda $
 # 
 
 #
 #		コンフィギュレータのパス2の生成スクリプト
 #
+
+#
+#  内部で使用するID
+#
+$TCLS_NONE = 0			# クラス共通
 
 #
 #  タイムスタンプファイルの指定
@@ -60,11 +65,6 @@ $kernelCfgH.add(<<EOS)
 EOS
 
 #
-#  内部で使用するID
-#
-$TCLS_NONE = 0			# クラス共通
-
-#
 #  kernel_cfg.cの先頭部分の生成
 #
 $kernelCfgC = GenFile.new("kernel_cfg.c")
@@ -79,7 +79,7 @@ $kernelCfgC.add(<<EOS)
 EOS
 
 #
-#  インクルードディレクティブ（#include）
+#  インクルードディレクティブ（#include）の生成
 #
 $kernelCfgC.comment_header("Include Directives")
 GenerateIncludes($kernelCfgC)
@@ -178,7 +178,7 @@ class KernelObject
         prepare(key, params)
       end
 
-      # オブジェクト全体に対して必要な処理（オプション）
+      # オブジェクト全体に対して必要なメモリ領域の生成（オプション）
       if respond_to?(:generateData)
         generateData()
       end
@@ -257,38 +257,35 @@ def generateNotifyHandler(key, params, objid)
   if (numpar == 2 && par2.nil?) || (nfymode2 != 0 && epar1.nil?) \
 								|| (nfymode2 == $TENFY_SETFLG && epar2.nil?)
     # パラメータが足りない場合
-    error_api(params, "too few parameters for nfymode `#{nfymode}' " \
-											"in %apiname of %#{objid}")
+    error_sapi(nil, params,
+					"too few parameters for nfymode `#{nfymode}'", objid)
   elsif (nfymode2 == 0 && !epar1.nil?) \
 					|| (nfymode2 != $TENFY_SETFLG && !epar2.nil?)
     # パラメータが多すぎる場合
-    error_api(params, "too many parameters for nfymode `#{nfymode}' " \
-											"in %apiname of %#{objid}")
+    error_sapi(nil, params,
+					"too many parameters for nfymode `#{nfymode}'", objid)
   elsif nfymode1 == $TNFY_HANDLER && nfymode2 == 0		#［NGKI3721］
-    # タイムイベントハンドラの呼出し
-    funcname = "(NFYHDR)(#{par2})"
+    # タイムイベントハンドラの呼出し（通知ハンドラ名を上書き）
+    params[:nfyhdr] = "(NFYHDR)(#{par2})"
   else
-    # 通知ハンドラの関数名
-    funcname = "_kernel_nfyhdr_#{params[objid]}"
-
     # エラー通知のための変数のアドレスとオブジェクトIDを格納する
     # 変数の生成（エラーチェックのために必要）
     if nfymode2 == $TENFY_SETVAR || nfymode2 == $TENFY_INCVAR
-      $kernelCfgC.add2("intptr_t *const #{funcname}_p_evar =" \
+      $kernelCfgC.add2("intptr_t *const #{params[:nfyhdr]}_p_evar =" \
 											" (intptr_t *)(#{epar1});")
     elsif nfymode2 == $TENFY_ACTTSK || nfymode2 == $TENFY_WUPTSK
-      $kernelCfgC.add2("const ID #{funcname}_etskid = #{epar1};")
+      $kernelCfgC.add2("const ID #{params[:nfyhdr]}_etskid = #{epar1};")
     elsif nfymode2 == $TENFY_SIGSEM
-      $kernelCfgC.add2("const ID #{funcname}_esemid = #{epar1};")
+      $kernelCfgC.add2("const ID #{params[:nfyhdr]}_esemid = #{epar1};")
     elsif nfymode2 == $TENFY_SETFLG
-      $kernelCfgC.add2("const ID #{funcname}_eflgid = #{epar1};")
+      $kernelCfgC.add2("const ID #{params[:nfyhdr]}_eflgid = #{epar1};")
     elsif nfymode2 == $TENFY_SNDDTQ
-      $kernelCfgC.add2("const ID #{funcname}_edtqid = #{epar1};")
+      $kernelCfgC.add2("const ID #{params[:nfyhdr]}_edtqid = #{epar1};")
     end
 
     # 関数の先頭部分の生成
     $kernelCfgC.add("static void")
-    $kernelCfgC.add("#{funcname}(intptr_t exinf)")
+    $kernelCfgC.add("#{params[:nfyhdr]}(EXINF exinf)")
     $kernelCfgC.add("{")
 
     if nfymode2 == 0
@@ -326,7 +323,7 @@ def generateNotifyHandler(key, params, objid)
       $kernelCfgC.add("\t#{errorCode}psnd_dtq(((ID) exinf), #{par2});")
     else
       # nfymodeの値が正しくない場合（E_PAR）［NGKI3730］
-      error_illegal_id("E_PAR", params, :nfymode, objid)
+      error_sapi("E_PAR", params, "illegal %%nfymode", objid)
     end
 
     if nfymode2 != 0
@@ -335,31 +332,32 @@ def generateNotifyHandler(key, params, objid)
 
       if nfymode2 == $TENFY_SETVAR
         # 変数の設定
-        $kernelCfgC.add("\t\t*#{funcname}_p_evar = (intptr_t) ercd;")
+        $kernelCfgC.add("\t\t*#{params[:nfyhdr]}_p_evar = (intptr_t) ercd;")
       elsif nfymode2 == $TENFY_INCVAR
         # 変数のインクリメント
         $kernelCfgC.add("\t\t(void) loc_cpu();")
-        $kernelCfgC.add("\t\t*#{funcname}_p_evar += 1;")
+        $kernelCfgC.add("\t\t*#{params[:nfyhdr]}_p_evar += 1;")
         $kernelCfgC.add("\t\t(void) unl_cpu();")
       elsif nfymode2 == $TENFY_ACTTSK
         # タスクの起動
-        $kernelCfgC.add("\t\t(void) act_tsk(#{funcname}_etskid);")
+        $kernelCfgC.add("\t\t(void) act_tsk(#{params[:nfyhdr]}_etskid);")
       elsif nfymode2 == $TENFY_WUPTSK
         # タスクの起床
-        $kernelCfgC.add("\t\t(void) wup_tsk(#{funcname}_etskid);")
+        $kernelCfgC.add("\t\t(void) wup_tsk(#{params[:nfyhdr]}_etskid);")
       elsif nfymode2 == $TENFY_SIGSEM
         # セマフォの返却
-        $kernelCfgC.add("\t\t(void) sig_sem(#{funcname}_esemid);")
+        $kernelCfgC.add("\t\t(void) sig_sem(#{params[:nfyhdr]}_esemid);")
       elsif nfymode2 == $TENFY_SETFLG
         # イベントフラグのセット
-        $kernelCfgC.add("\t\t(void) set_flg(#{funcname}_eflgid, #{epar2});")
+        $kernelCfgC.add("\t\t(void) set_flg(#{params[:nfyhdr]}_eflgid, " \
+															"#{epar2});")
       elsif nfymode2 == $TENFY_SNDDTQ
         # データキューへの送信
-        $kernelCfgC.add("\t\t(void) psnd_dtq(#{funcname}_edtqid," \
+        $kernelCfgC.add("\t\t(void) psnd_dtq(#{params[:nfyhdr]}_edtqid," \
 													" (intptr_t) ercd);")
       else
         # nfymodeの値が正しくない場合（E_PAR）［NGKI3730］
-        error_illegal_id("E_PAR", params, :nfymode, objid)
+        error_sapi("E_PAR", params, "illegal %%nfymode", objid)
       end
       $kernelCfgC.add("\t}")
     end
@@ -367,7 +365,6 @@ def generateNotifyHandler(key, params, objid)
     # 関数の末尾部分の生成
     $kernelCfgC.add2("}")
   end
-  return(funcname)
 end
 
 #
@@ -404,9 +401,11 @@ $prcClass = {}
 end
 
 #
-#  プロセッサ管理ブロック（PCB）
+#  カーネル動作状態フラグとプロセッサ管理ブロック（PCB）
 #
 $kernelCfgC.comment_header("Processor Management Functions")
+
+$kernelCfgC.add2("bool_t\t_kernel_kerflg_table[TNUM_PRCID];")
 
 1.upto($TNUM_PRCID) do |prcid|
   DefineVariableSection($kernelCfgC, "static PCB _kernel_pcb_prc#{prcid}", \
@@ -432,12 +431,12 @@ IncludeTrb("kernel/eventflag.trb")
 IncludeTrb("kernel/dataqueue.trb")
 IncludeTrb("kernel/pridataq.trb")
 IncludeTrb("kernel/mutex.trb")
+IncludeTrb("kernel/spin_lock.trb")
 IncludeTrb("kernel/mempfix.trb")
 IncludeTrb("kernel/cyclic.trb")
 IncludeTrb("kernel/alarm.trb")
 IncludeTrb("kernel/interrupt.trb")
 IncludeTrb("kernel/exception.trb")
-IncludeTrb("kernel/spin_lock.trb")
 
 #
 #  非タスクコンテキスト用のスタック領域
@@ -689,7 +688,7 @@ end
     $iniData[prcid].each_with_index do |(_, params), index|
       $kernelCfgC.add(",") if index > 0
       $kernelCfgC.append("\t{ (INIRTN)(#{params[:inirtn]}), " \
-								"(intptr_t)(#{params[:exinf]}) }")
+								"(EXINF)(#{params[:exinf]}) }")
     end
     $kernelCfgC.add
     $kernelCfgC.add2("};")
@@ -763,7 +762,7 @@ end
     $terData[prcid].reverse_each.each_with_index do |(_, params), index|
       $kernelCfgC.add(",") if index > 0
       $kernelCfgC.append("\t{ (TERRTN)(#{params[:terrtn]}), " \
-								"(intptr_t)(#{params[:exinf]}) }")
+								"(EXINF)(#{params[:exinf]}) }")
     end
     $kernelCfgC.add
     $kernelCfgC.add2("};")

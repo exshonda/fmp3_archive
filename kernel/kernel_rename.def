@@ -7,7 +7,7 @@ ext_ker_handler
 # task.c
 initialize_task
 search_schedtsk
-update_schedtsk
+update_schedtsk_dsp
 make_runnable
 make_non_runnable
 make_dormant
@@ -109,6 +109,7 @@ initialize_interrupt
 initialize_exception
 
 # kernel_cfg.c
+kerflg_table
 p_pcb_table
 initialize_object
 inirtnbb_table

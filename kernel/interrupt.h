@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: interrupt.h 207 2020-01-30 09:31:28Z ertl-honda $
+ *  $Id: interrupt.h 263 2021-01-08 06:08:59Z ertl-honda $
  */
 
 /*
@@ -58,8 +58,7 @@ typedef struct interrupt_handler_initialization_block {
 	INHNO		inhno;			/* 割込みハンドラ番号 */
 	ATR			inhatr;			/* 割込みハンドラ属性 */
 	FP			int_entry;		/* 割込みハンドラの出入口処理の番地 */
-	ID			iprcid;		/* 割込みハンドラの初期割付けプロセッサ */
-	uint_t		affinity;	/* 割込みハンドラの割付け可能プロセッサ */
+	ID			iprcid;			/* 割込みハンドラの初期割付けプロセッサ */
 } INHINIB;
 
 /*

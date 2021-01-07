@@ -5,7 +5,7 @@
  * 
  *  Copyright (C) 2000-2003 by Embedded and Real-Time Systems Laboratory
  *                              Toyohashi Univ. of Technology, JAPAN
- *  Copyright (C) 2005-2020 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2005-2021 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  * 
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: cyclic.c 207 2020-01-30 09:31:28Z ertl-honda $
+ *  $Id: cyclic.c 263 2021-01-08 06:08:59Z ertl-honda $
  */
 
 /*
@@ -312,7 +312,7 @@ ref_cyc(ID cycid, T_RCYC *pk_rcyc)
 #ifdef TOPPERS_cyccal
 
 void
-call_cyclic(CYCCB *p_cyccb)
+call_cyclic(PCB *p_my_pcb, CYCCB *p_cyccb)
 {
 	/*
 	 *  次回の起動のためのタイムイベントを登録する［ASPD1037］．
@@ -334,8 +334,10 @@ call_cyclic(CYCCB *p_cyccb)
 	(*(p_cyccb->p_cycinib->nfyhdr))(p_cyccb->p_cycinib->exinf);
 	LOG_CYC_LEAVE(p_cyccb);
 
-	force_unlock_spin(get_my_pcb());
-	if (!sense_lock()) {
+	if (sense_lock()) {
+		force_unlock_spin(p_my_pcb);
+	}
+	else {
 		lock_cpu();
 	}
 	acquire_glock();

@@ -37,7 +37,7 @@
 #   アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
 #   の責任を負わない．
 # 
-#   $Id: task.trb 178 2019-10-08 13:55:00Z ertl-honda $
+#   $Id: task.trb 263 2021-01-08 06:08:59Z ertl-honda $
 # 
 
 #
@@ -105,7 +105,7 @@ class TaskObject < KernelObject
     else
       tskinictxb = "#{params[:tinib_stksz]}, #{params[:tinib_stk]}"
     end
-    return("(#{params[:tskatr]}), (intptr_t)(#{params[:exinf]}), " \
+    return("(#{params[:tskatr]}), (EXINF)(#{params[:exinf]}), " \
 			"(TASK)(#{params[:task]}), INT_PRIORITY(#{params[:itskpri]}), " \
 			"#{tskinictxb}, " \
 			"#{$clsData[params[:class]][:initPrc]}, " \

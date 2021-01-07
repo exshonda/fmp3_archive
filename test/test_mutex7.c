@@ -34,7 +34,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: test_mutex7.c 33 2018-07-30 03:21:03Z ertl-honda $
+ *  $Id: test_mutex7.c 263 2021-01-08 06:08:59Z ertl-honda $
  */
 
 /* 
@@ -292,7 +292,7 @@
 /* DO NOT DELETE THIS LINE -- gentest depends on it. */
 
 void
-task1(intptr_t exinf)
+task1(EXINF exinf)
 {
 	ER_UINT	ercd;
 	PRI		tskpri;
@@ -470,7 +470,7 @@ task1(intptr_t exinf)
 static uint_t	task2_count = 0;
 
 void
-task2(intptr_t exinf)
+task2(EXINF exinf)
 {
 	ER_UINT	ercd;
 
@@ -567,7 +567,7 @@ task2(intptr_t exinf)
 static uint_t	task3_count = 0;
 
 void
-task3(intptr_t exinf)
+task3(EXINF exinf)
 {
 	ER_UINT	ercd;
 	PRI		tskpri;
@@ -633,7 +633,7 @@ task3(intptr_t exinf)
 static uint_t	task4_count = 0;
 
 void
-task4(intptr_t exinf)
+task4(EXINF exinf)
 {
 	ER_UINT	ercd;
 	PRI		tskpri;

@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: semaphore.c 145 2019-03-10 15:27:01Z ertl-honda $
+ *  $Id: semaphore.c 263 2021-01-08 06:08:59Z ertl-honda $
  */
 
 /*
@@ -123,7 +123,7 @@ initialize_semaphore(PCB *p_my_pcb)
 	uint_t	i;
 	SEMCB	*p_semcb;
 
-	if (is_mprc(p_my_pcb)) {
+	if (p_my_pcb->prcid == TOPPERS_MASTER_PRCID) {
 		for (i = 0; i < tnum_sem; i++) {
 			p_semcb = p_semcb_table[i];
 			queue_initialize(&(p_semcb->wait_queue));
@@ -146,10 +146,12 @@ sig_sem(ID semid)
 	SEMCB	*p_semcb;
 	TCB		*p_tcb;
 	ER		ercd;
+	TCB		*p_selftsk;
+	bool_t	context;
 	PCB		*p_my_pcb;
 
 	LOG_SIG_SEM_ENTER(semid);
-	CHECK_UNL();
+	CHECK_UNL_MYSTATE(&p_selftsk, &context);
 	CHECK_ID(VALID_SEMID(semid));
 	p_semcb = get_semcb(semid);
 
@@ -159,8 +161,8 @@ sig_sem(ID semid)
 	if (!queue_empty(&(p_semcb->wait_queue))) {
 		p_tcb = (TCB *) queue_delete_next(&(p_semcb->wait_queue));
 		wait_complete(p_my_pcb, p_tcb);
-		if (p_my_pcb->p_runtsk != p_my_pcb->p_schedtsk) {
-			if (!sense_context(p_my_pcb)) {
+		if (p_selftsk != p_my_pcb->p_schedtsk) {
+			if (!context) {
 				release_glock();
 				dispatch();
 				ercd = E_OK;
@@ -204,14 +206,13 @@ wai_sem(ID semid)
 	PCB		*p_my_pcb;
 
 	LOG_WAI_SEM_ENTER(semid);
-	CHECK_DISPATCH();
+	CHECK_DISPATCH_MYSTATE(&p_selftsk);
 	CHECK_ID(VALID_SEMID(semid));
 	p_semcb = get_semcb(semid);
 
 	lock_cpu_dsp();
 	acquire_glock();
 	p_my_pcb = get_my_pcb();
-	p_selftsk = p_my_pcb->p_runtsk;
 	if (p_selftsk->raster) {
 		ercd = E_RASTER;
 	}
@@ -286,7 +287,7 @@ twai_sem(ID semid, TMO tmout)
 	PCB		*p_my_pcb;
 
 	LOG_TWAI_SEM_ENTER(semid, tmout);
-	CHECK_DISPATCH();
+	CHECK_DISPATCH_MYSTATE(&p_selftsk);
 	CHECK_ID(VALID_SEMID(semid));
 	CHECK_PAR(VALID_TMOUT(tmout));
 	p_semcb = get_semcb(semid);

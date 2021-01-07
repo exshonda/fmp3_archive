@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: eventflag.c 178 2019-10-08 13:55:00Z ertl-honda $
+ *  $Id: eventflag.c 263 2021-01-08 06:08:59Z ertl-honda $
  */
 
 /*
@@ -131,7 +131,7 @@ initialize_eventflag(PCB *p_my_pcb)
 	uint_t	i;
 	FLGCB	*p_flgcb;
 
-	if (is_mprc(p_my_pcb)) {
+	if (p_my_pcb->prcid == TOPPERS_MASTER_PRCID) {
 		for (i = 0; i < tnum_flg; i++) {
 			p_flgcb = p_flgcb_table[i];
 			queue_initialize(&(p_flgcb->wait_queue));
@@ -177,10 +177,12 @@ set_flg(ID flgid, FLGPTN setptn)
 	TCB			*p_tcb;
 	WINFO_FLG	*p_winfo_flg;
 	ER			ercd;
+	TCB			*p_selftsk;
+	bool_t		context;
 	PCB			*p_my_pcb;
 
 	LOG_SET_FLG_ENTER(flgid, setptn);
-	CHECK_UNL();
+	CHECK_UNL_MYSTATE(&p_selftsk, &context);
 	CHECK_ID(VALID_FLGID(flgid));
 	p_flgcb = get_flgcb(flgid);
 
@@ -202,8 +204,8 @@ set_flg(ID flgid, FLGPTN setptn)
 			}
 		}
 	}
-	if (p_my_pcb->p_runtsk != p_my_pcb->p_schedtsk) {
-		if (!sense_context(p_my_pcb)) {
+	if (p_selftsk != p_my_pcb->p_schedtsk) {
+		if (!context) {
 			release_glock();
 			dispatch();
 			ercd = E_OK;
@@ -270,7 +272,7 @@ wai_flg(ID flgid, FLGPTN waiptn, MODE wfmode, FLGPTN *p_flgptn)
 	PCB			*p_my_pcb;
 
 	LOG_WAI_FLG_ENTER(flgid, waiptn, wfmode, p_flgptn);
-	CHECK_DISPATCH();
+	CHECK_DISPATCH_MYSTATE(&p_selftsk);
 	CHECK_ID(VALID_FLGID(flgid));
 	CHECK_PAR(waiptn != 0U);
 	CHECK_PAR(wfmode == TWF_ORW || wfmode == TWF_ANDW);
@@ -279,7 +281,6 @@ wai_flg(ID flgid, FLGPTN waiptn, MODE wfmode, FLGPTN *p_flgptn)
 	lock_cpu_dsp();
 	acquire_glock();
 	p_my_pcb = get_my_pcb();
-	p_selftsk = p_my_pcb->p_runtsk;
 	if (p_selftsk->raster) {
 		ercd = E_RASTER;
 	}
@@ -369,7 +370,7 @@ twai_flg(ID flgid, FLGPTN waiptn, MODE wfmode, FLGPTN *p_flgptn, TMO tmout)
 	PCB			*p_my_pcb;
 
 	LOG_TWAI_FLG_ENTER(flgid, waiptn, wfmode, p_flgptn, tmout);
-	CHECK_DISPATCH();
+	CHECK_DISPATCH_MYSTATE(&p_selftsk);
 	CHECK_ID(VALID_FLGID(flgid));
 	CHECK_PAR(waiptn != 0U);
 	CHECK_PAR(wfmode == TWF_ORW || wfmode == TWF_ANDW);
@@ -378,8 +379,7 @@ twai_flg(ID flgid, FLGPTN waiptn, MODE wfmode, FLGPTN *p_flgptn, TMO tmout)
 
 	lock_cpu_dsp();
 	acquire_glock();
-	p_my_pcb = get_my_pcb();
-	p_selftsk = p_my_pcb->p_runtsk;
+	p_my_pcb = get_my_pcb();	
 	if (p_selftsk->raster) {
 		ercd = E_RASTER;
 	}
@@ -429,9 +429,10 @@ ini_flg(ID flgid)
 	FLGCB	*p_flgcb;
 	ER		ercd;
 	PCB		*p_my_pcb;
+	TCB		*p_selftsk;
 
 	LOG_INI_FLG_ENTER(flgid);
-	CHECK_TSKCTX_UNL();
+	CHECK_TSKCTX_UNL_MYSTATE(&p_selftsk);
 	CHECK_ID(VALID_FLGID(flgid));
 	p_flgcb = get_flgcb(flgid);
 
@@ -440,7 +441,7 @@ ini_flg(ID flgid)
 	p_my_pcb = get_my_pcb();
 	init_wait_queue(p_my_pcb, &(p_flgcb->wait_queue));
 	p_flgcb->flgptn = p_flgcb->p_flginib->iflgptn;
-	if (p_my_pcb->p_runtsk != p_my_pcb->p_schedtsk) {
+	if (p_selftsk != p_my_pcb->p_schedtsk) {
 		release_glock();
 		dispatch();
 		ercd = E_OK;

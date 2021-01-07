@@ -34,7 +34,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: test_cpuexc1.c 33 2018-07-30 03:21:03Z ertl-honda $
+ *  $Id: test_cpuexc1.c 263 2021-01-08 06:08:59Z ertl-honda $
  */
 
 /* 
@@ -114,7 +114,7 @@
 volatile bool_t	alm1_flag = false;
 
 void
-task2(intptr_t exinf)
+task2(EXINF exinf)
 {
 	check_point(0);
 }
@@ -131,7 +131,7 @@ task2(intptr_t exinf)
 /* DO NOT DELETE THIS LINE -- gentest depends on it. */
 
 void
-alarm1_handler(intptr_t exinf)
+alarm1_handler(EXINF exinf)
 {
 	SIL_PRE_LOC;
 
@@ -169,7 +169,7 @@ cpuexc_handler(void *p_excinf)
 }
 
 void
-task1(intptr_t exinf)
+task1(EXINF exinf)
 {
 	ER_UINT	ercd;
 

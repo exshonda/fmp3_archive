@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: startup.c 207 2020-01-30 09:31:28Z ertl-honda $
+ *  $Id: startup.c 263 2021-01-08 06:08:59Z ertl-honda $
  */
 
 /*
@@ -177,7 +177,7 @@ sta_ker(void)
 	/*
 	 *  ジャイアントロックの初期化（マスタプロセッサのみ）
 	 */
-	if (is_mprc(p_my_pcb)) {
+	if (p_my_pcb->prcid == TOPPERS_MASTER_PRCID) {
 		initialize_glock();
 	}
 
@@ -186,7 +186,7 @@ sta_ker(void)
 	 */
 	barrier_sync(1);
 
-	if (is_mprc(p_my_pcb)) {
+	if (p_my_pcb->prcid == TOPPERS_MASTER_PRCID) {
 		call_inirtn(&(inirtnbb_table[0]));
 	}
 
@@ -215,7 +215,7 @@ sta_ker(void)
 	/*
 	 *  カーネル動作の開始
 	 */
-	p_my_pcb->kerflg = true;
+	kerflg_table[my_prcidx] = true;
 	LOG_KER_ENTER();
 	start_dispatch();
 	assert(0);
@@ -254,7 +254,7 @@ ext_ker(void)
 	 *  カーネル動作の終了
 	 */
 	LOG_KER_LEAVE();
-	p_my_pcb->kerflg = false;
+	kerflg_table[INDEX_PRC(p_my_pcb->prcid)] = false;
 
 	/*
 	 *  他のプロセッサへ終了処理を要求する
@@ -315,7 +315,7 @@ exit_kernel(PCB *p_my_pcb)
 
 	barrier_sync(6);
 
-	if (is_mprc(p_my_pcb)) {
+	if (p_my_pcb->prcid == TOPPERS_MASTER_PRCID) {
 		call_terrtn(&(terrtnbb_table[0]));
 	}
 
@@ -332,25 +332,69 @@ exit_kernel(PCB *p_my_pcb)
 
 /*
  *  ディスパッチハンドラ
+ *
+ *  非タスクコンテキストで実行されるため，他のプロセッサへマイグレート
+ *  することはなく，CPUロック状態にせずに自プロセッサのPCBにアクセスし
+ *  てよい．
  */
 #ifdef TOPPERS_dsphdr
+#ifndef OMIT_DISPATCH_HANDLER
 
 void
 dispatch_handler(void)
 {
+	assert(sense_context(get_my_pcb()));
+	assert(!sense_lock());
 }
 
+#endif /* OMIT_DISPATCH_HANDLER */
 #endif /* TOPPERS_dsphdr */
 
 /*
  *  カーネル終了ハンドラ
+ *
+ *  非タスクコンテキストで実行されるため，他のプロセッサへマイグレート
+ *  することはなく，CPUロック状態にせずに自プロセッサのPCBにアクセスし
+ *  てよい．
  */
 #ifdef TOPPERS_extkerhdr
 
 void
 ext_ker_handler(void)
 {
-	ext_ker();
+	PCB		*p_my_pcb = get_my_pcb();
+	SIL_PRE_LOC;
+
+	assert(sense_context(p_my_pcb));
+	assert(!sense_lock());
+
+	/*
+	 *  割込みロック状態に移行
+	 */
+	SIL_LOC_INT();
+
+	/*
+	 *  スピンロックを取得している場合は，スピンロックを解放する
+	 */
+	force_unlock_spin(p_my_pcb);
+
+	/*
+	 *  カーネル動作の終了
+	 */
+	LOG_KER_LEAVE();
+	kerflg_table[INDEX_PRC(p_my_pcb->prcid)] = false;
+
+	/*
+	 *  カーネルの終了処理の呼出し
+	 *
+	 *  非タスクコンテキストに切り換えて，exit_kernelを呼び出す．
+	 */
+	call_exit_kernel(p_my_pcb);
+
+	/*
+	 *  コンパイラの警告対策（ここへ来ることはないはず）
+	 */
+	SIL_UNL_INT();
 }
 
 #endif /* TOPPERS_extkerhdr */

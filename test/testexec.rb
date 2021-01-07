@@ -36,8 +36,38 @@
 #  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
 #  の責任を負わない．
 # 
-#  $Id: testexec.rb 207 2020-01-30 09:31:28Z ertl-honda $
+#  $Id: testexec.rb 263 2021-01-08 06:08:59Z ertl-honda $
 # 
+
+# 【実行方法】
+#	testexec <処理内容> <処理対象>
+#
+#	処理内容：
+#		デフォルト		buildとexec
+#		build			ビルドのみ
+#		exec			実行のみ
+#		clean			クリーン処理
+#
+#	処理対象：
+#		デフォルト		kernelとall
+#		kernel			デフォルトとディレクトリが作られているカーネル
+#		kernel<数字>	指定したビルドオプションのカーネル
+#		all				ディレクトリが作られているすべてのテストプログラム
+#		<テスト名>		指定したテストプログラム
+#
+# 【ターゲット毎のビルドオプション】
+#	ターゲット毎のビルドオプションを，TARGET_OPTIONSに作成する．異なる
+#	テスト用のビルドオプションを，各行に記述する．
+#
+#	各行（最初の行が0）に記述するビルドオプション：
+#		0		一般的なテストプログラム
+#		1		性能評価プログラム
+#		2		タイマドライバシミュレータを用いたテストプログラム
+#		3		FPUを使用するテストプログラム（ARM向け）
+#
+# 【ターゲット毎の実行方法】
+#	ターゲット上でテストプログラムを実行するための記述を，TARGET_RUNに
+#	作成する．
 
 Encoding.default_external = 'utf-8'
 require "pp"
@@ -63,14 +93,14 @@ TEST_SPEC = {
   "flg1"     => { SRC: "test_flg1" },
   "hrt1"     => { SRC: "test_hrt1" },
   "int1"     => { SRC: "test_int1" },
-  "mutex1"   => { SRC: "test_mutex1", CDL: "test_pf_bitmutex" },
-  "mutex2"   => { SRC: "test_mutex2", CDL: "test_pf_bitmutex" },
-  "mutex3"   => { SRC: "test_mutex3", CDL: "test_pf_bitmutex" },
-  "mutex4"   => { SRC: "test_mutex4", CDL: "test_pf_bitmutex" },
-  "mutex5"   => { SRC: "test_mutex5", CDL: "test_pf_bitmutex" },
-  "mutex6"   => { SRC: "test_mutex6", CDL: "test_pf_bitmutex" },
-  "mutex7"   => { SRC: "test_mutex7", CDL: "test_pf_bitmutex" },
-  "mutex8"   => { SRC: "test_mutex8", CDL: "test_pf_bitmutex" },
+  "mutex1"   => { SRC: "test_mutex1", CDL: "test_pf_bitkernel" },
+  "mutex2"   => { SRC: "test_mutex2", CDL: "test_pf_bitkernel" },
+  "mutex3"   => { SRC: "test_mutex3", CDL: "test_pf_bitkernel" },
+  "mutex4"   => { SRC: "test_mutex4", CDL: "test_pf_bitkernel" },
+  "mutex5"   => { SRC: "test_mutex5", CDL: "test_pf_bitkernel" },
+  "mutex6"   => { SRC: "test_mutex6", CDL: "test_pf_bitkernel" },
+  "mutex7"   => { SRC: "test_mutex7", CDL: "test_pf_bitkernel" },
+  "mutex8"   => { SRC: "test_mutex8", CDL: "test_pf_bitkernel" },
   "notify1"  => { SRC: "test_notify1" },
   "raster1"  => { SRC: "test_raster1", CDL: "test_pf_bitkernel" },
   "raster2"  => { SRC: "test_raster2" },
@@ -105,30 +135,37 @@ TEST_SPEC = {
   "subprio2" => { SRC: "test_subprio2" },
 
   # 性能評価プログラム
-  "perf0" => { CDL: "perf_pf", SYSLIB: "histogram" },
-  "perf1" => { CDL: "perf_pf", SYSLIB: "histogram" },
-  "perf2" => { CDL: "perf_pf", SYSLIB: "histogram" },
-  "perf3" => { CDL: "perf_pf", SYSLIB: "histogram" },
-  "perf4" => { CDL: "perf_pf", SYSLIB: "histogram" },
-  "perf5" => { CDL: "perf_pf", SYSLIB: "histogram" },
+  "perf0" => { TARGET: 1, CDL: "perf_pf", NK_DEFS: "-DHIST_INVALIDATE_CACHE" },
+  "perf1" => { TARGET: 1, CDL: "perf_pf", NK_DEFS: "-DHIST_INVALIDATE_CACHE" },
+  "perf2" => { TARGET: 1, CDL: "perf_pf", NK_DEFS: "-DHIST_INVALIDATE_CACHE" },
+  "perf3" => { TARGET: 1, CDL: "perf_pf", NK_DEFS: "-DHIST_INVALIDATE_CACHE" },
+  "perf4" => { TARGET: 1, CDL: "perf_pf", NK_DEFS: "-DHIST_INVALIDATE_CACHE" },
+  "perf5" => { TARGET: 1, CDL: "perf_pf", NK_DEFS: "-DHIST_INVALIDATE_CACHE" },
 
   # ARM向けテストプログラム
-  "arm_cpuexc" => { SRC: "arm_cpuexc", SRCDIR: "arch/arm_gcc/test" },
-  "arm_fpu1" => { TARGET: 2, SRC: "arm_fpu1", SRCDIR: "arch/arm_gcc/test" },
+  "arm_cpuexc1" => { SRC: "arm_cpuexc1", SRCDIR: "arch/arm_gcc/test" },
+  "arm_fpu1" => { TARGET: 3, SRC: "arm_fpu1", SRCDIR: "arch/arm_gcc/test" },
 }
 
 #
 #  カーネルライブラリの作成
 #
-def BuildKernel
-  if !Dir.exist?("KERNELLIB")
-    Dir.mkdir("KERNELLIB")
+def BuildKernel(target, mkdirFlag=false)
+  return unless $targetOptions.has_key?(target)
+
+  kernelDir = "KERNELLIB" + target.to_s
+  if !Dir.exist?(kernelDir)
+    if mkdirFlag
+      Dir.mkdir(kernelDir)
+    else
+      return
+    end
   end
 
-  Dir.chdir("KERNELLIB") do
-    puts("== building: KERNELLIB ==")
+  Dir.chdir(kernelDir) do
+    puts("== building: #{kernelDir} ==")
     configCommand = "ruby #{$usedSrcDir}/configure.rb"
-    configCommand += " #{$targetOptions[0]}"
+    configCommand += " #{$targetOptions[target]}"
     configCommand += " -f"
     puts(configCommand)
     system(configCommand)
@@ -136,6 +173,15 @@ def BuildKernel
     if File.exist?("Makefile.bak")
       File.delete("Makefile.bak")
     end
+  end
+end
+
+#
+#  全カーネルライブラリの作成
+#
+def BuildAllKernel()
+  $targetOptions.keys.each do |target|
+    BuildKernel(target)
   end
 end
 
@@ -169,8 +215,15 @@ def BuildTest(test, testSpec, mkdirFlag=false)
       configCommand += " -a #{$usedSrcDir}/test"
     end
 
-    if (!testSpec.has_key?(:TARGET) || testSpec[:TARGET] == 0)
-      configCommand += " -L ../KERNELLIB"
+    if !testSpec.has_key?(:DEFS)
+      if (testSpec.has_key?(:TARGET))
+        kernelDir = "KERNELLIB" + testSpec[:TARGET].to_s
+      else
+        kernelDir = "KERNELLIB0"
+      end
+      if Dir.exist?("../" + kernelDir)
+        configCommand += " -L ../" + kernelDir
+      end
     end
     if testSpec.has_key?(:SRC)
       configCommand += " -A #{testSpec[:SRC]}"
@@ -185,9 +238,9 @@ def BuildTest(test, testSpec, mkdirFlag=false)
     else
       configCommand += " -C test_pf.cdl"
     end
-    if testSpec.has_key?(:SYSLIB)
+    if testSpec.has_key?(:SYSOBJ)
       configCommand += " -S \"" \
-			+ testSpec[:SYSLIB].split(/\s+/).map{|f| f+".o"}.join(" ") \
+			+ testSpec[:SYSOBJ].split(/\s+/).map{|f| f+".o"}.join(" ") \
 			+ "\""
     end
     if testSpec.has_key?(:APPLOBJ)
@@ -201,9 +254,12 @@ def BuildTest(test, testSpec, mkdirFlag=false)
     if testSpec.has_key?(:DEFS)
       configCommand += " -O \"#{testSpec[:DEFS]}\""
     end
+    if testSpec.has_key?(:NK_DEFS)
+      configCommand += " -O \"#{testSpec[:NK_DEFS]}\""
+    end
     puts(configCommand)
     system(configCommand)
-    system("make -j8")
+    system("make -j4")
     if File.exist?("Makefile.bak")
       File.delete("Makefile.bak")
     end
@@ -213,7 +269,7 @@ end
 #
 #  全テストプログラムの作成
 #
-def BuildAll
+def BuildAllTest()
   TEST_SPEC.each do |test, testSpec|
     BuildTest(test, testSpec)
   end
@@ -241,7 +297,7 @@ end
 #
 #  全テストプログラムの実行
 #
-def ExecAll
+def ExecAllTest()
   TEST_SPEC.each do |test, testSpec|
     ExecTest(test, testSpec)
   end
@@ -250,11 +306,23 @@ end
 #
 #  カーネルライブラリのクリーン
 #
-def CleanKernel
-  if Dir.exist?("KERNELLIB")
-    Dir.chdir("KERNELLIB") do
+def CleanKernel(target)
+  return unless $targetOptions.has_key?(target)
+
+  kernelDir = "KERNELLIB" + target.to_s
+  if Dir.exist?(kernelDir)
+    Dir.chdir(kernelDir) do
       system("make clean")
     end
+  end
+end
+
+#
+#  全カーネルライブラリのクリーン
+#
+def CleanAllKernel()
+  $targetOptions.keys.each do |target|
+    CleanKernel(target)
   end
 end
 
@@ -275,7 +343,7 @@ end
 #
 #  全テストプログラムのクリーン
 #
-def CleanAll
+def CleanAllTest()
   TEST_SPEC.each do |test, testSpec|
     CleanTest(test, testSpec)
   end
@@ -303,41 +371,79 @@ $targetOptions = {}
 File.open("TARGET_OPTIONS") do |file|
   file.each_line.with_index do |line, index|
     line.chomp!
+    if line != ""
     $targetOptions[index] = line
   end
+end
 end
 
 #
 #  パラメータで指定された処理の実行
 #
-if ARGV.size == 0
-  BuildKernel()
-  BuildAll()
-  ExecAll()
-else
+$build_only = false
+$exec_only = false
+$clean_flag = false
+$proc_flag = false
+
   ARGV.each do |param|
     case param
-    when "kernel"
-      BuildKernel()
     when "build"
-      BuildAll()
+    $build_only = true
     when "exec"
-      ExecAll()
+    $exec_only = true
+  when "clean"
+    $clean_flag = true
+
+  when "kernel"
+    if ($clean_flag)
+      CleanAllKernel()
+    else
+      BuildAllKernel() unless $exec_only
+      # カーネルには，execはない
+    end
+    $proc_flag = true
+
+  when /^kernel([0-9]+)$/
+    target = $1.to_i
+    if ($clean_flag)
+      CleanKernel(target)
+    else
+      BuildKernel(target, true) unless $exec_only
+      # カーネルには，execはない
+    end
+    $proc_flag = true
+
     when "all"
-      BuildAll()
-      ExecAll()
-    when "clean_kernel"
-      CleanKernel()
-    when "clean"
-      CleanKernel()
-      CleanAll()
+    if ($clean_flag)
+      CleanAllTest()
+    else
+      BuildAllTest() unless $exec_only
+      ExecAllTest() unless $build_only
+    end
+    $proc_flag = true
+
     else
       if TEST_SPEC.has_key?(param)
-        BuildTest(param, TEST_SPEC[param], true)
-        ExecTest(param, TEST_SPEC[param])
+      if ($clean_flag)
+        CleanTest(param, TEST_SPEC[param])
+      else
+        BuildTest(param, TEST_SPEC[param], true) unless $exec_only
+        ExecTest(param, TEST_SPEC[param]) unless $build_only
+      end
       else
         puts("invalid parameter: #{param}")
       end
+    $proc_flag = true
+  end
     end
+if !$proc_flag
+  # デフォルトの処理対象（kernelとall）
+  if ($clean_flag)
+    CleanAllKernel()
+    CleanAllTest()
+  else
+    BuildAllKernel() unless $exec_only
+    BuildAllTest() unless $exec_only
+    ExecAllTest() unless $build_only
   end
 end

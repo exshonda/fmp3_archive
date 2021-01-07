@@ -34,7 +34,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: perf0.c 42 2018-07-31 07:29:20Z ertl-honda $
+ *  $Id: perf0.c 263 2021-01-08 06:08:59Z ertl-honda $
  */
 
 /*
@@ -59,7 +59,7 @@
 /*
  *  メインタスク
  */
-void main_task(intptr_t exinf)
+void main_task(EXINF exinf)
 {
 	uint_t	i;
 	ER		ercd;

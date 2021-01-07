@@ -4,7 +4,7 @@
 #  TOPPERS Software
 #      Toyohashi Open Platform for Embedded Real-Time Systems
 # 
-#  Copyright (C) 2006-2019 by Embedded and Real-Time Systems Laboratory
+#  Copyright (C) 2006-2020 by Embedded and Real-Time Systems Laboratory
 #              Graduate School of Information Science, Nagoya Univ., JAPAN
 # 
 #  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -36,12 +36,11 @@
 #  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
 #  の責任を負わない．
 # 
-#  $Id: makerelease.rb 179 2019-10-08 14:01:42Z ertl-honda $
+#  $Id: makerelease.rb 266 2021-01-08 06:41:39Z ertl-honda $
 # 
 
 require "optparse"
 require "fileutils"
-require "shell"
 
 #
 #  オプションの定義
@@ -147,8 +146,7 @@ $fileList = []
 #
 #  プリフィックス（./カレントディレクトリ名）の取り出し
 #
-cwd = Shell.new.cwd
-$prefix = "./" + File.basename(cwd)
+$prefix = "./" + File.basename(Dir.pwd)
 
 #
 #  パラメータの取り出し
@@ -190,9 +188,9 @@ puts("== RELEASE/#{archiveName} is generated. ==")
 command = "tar xvfz RELEASE/#{archiveName} -C RELEASE";
 system(command)
 archive_zipname = $package + "-" + $version + ".zip";
-command = "cd RELEASE; zip -r #{archive_zipname} #{File.basename(cwd)}";
+command = "cd RELEASE; zip -r #{archive_zipname} #{File.basename(Dir.pwd)}";
 system(command)
-command = "rm -rf RELEASE/#{File.basename(cwd)}";
+command = "rm -rf RELEASE/#{File.basename(Dir.pwd)}";
 system(command)
 
 
