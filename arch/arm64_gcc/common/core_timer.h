@@ -5,7 +5,7 @@
  *
  *  Copyright (C) 2000-2003 by Embedded and Real-Time Systems Laboratory
  *                              Toyohashi Univ. of Technology, JAPAN
- *  Copyright (C) 2005-2020 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2005-2021 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  *
  *  上記著作権者は，以下の(1)～(4)の条件を満たす場合に限り，本ソフトウェ
@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  *
- *  @(#) $Id: core_timer.h 252 2020-07-14 06:36:21Z ertl-honda $
+ *  @(#) $Id: core_timer.h 282 2021-06-03 06:35:25Z ertl-honda $
  */
 
 /*
@@ -102,14 +102,14 @@ extern CLOCK timer_cval[];
  *
  *  タイマを初期化し，周期的なタイマ割込み要求を発生させる．
  */
-extern void target_hrt_initialize(intptr_t exinf);
+extern void target_hrt_initialize(EXINF exinf);
 
 /*
  *  タイマの停止処理
  *
  *  タイマの動作を停止させる．
  */
-extern void target_hrt_terminate(intptr_t exinf);
+extern void target_hrt_terminate(EXINF exinf);
 
 #ifdef _RUN_TTSP3_
 /*------------------------------------------------------------------*/
@@ -225,12 +225,12 @@ extern void	target_hrt_handler(void);
 /*
  *  高分解能タイマの起動処理
  */
-extern void	target_hrt_initialize(intptr_t exinf);
+extern void	target_hrt_initialize(EXINF exinf);
 
 /*
  *  高分解能タイマの停止処理
  */
-extern void	target_hrt_terminate(intptr_t exinf);
+extern void	target_hrt_terminate(EXINF exinf);
 
 /*
  *  高分解能タイマの現在のカウント値の読出し

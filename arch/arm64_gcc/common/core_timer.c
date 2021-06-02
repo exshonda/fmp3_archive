@@ -3,7 +3,7 @@
  *      Toyohashi Open Platform for Embedded Real-Time Systems/
  *      Flexible MultiProcessor Kernel
  *
- *  Copyright (C) 2006-2020 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2006-2021 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  *
  *  上記著作権者は，以下の(1)～(4)の条件を満たす場合に限り，本ソフトウェ
@@ -35,7 +35,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  *
- *  @(#) $Id: core_timer.c 252 2020-07-14 06:36:21Z ertl-honda $
+ *  @(#) $Id: core_timer.c 282 2021-06-03 06:35:25Z ertl-honda $
  */
 
 /*
@@ -69,7 +69,7 @@ CLOCK	timer_cval[TNUM_PRCID];
  *  タイマの起動処理
  */
 void
-target_hrt_initialize(intptr_t exinf)
+target_hrt_initialize(EXINF exinf)
 {
 	/*
 	 *  タイマの停止
@@ -95,7 +95,7 @@ target_hrt_initialize(intptr_t exinf)
  *  タイマの停止処理
  */
 void
-target_hrt_terminate(intptr_t exinf)
+target_hrt_terminate(EXINF exinf)
 {
 	/*
 	 *  タイマの停止

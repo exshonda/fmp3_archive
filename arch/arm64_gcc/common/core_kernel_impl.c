@@ -5,7 +5,7 @@
  *
  *  Copyright (C) 2000-2003 by Embedded and Real-Time Systems Laboratory
  *                              Toyohashi Univ. of Technology, JAPAN
- *  Copyright (C) 2006-2020 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2006-2021 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  *
  *  上記著作権者は，以下の(1)～(4)の条件を満たす場合に限り，本ソフトウェ
@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  *
- *  @(#) $Id: core_kernel_impl.c 218 2020-02-19 14:55:35Z ertl-honda $
+ *  @(#) $Id: core_kernel_impl.c 282 2021-06-03 06:35:25Z ertl-honda $
  */
 
 /*
@@ -112,6 +112,48 @@ arm_fpu_initialize(void)
 }
 
 #endif /* USE_ARM64_FPU */
+
+/*
+ *  パフォーマンスモニタによる性能評価
+ */
+#ifdef USE_ARM64_PMCNT
+
+/*
+ *  パフォーマンスモニタの初期化
+ */
+Inline void
+arm64_pmcnt_initialize(void)
+{
+	volatile uint64_t	reg;
+
+	/*
+	 *  全カウンターの有効化
+	 */
+	PMCR_EL0_READ(reg);
+	reg |= PMCR_LC_BIT | PMCR_E_BIT;
+	PMCR_EL0_WRITE(reg);
+
+	INST_SYNC_BARRIER();
+	DATA_SYNC_BARRIER();
+
+	/*
+	 *  パフォーマンスカウンタの有効化
+	 */
+	PMCNTENSET_EL0_WRITE(PMCNTENSET_C_BIT);
+
+	INST_SYNC_BARRIER();
+	DATA_SYNC_BARRIER();
+
+	/*
+	 *  全カウンターのリセット
+	 */
+	PMCR_EL0_WRITE(reg | PMCR_C_BIT);
+
+	INST_SYNC_BARRIER();
+	DATA_SYNC_BARRIER();
+}
+
+#endif /* USE_ARM64_PMCNT */
 
 /*
  *  プロセッサ依存の初期化
@@ -208,9 +250,9 @@ core_initialize(PCB *p_my_pcb)
 	/*
 	 *  パフォーマンスモニタの初期化
 	 */
-#ifdef USE_ARM64_PM_HIST
-	arm_init_pmcnt();
-#endif /* USE_ARM64_PM_HIST */
+#ifdef USE_ARM64_PMCNT
+	arm64_pmcnt_initialize();
+#endif /* USE_ARM64_PMCNT */
 }
 
 /*

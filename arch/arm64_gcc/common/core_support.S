@@ -3,7 +3,7 @@
  *      Toyohashi Open Platform for Embedded Real-Time Systems/
  *      Flexible MultiProcessor Kernel
  *
- *  Copyright (C) 2006-2020 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2006-2021 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  *
  *  上記著作権者は，以下の(1)～(4)の条件を満たす場合に限り，本ソフトウェ
@@ -35,7 +35,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  *
- *  @(#) $Id: core_support.S 241 2020-07-02 15:25:55Z ertl-honda $
+ *  @(#) $Id: core_support.S 282 2021-06-03 06:35:25Z ertl-honda $
  */
 
 /*
@@ -256,12 +256,11 @@ ALABEL(dispatcher_2)
  *  カーネルの終了処理の呼出し
  *   引数1(x0) : p_my_pcb
  *
- *  割込みロック状態にし，使用するスタックを非タスクコンテキスト用のスタッ
- *  ク領域に切り替え，exit_kernelを呼び出す．
+ *  使用するスタックを非タスクコンテキスト用のスタック領域に切り替え，
+ *  例外ネストカウントを1にして，exit_kernelを呼び出す．
  */
 	AGLOBAL(call_exit_kernel)
 ALABEL(call_exit_kernel)
-	msr		DAIFSet, #DAIFSCBIT(DAIF_INTLOCK AOR DAIF_CPULOCK)
 	ldr		x1, [x0, #PCB_istkpt]	/* 非タスクコンテキスト用スタックに */
 	mov		sp, x1
 	mov		x1, #1
@@ -272,7 +271,6 @@ ALABEL(call_exit_kernel)
  *  自タスクのマイグレート
  *   引数1(x0) : p_my_pcb
  *   引数2(x1) : p_selftsk
- *   引数3(x2) : p_new_pcb
  */
 	ATEXT
 	AALIGN(2)
@@ -305,12 +303,12 @@ ALABEL(dispatch_and_migrate)
 	str		x3, [x1, #TCB_sp]		/* タスクスタックを保存 */
 	adr		x3, dispatch_r			/* 実行再開番地を保存 */
 	str		x3, [x1, #TCB_pc]		/* 実行再開番地を保存 */
-	ldr		x3, [x0, #PCB_idstkpt]
-	mov		sp, x3					/* アイドル処理用スタックへ切り換え */
+	ldr		x3, [x0, #PCB_istkpt]
+	mov		sp, x3					/* 非タスクコンテキスト用スタックに */
 	b		migrate_self			/* 自タスクのマイグレート */
 
 /*
- *  現在のコンテキストを捨てマイグレート
+ *  現在のコンテキストを捨ててマイグレート
  *   引数1(x0) : p_my_pcb
  *   引数2(x1) : p_selftsk
  */
@@ -318,8 +316,8 @@ ALABEL(dispatch_and_migrate)
 	AALIGN(2)
 	AGLOBAL(exit_and_migrate)
 ALABEL(exit_and_migrate)
-	ldr		x2, [x0, #PCB_idstkpt]
-	mov		sp, x2					/* アイドル処理用スタックへ切り換え */
+	ldr		x2, [x0, #PCB_istkpt]
+	mov		sp, x2					/* 非タスクコンテキスト用スタックに */
 	b		migrate_activate_self	/* 自タスクのマイグレートと起動 */
 
 /*
@@ -412,10 +410,10 @@ ALABEL(cur_spx_irq_handler)
 	 *  例外ネストカウントをインクリメントする．割込みが非タスクコンテキ
 	 *  ストで発生した場合には，irq_handler_1へ分岐する．
 	 */
-	my_pcb	x2, x1
-	ldr		w3, [x2, #PCB_excpt_nest_count]
+	my_pcb	x0, x1
+	ldr		w3, [x0, #PCB_excpt_nest_count]
 	add		w3, w3, #1
-	str		w3, [x2, #PCB_excpt_nest_count]
+	str		w3, [x0, #PCB_excpt_nest_count]
 	tbnz	x3, #1, irq_handler_1		/* CPU例外発生前が非タスクコンテキスト */
 										/* (x3==1)	ならirq_handler_1に分岐 */
 
@@ -514,7 +512,7 @@ ALABEL(irq_handler_2)
 	sub	w3, w3, #1
 	str	w3, [x2, #PCB_excpt_nest_count]
 	cbnz	w3, irq_handler_5		/* 戻り先が非タスクコンテキストなら */
-									/*				irq_handler_5に分岐 */
+									/*			ならirq_handler_5に分岐 */
 
 	/*
 	 *  タスク用のスタックに戻す．
@@ -996,8 +994,8 @@ ALABEL(exc_handler_1)
 	 *  に保存する．
 	 */
 	bl		irc_get_intpri
-	my_pcb	x2, x1
-	ldr		w3, [x2, #PCB_excpt_nest_count]
+	my_pcb	x0, x1
+	ldr		w3, [x0, #PCB_excpt_nest_count]
 	stp		x0, x3, [sp, #-16]!
 					/* 例外発生前の割込み優先度マスクをスタックに保存 */
 					/* excpt_nest_count をスタックに保存．*/
@@ -1019,8 +1017,8 @@ ALABEL(exc_handler_1)
 	 *
 	 *  カーネル管理外のCPU例外は，カーネル実行中，全割込みロック状態，
 	 *  CPUロック状態，カーネル管理外の割込みハンドラ実行中に発生した
-	 *  CPU例外である．ARMの場合は，SPSRのI/Fフラグのいずれかが'1'なら，
-	 *  該当する．
+	 *  CPU例外である．ARMの場合は，SPSRのI/Fフラグのいずれかがセット
+	 *  されているなら，これに該当する．
 	 */
 	ldr		x0, [x20, #EXC_FRAME_pstate]	/* 例外フレームからpstateを取得 */
 	tst		w0, #(DAIF_CPULOCK AOR DAIF_INTLOCK)
@@ -1028,7 +1026,7 @@ ALABEL(exc_handler_1)
 
 	/*
 	 * 【この時点のレジスタ状態】
-	 *  x2 ：p_my_pcb
+	 *  x0 ：p_my_pcb
 	 *  w3 ：excpt_nest_countの値
 	 *  w19：CPU例外ハンドラ番号
 	 *  x20：CPU例外の情報を記憶している領域の先頭番地
@@ -1038,7 +1036,7 @@ ALABEL(exc_handler_1)
 	 *  例外ネストカウントをインクリメントする．
 	 */
 	add		w3, w3, #1
-	str		w3, [x2, #PCB_excpt_nest_count]
+	str		w3, [x0, #PCB_excpt_nest_count]
 	tbnz	w3, #1, exc_handler_2	/* CPU例外発生前が非タスクコンテキスト */
 									/*			   ならexc_handler_2に分岐 */
 
@@ -1133,8 +1131,8 @@ ALABEL(exc_handler_2)
 	ldr		w3, [x2, #PCB_excpt_nest_count]
 	sub		w3, w3, #1
 	str		w3, [x2, #PCB_excpt_nest_count]
-	cbnz	w3, exc_handler_5	/* 戻り先が非タスクコンテキストなら */
-								/*				exc_handler_5に分岐 */
+	cbnz	w3, exc_handler_5	/* 戻り先が非タスクコンテキスト */
+								/*		ならexc_handler_5に分岐 */
 
 	/*
 	 *  タスク用のスタックに戻す．
@@ -1251,8 +1249,8 @@ ALABEL(exc_handler_5)
 ALABEL(nk_exc_handler_1)
 	/*
 	 * 【この時点のレジスタ状態】
+	 *  x0 ：p_my_pcb
 	 *  x1 ：CPU例外発生前のCPSRのFビットとIビットの値
-	 *  x2 ：p_my_pcb
 	 *  x3 ：excpt_nest_countの値
 	 *  x19：CPU例外ハンドラ番号
 	 *  x20：CPU例外の情報を記憶している領域の先頭番地
@@ -1262,7 +1260,7 @@ ALABEL(nk_exc_handler_1)
 	 *  例外ネストカウントをインクリメントする．
 	 */
 	add		x3, x3, #1
-	str		x3, [x2,#PCB_excpt_nest_count]
+	str		x3, [x0,#PCB_excpt_nest_count]
 	tbnz	x3, #1, nk_exc_handler_2	/* CPU例外発生前が非タスクコンテキスト */
 										/* (x3==1)	ならnk_exc_handler_2に分岐 */
 
@@ -1301,8 +1299,8 @@ ALABEL(nk_exc_handler_2)
 	ldr	w3, [x2, #PCB_excpt_nest_count]
 	sub	w3, w3, #1
 	str	w3, [x2, #PCB_excpt_nest_count]
-	cmp	w3, wzr					/* 戻り先が非タスクコンテキストなら */
-	bne		exc_handler_5		/*				exc_handler_5に分岐 */
+	cmp	w3, wzr					/* 戻り先が非タスクコンテキスト */
+	bne		exc_handler_5		/*		ならexc_handler_5に分岐 */
 
 	/*
 	 *  タスク用のスタックに戻す．
@@ -1316,6 +1314,8 @@ ALABEL(nk_exc_handler_2)
 /*
  *  微少時間待ち
  */
+	ATEXT
+	AALIGN(3)
 	AGLOBAL(sil_dly_nse)
 ALABEL(sil_dly_nse)
 	sub		x0, x0, #SIL_DLY_TIM1

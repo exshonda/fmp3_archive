@@ -46,6 +46,9 @@
 
 /*
  *  プロセッサ間割込みの割込み優先度
+ *
+ *  システム周期開始要求割込みの優先度は，高分解能タイマ割込みの優先度
+ *  と同じでなければならない．
  */
 #define INTPRI_IPI_DISPATCH_PRC1		(-2)    /* ディスパッチ要求 */
 #define INTPRI_IPI_DISPATCH_PRC2		(-2)

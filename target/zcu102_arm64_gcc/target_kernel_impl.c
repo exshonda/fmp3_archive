@@ -3,7 +3,7 @@
  *      Toyohashi Open Platform for Embedded Real-Time Systems/
  *      Flexible MultiProcessor Kernel
  *
- *  Copyright (C) 2007-2020 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2007-2021 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  *
  *  上記著作権者は，以下の(1)～(4)の条件を満たす場合に限り，本ソフトウェ
@@ -35,7 +35,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  *
- *  @(#) $Id: target_kernel_impl.c 216 2020-02-17 16:17:15Z ertl-honda $  
+ *  @(#) $Id: target_kernel_impl.c 282 2021-06-03 06:35:25Z ertl-honda $  
  */
 
 /*
@@ -52,7 +52,7 @@
 /*
  *  システムログの低レベル出力のための初期化
  */
-extern void	sio_initialize(intptr_t exinf);
+extern void	sio_initialize(EXINF exinf);
 extern void	target_fput_initialize(void);
 
 /*
@@ -143,7 +143,7 @@ target_initialize(PCB *p_my_pcb)
 	/*
 	 *  バナー表示，低レベル出力用にUARTを初期化
 	 */
-	if (is_mprc(p_my_pcb)) {
+	if (p_my_pcb->prcid == TOPPERS_MASTER_PRCID) {
 		sio_initialize(0);
 		target_fput_initialize();
 	}
@@ -179,11 +179,9 @@ target_exit(void)
 	/*
 	 *  QEMUを終了させる．
 	 */
-	if (ID_PRC(get_my_prcidx()) == TOPPERS_TMASTER_PRCID) {
-		Asm("ldr x1, =0x20026\n\t"		/* ADP_Stopped_ApplicationExit */ 
-			"mov x0, #0x18\n\t"			/* angel_SWIreason_ReportException */
-			"hlt #0xF000");
-	}
+	Asm("ldr x1, =0x20026\n\t"		/* ADP_Stopped_ApplicationExit */ 
+		"mov x0, #0x18\n\t"			/* angel_SWIreason_ReportException */
+		"hlt #0xF000");
 #endif /* defined(TOPPERS_USE_QEMU) && !defined(TOPPERS_OMIT_QEMU_SEMIHOSTING) */
 	while (true) ;
 }

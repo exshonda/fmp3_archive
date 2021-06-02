@@ -1,11 +1,14 @@
 #
-#		Makefile のターゲット依存部（ZYNQMP-A53-ARM64用）
+#		Makefile のターゲット依存部（ZCU102-ARM64用）
 #
 
 #
-# ATFの BL32 (Secure-EL1 Payload) として動作させるか
+#  System monitor設定
+#    ATF_S     :   ATF(SafeG64) Secure EL1動作
+#    ATF_NS    :   ATF Non-Secure EL1動作
+#    指定なし  :   ATF Secure EL1動作
 #
-#ENABLE_ATF_S_EL1 = true
+#SYSMON = ATF_S
 
 #
 #  システム名，チップ名，コア名，開発環境名の定義
@@ -36,15 +39,42 @@ CDEFS := $(CDEFS) -DUSE_ARM64_FPU
 #
 #  各セグメントの開始アドレスとサイズのディフォルト値の定義
 #
+ifeq ($(SYSMON),ATF_S)
+#
+#  ATF(Secure動作)に関する定義
+#
+CDEFS := $(CDEFS) -DTOPPERS_WITH_ATF
+CDEFS := $(CDEFS) -DTOPPERS_TZ_S
+CDEFS := $(CDEFS) -DSYSMON
 ifndef TOPPERS_MEM_BASE
-ifeq ($(ENABLE_ATF_S_EL1),true)
 TOPPERS_MEM_BASE = 0x7B000000
 TOPPERS_MEM_SIZE = 0x00E00000
+endif
+else ifeq ($(SYSMON),ATF_NS)
+#
+#  ATF(Non-Secure動作)に関する定義
+#
+CDEFS := $(CDEFS) -DTOPPERS_WITH_ATF
+CDEFS := $(CDEFS) -DTOPPERS_TZ_NS
+CDEFS := $(CDEFS) -DSYSMON
+ifndef TOPPERS_MEM_BASE
+TOPPERS_MEM_BASE = 0x00000000
+TOPPERS_MEM_SIZE = 0x40000000
+endif
 else
+#
+#  単独動作に関する定義
+#
+CDEFS := $(CDEFS) -DTOPPERS_WITH_ATF
+CDEFS := $(CDEFS) -DTOPPERS_TZ_NS
+CDEFS := $(CDEFS) -USYSMON
+ifndef TOPPERS_MEM_BASE
 TOPPERS_MEM_BASE = 0x00000000
 TOPPERS_MEM_SIZE = 0x40000000
 endif
 endif
+
+TEXT_START_ADDRESS=$(TOPPERS_MEM_BASE)
 
 #
 #  コンパイルオプション
@@ -58,7 +88,7 @@ CFG1_OUT_LDFLAGS := -nostdlib $(CFG1_OUT_LDFLAGS)
 #
 #  SIOPとするXUARTの番号
 #
-ifeq ($(ENABLE_ATF_S_EL1),true)
+ifeq ($(SYSMON),ATF_S)
 SIOP = XUART1
 else
 SIOP = XUART0
@@ -122,6 +152,32 @@ CDEFS := $(CDEFS) -DTOPPERS_MEM_SIZE=$(TOPPERS_MEM_SIZE)
 CDEFS := $(CDEFS) -DTOPPERS_32BIT_ABOVE_ADDR
 
 #
+#  プラットホームの判定
+#
+# setup.exeによるCygwinでは，PATHに/cygdrive/が入る
+ifneq (,$(findstring /cygdrive/,$(PATH)))
+    TARGET_UNAME := Cygwin
+else
+# gnupackのCygwinは/cygdrive/が無いため/c/WINDOWS/で判別する(/c/はWSLにも存在する)
+ifneq (,$(findstring /c/WINDOWS/,$(PATH)))
+    TARGET_UNAME := Cygwin
+else
+ifneq (,$(findstring /mnt/c/Windows/,$(PATH)))
+#, WSL
+    TARGET_UNAME := WSL
+else
+# Windows は shell uname が使えないないので，OSで判断
+ifeq ($(OS),Windows_NT)
+    TARGET_UNAME := Windows
+else
+# Linux, Darwin(Mac)
+    TARGET_UNAME := $(shell uname)
+endif
+endif
+endif
+endif
+
+#
 #  Xilinx SDK へのパス
 #
 XILINXSDK = C:/Xilinx/SDK/2019.1/
@@ -143,13 +199,28 @@ endif
 endif
 
 #
+#  ボード名の定義
+#
+BOARD = zcu102
+#BOARD = zcu104
+
+#
+#  psu_initの選択
+#
+ifeq ($(BOARD),zcu102)
+	PSU_INIT = psu_init_zcu102.tcl 
+else
+	PSU_INIT = psu_init_zcu104.tcl 
+endif
+
+#
 #  GDBの選択
 #
 GDB = aarch64-elf-gdb
 
 runj:$(OBJFILE)
-	$(XSCT) -interactive $(SRCDIR)/target/zynqmp_r5_gcc/tools/jtag/jtag_a53_64.tcl \
-		$(SRCDIR)/target/zynqmp_r5_gcc/tools/jtag/$(PSU_INIT) \
+	$(XSCT) -interactive $(TARGETDIR)/tools/jtag/jtag_a53_64.tcl \
+		$(TARGETDIR)/tools/jtag/$(PSU_INIT) \
 		$(OBJFILE) $(XILINXSDK)/scripts/sdk/util/zynqmp_utils.tcl  \
 		$(TOPPERS_MEM_BASE)
 

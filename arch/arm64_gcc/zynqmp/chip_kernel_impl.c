@@ -35,7 +35,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  *
- *  @(#) $Id: chip_kernel_impl.c 213 2020-02-15 17:11:06Z ertl-honda $
+ *  @(#) $Id: chip_kernel_impl.c 282 2021-06-03 06:35:25Z ertl-honda $
  */
 
 /*
@@ -43,14 +43,19 @@
  */
 #include "kernel_impl.h"
 
+#ifdef TOPPERS_WITH_ATF
+#include "atf.h"
+#include "psci.h"
+#endif /* TOPPERS_WITH_ATF */
+
 /*
  *  EL3で行う初期化処理
  */
 void
 chip_el3_initialize(void)
 {
-	uint32_t scr;
-	uint32_t cpuectlr;
+	volatile uint32_t scr;
+	volatile uint32_t cpuectlr;
 
 	SCR_EL3_READ(scr);
 	scr &= ~(SCR_EA_BIT|SCR_FIQ_BIT|SCR_IRQ_BIT|SCR_NS_BIT);
@@ -104,31 +109,47 @@ extern void start(void);
 void
 chip_mprc_initialize(void)
 {
+#ifdef SYSMON
+	uint32_t i;
+#else
+	uint64_t tmp_addr = (uint64_t)start;
+#endif
+
 	dcache_disable();
 	icache_disable();
 
+#ifdef SYSMON
 #ifdef TOPPERS_WITH_ATF
-
 #ifdef TOPPERS_TZ_S
 	/*
 	 *  ATFの BL32 (Secure-EL1 Payload) として動作させる場合
 	 */
-	uint32_t i;
-
 	/* ATFからのTOPPERS/FMPのエントリポイントを設定 */
 	atf_smc_setvct(&atf_vector_table);
 
 	/*
 	 *  サブコア ON
 	 */
-	for (i = 0; i < TNUM_PRCID; i++) {
+	for (i = 1; i < TNUM_PRCID; i++) {
 		atf_smc_cpuon(i);
 	}
-#else /* TOPPERS_TZ_NS */
-#error ATF NonSecure-EL1 Payload mode is not support!
-#endif /* TOPPERS_TZ_S */
 
-#else /* !TOPPERS_WITH_ATF */
+#else /* TOPPERS_TZ_NS */
+
+	/*
+	 *  ARM Trusted Firmware(None Secure) 使用時
+	 */
+
+	/*
+	 *  サブコア ON
+	 */
+	for(i = 1; i < TNUM_PRCID; i++) {
+		psci_smc_cpuon(i, (uint64_t)start, 0);
+	}
+
+#endif /* TOPPERS_TZ_S */
+#endif /* TOPPERS_WITH_ATF */
+#else /* SYSMON */
 	/*
 	 *  FSBLから起動する場合
 	 */
@@ -170,7 +191,7 @@ chip_mprc_initialize(void)
 				sil_rew_mem((void*)CRF_APB_RST_FPD_APU)
 				& ~(CRF_APB_RST_FPD_APU_APU_L2_RESET_MASK|mask|(mask << CRF_APB_RST_FPD_APU_ACPU0_PWRON_OFFSET)));
 #endif /* TNUM_PRCID >= 2 */
-#endif /* TOPPERS_WITH_ATF */
+#endif /* SYSMON */
 
 	core_mprc_initialize();
 }

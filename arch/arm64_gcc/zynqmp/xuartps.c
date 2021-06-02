@@ -36,7 +36,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  *
- *  $Id: xuartps.c 213 2020-02-15 17:11:06Z ertl-honda $
+ *  $Id: xuartps.c 282 2021-06-03 06:35:25Z ertl-honda $
  */
 
 /*
@@ -62,11 +62,11 @@ typedef struct sio_port_initialization_block {
 /*
  *  SIOポート管理ブロックの定義
  */
-struct sio_port_control_block {
+typedef struct sio_port_control_block {
 	const SIOPINIB *p_siopinib;		/* SIOポート初期化ブロック */
 	intptr_t	exinf;				/* 拡張情報 */
 	bool_t		opened;				/* オープン済み */
-};
+} SIOPCB;
 
 /*
  *  SIOポート初期化ブロック
@@ -121,8 +121,10 @@ xuartps_terminate(void)
 			 *  送信FIFOが空になるまで待つ
 			 */
 			while ((sil_rew_mem(XUARTPS_SR(p_siopcb->p_siopinib->base))
-											& XUARTPS_SR_TXEMPTY) == 0U);
-			sil_dly_nse(100);
+					& XUARTPS_SR_TXEMPTY) == 0U) {
+				sil_dly_nse(100);
+			}
+
 			/*
 			 *  オープンされているSIOポートのクローズ
 			 */
@@ -135,7 +137,7 @@ xuartps_terminate(void)
  *  SIOポートのオープン
  */
 SIOPCB *
-xuartps_opn_por(ID siopid, intptr_t exinf)
+xuartps_opn_por(ID siopid, EXINF exinf)
 {
 	SIOPCB		*p_siopcb;
 	uintptr_t	base;

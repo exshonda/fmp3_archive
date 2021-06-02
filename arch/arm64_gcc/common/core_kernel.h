@@ -35,7 +35,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  *
- *  @(#) $Id: core_kernel.h 231 2020-05-20 02:30:21Z ertl-honda $
+ *  @(#) $Id: core_kernel.h 282 2021-06-03 06:35:25Z ertl-honda $
  */
 
 /*
@@ -102,7 +102,7 @@
  *  CPU例外の情報を記憶しているメモリ領域の構造
  */
 typedef struct {
-	uint64_t	intpri;
+	int64_t		intpri;
 	uint64_t	nest_count;
 #ifdef USE_ARM64_FPU
 	uint64_t	fpsr;

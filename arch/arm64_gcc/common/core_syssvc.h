@@ -35,7 +35,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: core_syssvc.h 232 2020-05-20 02:39:39Z ertl-honda $
+ *  $Id: core_syssvc.h 282 2021-06-03 06:35:25Z ertl-honda $
  */
 
 /*
@@ -55,7 +55,7 @@
 /*
  *  パフォーマンスモニタによる性能評価
  */
-#ifdef USE_ARM64_PM_HIST
+#ifdef USE_ARM64_PMCNT
 
 /*
  *  パフォーマンスモニタのカウンタのデータ型
@@ -122,7 +122,6 @@ arm64_conv_pmcnt(PMCNT count) {
 #define HISTTIM					PMCNT
 #define HIST_GET_TIM(p_time)	(arm64_get_pmcnt(p_time))
 #define HIST_CONV_TIM(time)		(arm64_conv_pmcnt(time))
-#define HIST_BM_HOOK()			((void) 0)
 
-#endif /* USE_ARM64_PM_HIST */
+#endif /* USE_ARM64_PMCNT */
 #endif /* TOPPERS_CORE_SYSSVC_H */

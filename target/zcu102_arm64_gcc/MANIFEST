@@ -13,7 +13,6 @@ target_kernel.trb
 target_kernel_impl.c
 target_kernel_impl.h
 target_mmu_config.h
-target_pcb.h
 target_rename.def
 target_rename.h
 target_serial.cfg
@@ -28,3 +27,7 @@ target_unrename.h
 target_user.txt
 zcu102.h
 zcu102.ld
+gdb.ini
+./tools/jtag/jtag_a53_64.tcl
+./tools/jtag/psu_init_zcu102.tcl
+./tools/jtag/psu_init_zcu104.tcl

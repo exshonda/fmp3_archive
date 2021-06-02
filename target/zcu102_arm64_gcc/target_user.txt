@@ -1,7 +1,7 @@
 =====================================================================
                      ZYNQMP_A53(AArch64)ターゲット依存部
-                            2018-2020 (C) Shinya Honda honda@ertl.jp                     
-                                  Last Modified:2020 Nov 26 16:14:50
+                            2018-2021 (C) Shinya Honda honda@ertl.jp                     
+                                  Last Modified:2021 Jun 03 11:22:54
 =====================================================================
 
 ○概要
@@ -93,6 +93,9 @@ configure.rb -T zcu102_arm64_gcc -w -S "syslog.o banner.o serial.o chip_serial.o
 
 
 ○変更履歴
+
+2021/06/03
+・3.2対応
 
 2020/07/22
 ・最初のリリース
