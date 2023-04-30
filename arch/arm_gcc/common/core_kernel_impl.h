@@ -5,7 +5,7 @@
  * 
  *  Copyright (C) 2000-2003 by Embedded and Real-Time Systems Laboratory
  *                              Toyohashi Univ. of Technology, JAPAN
- *  Copyright (C) 2006-2020 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2006-2022 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  * 
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: core_kernel_impl.h 263 2021-01-08 06:08:59Z ertl-honda $
+ *  $Id: core_kernel_impl.h 335 2023-04-18 10:50:40Z ertl-honda $
  */
 
 /*
@@ -56,9 +56,9 @@
 /*
  *  ターゲット依存のタスク属性（エラーチェック用）
  */
-#ifdef USE_ARM_FPU
+#ifdef USE_ARM_FPU_SELECTIVE
 #define TARGET_TSKATR		(TA_FPU)
-#endif /* USE_ARM_FPU */
+#endif /* USE_ARM_FPU_SELECTIVE */
 
 /*
  *  エラーチェック方法の指定
@@ -422,6 +422,10 @@ exc_sense_context(void *p_excinf)
 
 /*
  *  CPU例外の発生した時の割込み優先度マスクの参照
+ *
+ *  この関数は，CPU例外がタスクコンテキストで発生した場合にのみ呼び出
+ *  される．そのため，CPU例外が非タスクコンテキストで発生した場合には，
+ *  正しい値を返す必要がない．
  */
 Inline PRI
 exc_get_intpri(void *p_excinf)
@@ -478,7 +482,12 @@ exc_sense_intmask(void *p_excinf)
 												|CP15_TTBR_IRGN_WBWA)
 #endif
 
+/*
+ *  MMUの初期化
+ */
 #ifndef TOPPERS_MACRO_ONLY
+
+extern void arm_mmu_initialize(void);
 
 /*
  *  MMUの設定情報のデータ型
@@ -500,22 +509,11 @@ extern const uint_t arm_tnum_memory_area;
  */
 extern ARM_MMU_CONFIG arm_memory_area[];
 
-/*
- *  MMUの初期化
- */
-extern void arm_mmu_initialize(void);
 
 #endif /* TOPPERS_MACRO_ONLY */
 #endif /* USE_ARM_MMU */
 
 #ifndef TOPPERS_MACRO_ONLY
-
-/*
- *  FPUの初期化
- */
-#ifdef USE_ARM_FPU
-extern void arm_fpu_initialize(void);
-#endif /* USE_ARM_FPU */
 
 /*
  *  コア依存の初期化
@@ -706,4 +704,18 @@ extern LOCK giant_lock;
 #define delay_for_emulate_spn()
 
 #endif /* TOPPERS_MACRO_ONLY */
+
+/*
+ *  整合性検査のための定義
+ *
+ *  保存されているスタックポインタが，4バイト境界にアラインし，スタッ
+ *  ク上を指しているかをチェックする．
+ *
+ *  VALID_TSKCTXBを，インライン関数ではなくマクロ定義としているのは，
+ *  この時点ではTCBが定義されていないためである．
+ */
+#define VALID_TSKCTXB(p_tskctxb, p_tcb)								\
+			((((uintptr_t)((p_tskctxb)->sp) & 0x03U) == 0U)			\
+				&& on_sstack((p_tskctxb)->sp, 0, (p_tcb)->p_tinib))
+
 #endif /* TOPPERS_CORE_KERNEL_IMPL_H */

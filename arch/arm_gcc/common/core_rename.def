@@ -31,12 +31,19 @@ default_int_handler
 default_exc_handler
 giant_lock
 
+# core_kernel_impl.h
+lock_cpu
+unlock_cpu
+sense_lock
+
 # mpcore_kernel_impl.c
 mpcore_mprc_initialize
 mpcore_initialize
 mpcore_terminate
 
 # mpcore_timer.c
+target_hrt_initialize_global
+target_hrt_terminate_global
 target_hrt_initialize
 target_hrt_terminate
 target_hrt_handler

@@ -1,5 +1,5 @@
 PACKAGE fmp3_arch_arm_gcc_zynq7000
-VERSION 3.1.0
+VERSION 3.3.0
 
 MANIFEST
 Makefile.chip

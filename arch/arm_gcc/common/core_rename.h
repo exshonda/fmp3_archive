@@ -9,7 +9,6 @@
 #define p_inh_table					_kernel_p_inh_table
 #define p_intcfg_table				_kernel_p_intcfg_table
 #define p_exc_table					_kernel_p_exc_table
-#define idstkpt_table				_kernel_idstkpt_table
 
 /*
  *  core_support.S
@@ -44,6 +43,13 @@
 #define giant_lock					_kernel_giant_lock
 
 /*
+ *  core_kernel_impl.h
+ */
+#define lock_cpu					_kernel_lock_cpu
+#define unlock_cpu					_kernel_unlock_cpu
+#define sense_lock					_kernel_sense_lock
+
+/*
  *  mpcore_kernel_impl.c
  */
 #define mpcore_mprc_initialize		_kernel_mpcore_mprc_initialize
@@ -53,6 +59,8 @@
 /*
  *  mpcore_timer.c
  */
+#define target_hrt_initialize_global	_kernel_target_hrt_initialize_global
+#define target_hrt_terminate_global	_kernel_target_hrt_terminate_global
 #define target_hrt_initialize		_kernel_target_hrt_initialize
 #define target_hrt_terminate		_kernel_target_hrt_terminate
 #define target_hrt_handler			_kernel_target_hrt_handler

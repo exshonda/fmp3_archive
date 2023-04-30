@@ -1,5 +1,5 @@
 /*
- *  $Id: zybo_z7.ld 178 2019-10-08 13:55:00Z ertl-honda $
+ *  $Id: zybo_z7.ld 342 2023-04-19 13:50:03Z ertl-honda $
  */
 
 OUTPUT_FORMAT("elf32-littlearm", "elf32-bigarm", "elf32-littlearm") 
@@ -9,10 +9,6 @@ ENTRY(start);
 MEMORY {
 	RAM (xrw) : ORIGIN = 0x00100000, LENGTH = 511M
 }
-
-PROVIDE(hardware_init_hook = 0);
-PROVIDE(software_init_hook = 0);
-PROVIDE(software_term_hook = 0);
 
 SECTIONS {
 	.text : {

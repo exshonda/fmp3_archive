@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: chip_kernel_impl.c 263 2021-01-08 06:08:59Z ertl-honda $
+ *  $Id: chip_kernel_impl.c 335 2023-04-18 10:50:40Z ertl-honda $
  */
 
 /*
@@ -45,7 +45,6 @@
  */
 
 #include "kernel_impl.h"
-#include "pl310.h"
 
 /*
  *  チップ依存の初期化
@@ -57,15 +56,6 @@ chip_initialize(PCB *p_my_pcb)
 	 *  MPCore依存の初期化
 	 */
 	mpcore_initialize(p_my_pcb);
-
-	/*
-	 *  L2キャッシュコントローラ（PL310）の初期化
-	 */
-	barrier_sync(101);
-
-	if (p_my_pcb->prcid == TOPPERS_MASTER_PRCID) {
-		pl310_initialize(0x0U, ~0x0U);
-	}
 }
 
 /*

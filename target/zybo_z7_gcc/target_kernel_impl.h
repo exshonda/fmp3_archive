@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: target_kernel_impl.h 263 2021-01-08 06:08:59Z ertl-honda $
+ *  $Id: target_kernel_impl.h 343 2023-04-19 13:51:34Z ertl-honda $
  */
 
 /*
@@ -54,11 +54,6 @@
  *  ターゲットのハードウェア資源の定義
  */
 #include "zybo_z7.h"
-
-/*
- *  タイムマスタプロセッサ
- */
-#define TOPPERS_TMASTER_PRCID	PRC1
 
 /*
  *  スレッドIDレジスタに自プロセッサPCBへのポインタを格納する

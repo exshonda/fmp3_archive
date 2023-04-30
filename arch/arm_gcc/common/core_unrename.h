@@ -10,7 +10,6 @@
 #undef p_inh_table
 #undef p_intcfg_table
 #undef p_exc_table
-#undef idstkpt_table
 
 /*
  *  core_support.S
@@ -45,6 +44,13 @@
 #undef giant_lock
 
 /*
+ *  core_kernel_impl.h
+ */
+#undef lock_cpu
+#undef unlock_cpu
+#undef sense_lock
+
+/*
  *  mpcore_kernel_impl.c
  */
 #undef mpcore_mprc_initialize
@@ -54,6 +60,8 @@
 /*
  *  mpcore_timer.c
  */
+#undef target_hrt_initialize_global
+#undef target_hrt_terminate_global
 #undef target_hrt_initialize
 #undef target_hrt_terminate
 #undef target_hrt_handler

@@ -3,7 +3,7 @@
  *      Toyohashi Open Platform for Embedded Real-Time Systems/
  *      Flexible MultiProcessor Kernel
  * 
- *  Copyright (C) 2006-2021 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2006-2023 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  * 
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -35,7 +35,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: mpcore_timer.c 263 2021-01-08 06:08:59Z ertl-honda $
+ *  $Id: mpcore_timer.c 335 2023-04-18 10:50:40Z ertl-honda $
  */
 
 /*
@@ -57,35 +57,56 @@
  */
 
 /*
+ *  タイマの起動処理（マスタプロセッサで実行）
+ *
+ *  この関数は，本来はタイムマスタプロセッサで実行すべきであるが，グロー
+ *  バル初期化処理ルーチンとして登録するために，マスタプロセッサで実行
+ *  される．
+ */
+void
+target_hrt_initialize_global(EXINF exinf)
+{
+	/*
+	 *  タイマをディスエーブルする．
+	 */
+	sil_wrw_mem(MPCORE_GTC_CTRL, MPCORE_GTC_CTRL_DISABLE);
+
+	/*
+	 *  カウンタを0に初期化する（セキュアモードでないと効果がない）．
+	 */
+	sil_wrw_mem(MPCORE_GTC_COUNT_L, 0U);
+	sil_wrw_mem(MPCORE_GTC_COUNT_U, 0U);
+
+	/*
+	 *  タイマの動作を開始する（コンパレータと割込みはディスエーブル）．
+	 */
+	sil_wrw_mem(MPCORE_GTC_CTRL,
+				MPCORE_GTC_CTRL_ENABLE
+					| (MPCORE_GTC_PS_VALUE << MPCORE_GTC_CTRL_PS_SHIFT));
+}
+
+/*
+ *  タイマの停止処理（マスタプロセッサで実行）
+ *
+ *  この関数は，本来はタイムマスタプロセッサで実行すべきであるが，グロー
+ *  バル初期化処理ルーチンとして登録するために，マスタプロセッサで実行
+ *  される．
+ */
+void
+target_hrt_terminate_global(EXINF exinf)
+{
+	/*
+	 *  タイマを停止する．
+	 */
+	sil_wrw_mem(MPCORE_GTC_CTRL, MPCORE_GTC_CTRL_DISABLE);
+}
+
+/*
  *  タイマの起動処理
  */
 void
 target_hrt_initialize(EXINF exinf)
 {
-	/*
-	 * タイムマスタプロセッサであればカウンタを初期化
-	 */
-	if (ID_PRC(get_my_prcidx()) == TOPPERS_TMASTER_PRCID) {
-		/*
-		 *  タイマをディスエーブルする．
-		 */
-		sil_wrw_mem(MPCORE_GTC_CTRL, MPCORE_GTC_CTRL_DISABLE);
-
-		/*
-		 *  カウンタを0に初期化する（セキュアモードでないと効果がない）．
-		 */
-		sil_wrw_mem(MPCORE_GTC_COUNT_L, 0U);
-		sil_wrw_mem(MPCORE_GTC_COUNT_U, 0U);
-
-		/*
-		 *  タイマの動作を開始する（コンパレータと割込みはディスエーブル）．
-		 */
-		sil_wrw_mem(MPCORE_GTC_CTRL,
-					MPCORE_GTC_CTRL_ENABLE
-						| (MPCORE_GTC_PS_VALUE << MPCORE_GTC_CTRL_PS_SHIFT));
-
-	}
-
 	/*
 	 *  コンペアの停止
 	 */
@@ -104,13 +125,6 @@ target_hrt_initialize(EXINF exinf)
 void
 target_hrt_terminate(EXINF exinf)
 {
-	/*
-	 *  タイムマスタプロセッサであればタイマを停止する．
-	 */
-	if (ID_PRC(get_my_prcidx()) == TOPPERS_TMASTER_PRCID) {
-		sil_wrw_mem(MPCORE_GTC_CTRL, MPCORE_GTC_CTRL_DISABLE);
-	}
-
 	/*
 	 *  コンペアを停止する．
 	 */

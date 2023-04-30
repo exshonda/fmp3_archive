@@ -1,7 +1,7 @@
 #
 #		Makefileのターゲット依存部（ZYBO_Z7用）
 #
-#  $Id: Makefile.target 209 2020-01-30 09:59:08Z ertl-honda $
+#  $Id: Makefile.target 335 2023-04-18 10:50:40Z ertl-honda $
 # 
 
 #
@@ -13,15 +13,20 @@ CORE = arm
 TOOL = gcc
 
 #
-#  FPUサポートとコーリングコンベンション
+#  FPUサポートとABI
 #
-#  FPUを使用する場合は，USE_ARM_FPUをマクロ定義し，使用するコーリング
-#  コンベンションに応じて，-mfloat-abi=softfpまたは-mfloat-abi=hardオ
-#  プションをつける．
+#  FPUを使用する場合は，USE_ARM_FPU_ALWAYSまたはUSE_ARM_FPU_SELECTIVE
+#  をマクロ定義する．
+#  USE_ARM_FPU_ALWAYSの場合には，FPUを使用する場合に最適化されたABIを
+#  用いるのが良いため，-mfloat-abi=hardオプションを付ける．また，使用
+#  するFPUを指定するために，-mfpu=vfpv3-d16オプションを付ける．
+#  USE_ARM_FPU_SELECTIVEの場合には，FPUを使用しない場合と互換のABIを用
+#  いる必要があるため，-mfloat-abi=softfpを付ける．-mfpu=vfpv3-d16オプ
+#  ションは，FPUを使用する処理単位をコンパイルする場合にのみ付けること
+#  が必要である．
 #
-#CDEFS := $(CDEFS) -DUSE_ARM_FPU
-#COPTS := $(COPTS) -mfloat-abi=softfp
-#COPTS := $(COPTS) -mfloat-abi=hard
+COPTS := $(COPTS) -DUSE_ARM_FPU_ALWAYS -mfpu=vfpv3-d16 -mfloat-abi=hard
+#COPTS := $(COPTS) -DUSE_ARM_FPU_SELECTIVE -mfloat-abi=softfp
 
 #
 #  QEMUに関する定義

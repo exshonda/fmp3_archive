@@ -2,7 +2,7 @@
  *  TOPPERS Software
  *      Toyohashi Open Platform for Embedded Real-Time Systems
  * 
- *  Copyright (C) 2013-2016 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2013-2022 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  * 
  *  上記著作権者は，以下の(1)～(4)の条件を満たす場合に限り，本ソフトウェ
@@ -34,7 +34,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: pl310.c 12 2018-07-03 03:56:42Z ertl-honda $
+ *  $Id: pl310.c 334 2023-04-14 07:39:43Z ertl-honda $
  */
 
 /*
@@ -135,7 +135,6 @@ pl310_initialize(uint32_t aux_val, uint32_t aux_mask)
 void
 pl310_disable(void)
 {
-	pl310_clean_and_invalidate_all();
 	sil_wrw_mem(PL310_CTRL, 0x00);
 }
 

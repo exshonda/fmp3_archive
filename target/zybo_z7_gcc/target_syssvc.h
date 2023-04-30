@@ -5,7 +5,7 @@
  *  スのターゲット依存の設定は，できる限りコンポーネント記述ファイルで
  *  記述し，このファイルに記述するものは最小限とする．
  * 
- *  $Id: target_syssvc.h 166 2019-08-28 07:54:41Z ertl-honda $
+ *  $Id: target_syssvc.h 334 2023-04-14 07:39:43Z ertl-honda $
  */
 
 #ifndef TOPPERS_TARGET_SYSSVC_H
@@ -59,6 +59,13 @@ extern void	target_fput_log(char c);
  *  低レベル出力で使用するSIOポート
  */
 #define SIOPID_FPUT		1
+
+/*
+ *  トレースログに関する設定
+ */
+#ifdef TOPPERS_ENABLE_TRACE
+#include "arch/tracelog/trace_log.h"
+#endif /* TOPPERS_ENABLE_TRACE */
 
 #endif /* TOPPERS_OMIT_TECS */
 

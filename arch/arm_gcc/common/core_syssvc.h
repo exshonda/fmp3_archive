@@ -35,7 +35,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: core_syssvc.h 263 2021-01-08 06:08:59Z ertl-honda $
+ *  $Id: core_syssvc.h 335 2023-04-18 10:50:40Z ertl-honda $
  */
 
 /*
@@ -80,14 +80,14 @@ arm_invalidate_all(void)
 
 #endif /* HIST_INVALIDATE_CACHE */
 
-	/*
+/*
  *  パフォーマンスモニタによる性能評価
-	 */
+ */
 #if defined(USE_ARM_PMCNT) && __TARGET_ARCH_ARM == 7
 
-	/*
+/*
  *  パフォーマンスモニタのカウンタのデータ型
-	 */
+ */
 typedef uint32_t	PMCNT;
 
 /*

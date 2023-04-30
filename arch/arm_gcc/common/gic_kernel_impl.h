@@ -2,7 +2,7 @@
  *  TOPPERS Software
  *      Toyohashi Open Platform for Embedded Real-Time Systems
  * 
- *  Copyright (C) 2006-2019 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2006-2022 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  * 
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -34,7 +34,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: gic_kernel_impl.h 178 2019-10-08 13:55:00Z ertl-honda $
+ *  $Id: gic_kernel_impl.h 335 2023-04-18 10:50:40Z ertl-honda $
  */
 
 /*
@@ -77,34 +77,92 @@
  *  いほど優先度が下がるものとする．GICのレジスタ構成と整合させるために，
  *  優先度の段数が256段階の時にあわせて表す．
  */
+#if defined(TOPPERS_SAFEG_SECURE)
+#define GIC_PRI_LEVEL		(0 - (TMIN_INTPRI - 1))
+#elif defined(TOPPERS_SAFEG_NONSECURE)
+#define GIC_PRI_LEVEL		((0 - (TMIN_INTPRI - 1)) << 1)
+#else  /* TOPPERS_SAFEG_NONSECURE */
 #define GIC_PRI_LEVEL		(TMAX_INTPRI - TMIN_INTPRI + 2)
+#endif /* TOPPERS_SAFEG_NONSECURE */
 
+#ifndef TOPPERS_SAFEG_NONSECURE
 #if GIC_PRI_LEVEL == 16
 #define GIC_PRI_SHIFT		4
-#define GIC_PRI_MASK		UINT_C(0x0f)
 #elif GIC_PRI_LEVEL == 32
 #define GIC_PRI_SHIFT		3
-#define GIC_PRI_MASK		UINT_C(0x1f)
 #elif GIC_PRI_LEVEL == 64
 #define GIC_PRI_SHIFT		2
-#define GIC_PRI_MASK		UINT_C(0x3f)
 #elif GIC_PRI_LEVEL == 128
 #define GIC_PRI_SHIFT		1
-#define GIC_PRI_MASK		UINT_C(0x7f)
 #elif GIC_PRI_LEVEL == 256
 #define GIC_PRI_SHIFT		0
+#else
+#error Invalid number of priority levels for GIC.
+#endif /* GIC_PRI_LEVEL == 16 */
+#else /* TOPPERS_SAFEG_NONSECURE */
+#if GIC_PRI_LEVEL == 16
+#define GIC_PRI_SHIFT		5
+#elif GIC_PRI_LEVEL == 32
+#define GIC_PRI_SHIFT		4
+#elif GIC_PRI_LEVEL == 64
+#define GIC_PRI_SHIFT		3
+#elif GIC_PRI_LEVEL == 128
+#define GIC_PRI_SHIFT		2
+#elif GIC_PRI_LEVEL == 256
+#define GIC_PRI_SHIFT		1
+#else
+#error Invalid number of priority levels for GIC.
+#endif /* GIC_PRI_LEVEL == 16 */
+#endif /* TOPPERS_SAFEG_NONSECURE */
+
+#if defined(TOPPERS_SAFEG_SECURE) || defined(TOPPERS_SAFEG_NONSECURE)
+#if GIC_PRI_LEVEL == 16
+#define GIC_PRI_MASK		UINT_C(0x07)
+#elif GIC_PRI_LEVEL == 32
+#define GIC_PRI_MASK		UINT_C(0x0f)
+#elif GIC_PRI_LEVEL == 64
+#define GIC_PRI_MASK		UINT_C(0x1f)
+#elif GIC_PRI_LEVEL == 128
+#define GIC_PRI_MASK		UINT_C(0x3f)
+#elif GIC_PRI_LEVEL == 256
+#define GIC_PRI_MASK		UINT_C(0x7f)
+#else
+#error Invalid number of priority levels for GIC.
+#endif /* GIC_PRI_LEVEL == 16 */
+#else /* defined(TOPPERS_SAFEG_SECURE) || defined(TOPPERS_SAFEG_NONSECURE) */
+#if GIC_PRI_LEVEL == 16
+#define GIC_PRI_MASK		UINT_C(0x0f)
+#elif GIC_PRI_LEVEL == 32
+#define GIC_PRI_MASK		UINT_C(0x1f)
+#elif GIC_PRI_LEVEL == 64
+#define GIC_PRI_MASK		UINT_C(0x3f)
+#elif GIC_PRI_LEVEL == 128
+#define GIC_PRI_MASK		UINT_C(0x7f)
+#elif GIC_PRI_LEVEL == 256
 #define GIC_PRI_MASK		UINT_C(0xff)
 #else
 #error Invalid number of priority levels for GIC.
 #endif /* GIC_PRI_LEVEL == 16 */
+#endif /* defined(TOPPERS_SAFEG_SECURE) || defined(TOPPERS_SAFEG_NONSECURE) */
 
+#if defined(TOPPERS_SAFEG_SECURE) || defined(TOPPERS_SAFEG_NONSECURE)
 /* 外部表現への変換 */
 #define EXT_IPM(pri) \
+			(((PRI)((pri) >> GIC_PRI_SHIFT)) - ((GIC_PRI_LEVEL >> 1) - 1))
+
+/* 内部表現への変換 */
+#define INT_IPM(ipm) \
+			(((uint_t)((ipm) + ((GIC_PRI_LEVEL >> 1) - 1))) << GIC_PRI_SHIFT)
+#else /* defined(TOPPERS_SAFEG_SECURE) || defined(TOPPERS_SAFEG_NONSECURE) */
+/* 外部表現への変換 */
+#define EXT_IPM(pri)												\
 			(((PRI)((pri) >> GIC_PRI_SHIFT)) - (GIC_PRI_LEVEL - 1))
 
 /* 内部表現への変換 */
 #define INT_IPM(ipm) \
 			(((uint_t)((ipm) + (GIC_PRI_LEVEL - 1))) << GIC_PRI_SHIFT)
+#endif /* defined(TOPPERS_SAFEG_SECURE) || defined(TOPPERS_SAFEG_NONSECURE) */
+
 
 /*
  *  GICレジスタのアドレスを定義するためのマクロ
@@ -287,6 +345,9 @@ gicd_raise_sgi(INTNO intno, ID prcid)
 
 /*
  *  割込みのコンフィグレーション
+ * 
+ *  この関数は，カーネルの初期化中に呼び出すことを想定しているため，
+ *  GICの操作後にメモリ同期バリアを入れていない．
  */
 Inline void
 gicd_config(INTNO intno, uint_t config)
@@ -304,6 +365,9 @@ gicd_config(INTNO intno, uint_t config)
 
 /*
  *  割込みグループの設定（セキュリティ拡張）
+ * 
+ *  この関数は，カーネルの初期化中に呼び出すことを想定しているため，
+ *  GICの操作後にメモリ同期バリアを入れていない．  
  */
 Inline void
 gicd_config_group(INTNO intno, uint_t group)
@@ -319,6 +383,9 @@ gicd_config_group(INTNO intno, uint_t group)
 
 /*
  *  割込み要求ラインに対する割込み優先度の設定（priは内部表現）
+ * 
+ *  この関数は，カーネルの初期化中に呼び出すことを想定しているため，
+ *  GICの操作後にメモリ同期バリアを入れていない．  
  */
 Inline void
 gicd_set_priority(INTNO intno, uint_t pri)
@@ -341,6 +408,9 @@ gicd_set_priority(INTNO intno, uint_t pri)
  *		プロセッサ1 : 0x02
  *		プロセッサ2 : 0x04
  *		プロセッサ3 : 0x08
+ * 
+ *  この関数は，カーネルの初期化中に呼び出すことを想定しているため，
+ *  GICの操作後にメモリ同期バリアを入れていない．  
  */
 Inline void
 gicd_set_target(INTNO intno, uint_t affinity)

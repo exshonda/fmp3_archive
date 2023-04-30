@@ -35,7 +35,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: target_kernel_impl.c 263 2021-01-08 06:08:59Z ertl-honda $
+ *  $Id: target_kernel_impl.c 335 2023-04-18 10:50:40Z ertl-honda $
  */
 
 /*
@@ -101,6 +101,7 @@
 /*
  *  MMUの設定情報（メモリエリアの情報）
  */
+__attribute__((weak))
 ARM_MMU_CONFIG arm_memory_area[] = {
 	{ DDR_ADDR,  DDR_ADDR,  DDR_SIZE,  DDR_ATTR  },
 	{ PL_ADDR,   PL_ADDR,   PL_SIZE,   PL_ATTR   },
@@ -111,6 +112,7 @@ ARM_MMU_CONFIG arm_memory_area[] = {
 /*
  *  MMUの設定情報の数（メモリエリアの数）
  */
+__attribute__((weak))
 const uint_t arm_tnum_memory_area
 					= sizeof(arm_memory_area) / sizeof(ARM_MMU_CONFIG);
 
@@ -154,7 +156,23 @@ boot_second_core(uint32_t address)
 void
 hardware_init_hook(void)
 {
-	arm_disable_dcache();
+	uint32_t reg;
+
+	/* 
+	 * キャッシュの無効化処理 
+	 */
+	CP15_READ_SCTLR(reg);
+	if (reg & CP15_SCTLR_DCACHE) {
+		/* Dキャッシュが有効な場合 */
+		arm_clean_dcache();
+		arm_clean_outer_cache();
+		arm_disable_dcache();
+	}
+	/* MMUの無効化 */
+	arm_disable_mmu();
+	/* L2キャッシュの無効化 */
+	arm_disable_outer_cache();
+	/* Iキャッシュの無効化 */
 	arm_disable_icache();
 }
 
@@ -165,8 +183,6 @@ hardware_init_hook(void)
 void
 target_mprc_initialize(void)
 {
-	pl310_disable();
-
 	mpcore_mprc_initialize();
 
 #if TNUM_PRCID >= 2
@@ -204,22 +220,23 @@ target_initialize(PCB *p_my_pcb)
 }
 
 /*
+ *  デフォルトのsoftware_term_hook（weak定義）
+ */
+__attribute__((weak))
+void software_term_hook(void)
+{
+}
+
+/*
  *  ターゲット依存の終了処理
  */
 void
 target_exit(void)
 {
-	extern void	software_term_hook(void);
-	void (*volatile fp)(void) = software_term_hook;
-
 	/*
-	 *  software_term_hookへのポインタを，一旦volatile指定のあるfpに代
-	 *  入してから使うのは，0との比較が最適化で削除されないようにするた
-	 *  めである．
+	 *  software_term_hookの呼出し
 	 */
-	if (fp != 0) {
-		(*fp)();
-	}
+	software_term_hook();
 
 	/*
 	 *  チップ依存の終了処理

@@ -5,7 +5,7 @@
  *  から直接インクルードすることはない．このファイルをインクルードする
  *  前に，t_stddef.hがインクルードされるので，それに依存してもよい．
  * 
- *  $Id: target_kernel.h 178 2019-10-08 13:55:00Z ertl-honda $
+ *  $Id: target_kernel.h 335 2023-04-18 10:50:40Z ertl-honda $
  */
 
 #ifndef TOPPERS_TARGET_KERNEL_H
@@ -42,10 +42,18 @@
 /*
  *  クラスIDの定義
  */
-#define CLS_ALL_PRC1	1		/* 割付け可能：すべて，初期割付け：PRC1 */
-#define CLS_ALL_PRC2	2		/* 割付け可能：すべて，初期割付け：PRC2 */
-#define CLS_PRC1		3		/* 割付け可能：PRC1，初期割付け：PRC1 */
-#define CLS_PRC2		4		/* 割付け可能：PRC2，初期割付け：PRC2 */
+#if TNUM_PRCID == 1
+#define CLS_PRC1		1		/* 割付け可能：PRC1，初期割付け：PRC1 */
+#define CLS_ALL_PRC1	2		/* 割付け可能：すべて，初期割付け：PRC1 */
+#elif TNUM_PRCID == 2
+#define CLS_PRC1		1		/* 割付け可能：PRC1，初期割付け：PRC1 */
+#define CLS_PRC2		2		/* 割付け可能：PRC2，初期割付け：PRC2 */
+#define CLS_ALL_PRC1	3		/* 割付け可能：すべて，初期割付け：PRC1 */
+#define CLS_ALL_PRC2	4		/* 割付け可能：すべて，初期割付け：PRC2 */
+#else
+#error TNUM_PRCID is out of range.
+#endif /* TNUM_PRCID == 1 */
+
 
 /*
  *  高分解能タイマのタイマ周期

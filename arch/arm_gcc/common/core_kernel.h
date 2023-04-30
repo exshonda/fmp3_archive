@@ -5,7 +5,7 @@
  * 
  *  Copyright (C) 2000-2003 by Embedded and Real-Time Systems Laboratory
  *                              Toyohashi Univ. of Technology, JAPAN
- *  Copyright (C) 2004-2019 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2004-2023 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  * 
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: core_kernel.h 263 2021-01-08 06:08:59Z ertl-honda $
+ *  $Id: core_kernel.h 335 2023-04-18 10:50:40Z ertl-honda $
  */
 
 /*
@@ -83,6 +83,10 @@
 
 /*
  *  CPU例外の情報を記憶しているメモリ領域の構造
+ *
+ *  割込み優先度マスクは，CPU例外がタスクコンテキストで発生した場合に
+ *  のみ有効である．非タスクコンテキストで発生した場合には，正しい値と
+ *  ならない場合がある．
  */
 typedef struct t_excinf {
 	uint32_t	nest_count;				/* 例外ネストカウント */

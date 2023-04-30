@@ -4,7 +4,7 @@
  *
  *  Copyright (C) 2000-2003 by Embedded and Real-Time Systems Laboratory
  *                              Toyohashi Univ. of Technology, JAPAN
- *  Copyright (C) 2006-2018 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2006-2023 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  *
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -36,7 +36,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  *
- *  $Id: xuartps.c 263 2021-01-08 06:08:59Z ertl-honda $
+ *  $Id: xuartps.c 335 2023-04-18 10:50:40Z ertl-honda $
  */
 
 /*
@@ -285,13 +285,28 @@ xuartps_dis_cbr(SIOPCB *p_siopcb, uint_t cbrtn)
 static void
 xuartps_isr_siop(SIOPCB *p_siopcb)
 {
+	uint32_t	xuartps_isr;
+
+	/*
+	 *  この時点の割込み要求の状態を保存
+	 *  この関数の最後に実施すると，関数内で処理していない要求をクリアする
+	 *  可能性があるため．
+	 */
+	xuartps_isr = sil_rew_mem(XUARTPS_ISR(p_siopcb->p_siopinib->base));
+                              
 	if (xuartps_getready(p_siopcb->p_siopinib->base)) {
 		/*
 		 *  受信通知コールバックルーチンを呼び出す．
 		 */
 		xuartps_irdy_rcv(p_siopcb->exinf);
 	}
-	if (xuartps_putready(p_siopcb->p_siopinib->base)) {
+
+	/*
+	 *  送信可能かつSIOドライバで送信したいデータがあるかぎり
+	 *  送信可能コールバックルーチンを呼び出す．
+	 */ 
+	while(xuartps_putready(p_siopcb->p_siopinib->base) &&
+		(sil_rew_mem(XUARTPS_IMR(p_siopcb->p_siopinib->base)) & XUARTPS_IXR_TXEMPTY)) {
 		/*
 		 *  送信可能コールバックルーチンを呼び出す．
 		 */
@@ -301,8 +316,7 @@ xuartps_isr_siop(SIOPCB *p_siopcb)
 	/*
 	 *  ペンディングしている割込みをクリア
 	 */
-	sil_wrw_mem(XUARTPS_ISR(p_siopcb->p_siopinib->base), 
-					sil_rew_mem(XUARTPS_ISR(p_siopcb->p_siopinib->base)));
+	sil_wrw_mem(XUARTPS_ISR(p_siopcb->p_siopinib->base), xuartps_isr);
 }
 
 /*

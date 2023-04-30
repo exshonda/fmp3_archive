@@ -7,13 +7,14 @@ Makefile.target
 MANIFEST
 target_cfg1_out.h
 target_check.trb
+target_class.trb
 target_ipi.cfg
 target_ipi.h
 target_kernel.cfg
 target_kernel.h
+target_kernel.trb
 target_kernel_impl.c
 target_kernel_impl.h
-target_kernel.trb
 target_rename.def
 target_rename.h
 target_serial.cfg

@@ -5,7 +5,7 @@
  * 
  *  Copyright (C) 2000-2003 by Embedded and Real-Time Systems Laboratory
  *                              Toyohashi Univ. of Technology, JAPAN
- *  Copyright (C) 2006-2019 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2006-2023 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  * 
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: mpcore_kernel_impl.c 178 2019-10-08 13:55:00Z ertl-honda $
+ *  $Id: mpcore_kernel_impl.c 335 2023-04-18 10:50:40Z ertl-honda $
  */
 
 /*
@@ -49,9 +49,9 @@
 #include "arm.h"
 
 /*
- *  MPCore依存の初期化（マスタコア）
+ *  MPCore依存の初期化（マスタプロセッサ）
  *
- *  sta_ker()の実行前にマスタプロセッサのみが実行する．
+ *  sta_kerの実行前にマスタプロセッサのみが実行する．
  */
 void
 mpcore_mprc_initialize(void)
@@ -67,27 +67,33 @@ mpcore_mprc_initialize(void)
 	gicd_initialize();
 
 	/*
-	 *  SCUをイネーブル
+	 *  SCUのイネーブル
 	 */
 	mpcore_enable_scu();
+
+	/*
+	 *  L2キャッシュの有効化
+	 */
+	arm_enable_outer_cache();
+	arm_invalidate_outer_cache();    
 }
 
 /*
  *  MPCore依存の初期化
+ *    
+ *   呼び出し時の状態
+ *    マスタプロセッサ     : L1キャッシュ無効
+ *    マスタプロセッサ以外 : L1キャッシュ無効
+ *    L2キャッシュ : 有効
  */
 void
 mpcore_initialize(PCB *p_my_pcb)
 {
 	/*
-	 *  キャッシュをディスエーブル
-	 */
-	arm_disable_cache();
-
-	/*
 	 *  コア依存の初期化
 	 */
 	core_initialize(p_my_pcb);
-
+        
 	/*
 	 *  MPCoreをSMPモードに設定
 	 *
@@ -97,9 +103,12 @@ mpcore_initialize(PCB *p_my_pcb)
 	mpcore_enable_smp();
 
 	/*
-	 *  キャッシュをイネーブル
+	 *  L1キャッシュの無効化とイネーブル
 	 */
-	arm_enable_cache();
+	arm_invalidate_dcache();
+	arm_invalidate_icache();
+	arm_enable_dcache();
+	arm_enable_icache();
 
 	/*
 	 * GICのCPUインタフェースの初期化

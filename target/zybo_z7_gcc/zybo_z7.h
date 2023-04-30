@@ -2,7 +2,7 @@
  *  TOPPERS Software
  *      Toyohashi Open Platform for Embedded Real-Time Systems
  *
- *  Copyright (C) 2012-2018 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2012-2023 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  *
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -34,7 +34,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  *
- *  $Id: zybo_z7.h 166 2019-08-28 07:54:41Z ertl-honda $
+ *  $Id: zybo_z7.h 335 2023-04-18 10:50:40Z ertl-honda $
  */
 
 /*
@@ -47,23 +47,20 @@
  *  各クロック周波数の定義
  */
 #define ZYNQ_CPU_6X4X_MHZ		667U		/* 667MHz */
-#define ZYNQ_CPU_3X2X_MHZ		356U		/* 356MHz */
+#define ZYNQ_CPU_3X2X_MHZ		333U		/* 333MHz */
 #define ZYNQ_CPU_2X_MHZ			222U		/* 222MHz */
 #define ZYNQ_CPU_1X_MHZ			111U		/* 111MHz */
 
 /*
  *  各タイマのプリスケール値と周波数の定義
  *
- *  周辺デバイス向けクロック（ZYNQ_CPU_3X2X_MZ，356MHz）を73分周して，
- *  5MHzの周波数で使用する．
+ *  周辺デバイス向けクロック（ZYNQ_CPU_3X2X_MZ，333MHz）を67分周して，
+ *  5MHz(4.970149254Mhz)の周波数で使用する．
  */
-#define MPCORE_TMR_PS_VALUE		62
-#define MPCORE_TMR_FREQ			5
-
-#define MPCORE_WDG_PS_VALUE		62
+#define MPCORE_WDG_PS_VALUE		66
 #define MPCORE_WDG_FREQ			5
 
-#define MPCORE_GTC_PS_VALUE		62
+#define MPCORE_GTC_PS_VALUE		66
 #define MPCORE_GTC_FREQ			5
 
 /*

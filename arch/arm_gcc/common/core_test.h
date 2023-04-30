@@ -3,7 +3,7 @@
  *      Toyohashi Open Platform for Embedded Real-Time Systems/
  *      Flexible MultiProcessor Kernel
  * 
- *  Copyright (C) 2006-2018 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2006-2023 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  * 
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -35,7 +35,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: core_test.h 209 2020-01-30 09:59:08Z ertl-honda $
+ *  $Id: core_test.h 335 2023-04-18 10:50:40Z ertl-honda $
  */
 
 /*
@@ -75,10 +75,10 @@
 #define EXCNO_MACV_DATA_PRC3	(0x30000U | EXCNO_DABORT)
 #define EXCNO_MACV_DATA_PRC4	(0x40000U | EXCNO_DABORT)
 
-#define CPUEXC1_PRC1		(0x10000U | CPUEXC1)
-#define CPUEXC1_PRC2		(0x20000U | CPUEXC1)
-#define CPUEXC1_PRC3		(0x30000U | CPUEXC1)
-#define CPUEXC1_PRC4		(0x40000U | CPUEXC1)
+#define CPUEXC1_PRC1		(0x10000U | _CPUEXC1)
+#define CPUEXC1_PRC2		(0x20000U | _CPUEXC1)
+#define CPUEXC1_PRC3		(0x30000U | _CPUEXC1)
+#define CPUEXC1_PRC4		(0x40000U | _CPUEXC1)
 
 #define EXCNO_UNDEF_PRC1	(0x10000U | EXCNO_UNDEF)
 #define EXCNO_UNDEF_PRC2	(0x20000U | EXCNO_UNDEF)
@@ -106,31 +106,31 @@
  */
 #if defined(USE_CPUEXC_SVC)
 
-#define CPUEXC1					EXCNO_SVC		/* スーパバイザコール */
+#define _CPUEXC1					EXCNO_SVC		/* スーパバイザコール */
 #define RAISE_CPU_EXCEPTION		RAISE_CPU_EXCEPTION_SVC
 #define PREPARE_RETURN_CPUEXC	PREPARE_RETURN_CPUEXC_SVC
 
 #elif defined(USE_CPUEXC_PABORT)
 
-#define CPUEXC1					EXCNO_PABORT	/* プリフェッチアボート */
+#define _CPUEXC1				EXCNO_PABORT	/* プリフェッチアボート */
 #define RAISE_CPU_EXCEPTION		RAISE_CPU_EXCEPTION_PABORT
 #define PREPARE_RETURN_CPUEXC	PREPARE_RETURN_CPUEXC_PABORT
 
 #elif defined(USE_CPUEXC_DABORT)
 
-#define CPUEXC1					EXCNO_DABORT	/* データアボート */
+#define _CPUEXC1				EXCNO_DABORT	/* データアボート */
 #define RAISE_CPU_EXCEPTION		RAISE_CPU_EXCEPTION_DABORT
 #define PREPARE_RETURN_CPUEXC	PREPARE_RETURN_CPUEXC_DABORT
 
 #elif defined(USE_CPUEXC_FATAL)
 
-#define CPUEXC1					EXCNO_FATAL		/* フェイタルデータアボート */
+#define _CPUEXC1				EXCNO_FATAL		/* フェイタルデータアボート */
 #define RAISE_CPU_EXCEPTION		RAISE_CPU_EXCEPTION_FATAL
 /* フェイタルデータアボート例外ハンドラからリターンしてはならない */
 
 #else
 
-#define CPUEXC1					EXCNO_UNDEF		/* 未定義命令 */
+#define _CPUEXC1				EXCNO_UNDEF		/* 未定義命令 */
 #define RAISE_CPU_EXCEPTION		RAISE_CPU_EXCEPTION_UNDEF
 #define PREPARE_RETURN_CPUEXC	PREPARE_RETURN_CPUEXC_UNDEF
 

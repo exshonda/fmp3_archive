@@ -5,7 +5,7 @@
  * 
  *  Copyright (C) 2000-2003 by Embedded and Real-Time Systems Laboratory
  *                              Toyohashi Univ. of Technology, JAPAN
- *  Copyright (C) 2005-2020 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2005-2023 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  * 
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: mpcore_timer.h 263 2021-01-08 06:08:59Z ertl-honda $
+ *  $Id: mpcore_timer.h 335 2023-04-18 10:50:40Z ertl-honda $
  */
 
 /*
@@ -145,6 +145,16 @@ mpcore_gtc_set_cvr(uint64_t cvr)
 }
 
 /*
+ * 高分解能タイマの起動処理（マスタプロセッサで実行）
+ */
+extern void target_hrt_initialize_global(EXINF exinf);
+
+/*
+ *  高分解能タイマの停止処理（マスタプロセッサで実行）
+ */
+extern void target_hrt_terminate_global(EXINF exinf);
+
+/*
  *  高分解能タイマの起動処理
  */
 extern void	target_hrt_initialize(EXINF exinf);
@@ -156,6 +166,10 @@ extern void	target_hrt_terminate(EXINF exinf);
 
 /*
  *  高分解能タイマの現在のカウント値の読出し
+ *
+ *  この関数はシステムログへのログ情報の出力時に呼び出されるため，この
+ *  関数内でsyslogやassertを使ってはならない（無限の再帰呼出しが起こ
+ *  る）．
  */
 Inline HRTCNT
 target_hrt_get_current(void)

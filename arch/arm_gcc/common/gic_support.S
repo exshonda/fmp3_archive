@@ -4,7 +4,7 @@
  * 
  *  Copyright (C) 2000-2003 by Embedded and Real-Time Systems Laboratory
  *                              Toyohashi Univ. of Technology, JAPAN
- *  Copyright (C) 2006-2018 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2006-2023 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  * 
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -36,7 +36,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: gic_support.S 64 2018-08-20 06:57:46Z ertl-honda $
+ *  $Id: gic_support.S 335 2023-04-18 10:50:40Z ertl-honda $
  */
 
 /*
@@ -96,21 +96,11 @@ ALABEL(irc_begin_int_errata_2)
 #endif /* GIC_PL390_ERRATA */
 
 	/*
-	 *  割込み要因の割込み優先度を求め，割込み優先度マスクに設定する．
+	 *  割込み発生前の割込み優先度を保存する．
 	 */
-	ldr		r1, =GICC_RPR		/* 受け付けた割込みの割込み優先度を取得 */
-	ldr		r0, [r1]
 	ldr		r1, =GICC_PMR		/* 割込み発生前の割込み優先度を取得 */
 	ldr		r2, [r1]
-	str		r0, [r1]			/* 新しい割込み優先度マスクをセットする */
-	asm_data_sync_barrier r0	/* 割込み優先度マスクがセットされるのを待つ */
-	str		r2, [sp]			/* irc_end_intで用いる情報を保存 */
-
-	/*
-	 *  EOIを発行する．
-	 */
-	ldr		r1, =GICC_EOIR		/* EOIレジスタへの書込み */
-	str		r3, [r1]
+	push	{r2,r3}				/* irc_end_intで用いる情報を保存 */
 
 	/*
 	 *  r4に割込み番号を入れた状態でリターンする．
@@ -125,9 +115,15 @@ ALABEL(irc_begin_int_errata_2)
 	AGLOBAL(irc_end_int)
 ALABEL(irc_end_int)
 	/*
-	 *  割込み優先度マスクを元に戻す．
+	 *  EOIを発行する．
 	 */
-	ldr		r2, [sp]			/* irc_begin_intで保存した情報を復帰 */
+	pop		{r2,r3}				/* irc_begin_intで保存した情報を復帰 */
+	ldr		r1, =GICC_EOIR		/* EOIレジスタへの書込み */
+	str		r3, [r1]
+
+	/*
+	 *  割込み優先度マスクを元に戻してリターンする．
+	 */
 	ldr		r1, =GICC_PMR		/* 割込み優先度マスクを元に戻す */
 	str		r2, [r1]
 	bx		lr

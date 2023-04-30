@@ -2,8 +2,8 @@
 		TOPPERS/FMP3カーネル
 		ZYBO_Z7依存部 ユーザーズマニュアル
 
-		対応バージョン: Release 3.2
-		最終更新: 2021年1月6日
+		対応バージョン: Release 3.3
+		最終更新: 2023年04月18日
 
 このドキュメントは，TOPPERS/FMP3カーネルのZYBO_Z7ターゲット依存部を使用す
 るために必要な事項を説明するものである．
@@ -13,7 +13,7 @@
       Toyohashi Open Platform for Embedded Real-Time Systems/
       Flexible MultiProcessor Kernel
 
- Copyright (C) 2008-2021 by Embedded and Real-Time Systems Laboratory
+ Copyright (C) 2008-2023 by Embedded and Real-Time Systems Laboratory
              Graduate School of Information Science, Nagoya Univ., JAPAN
  
  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -45,7 +45,7 @@
  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  の責任を負わない．
  
- $Id: target_user.txt 265 2021-01-08 06:17:00Z ertl-honda $
+ $Id: target_user.txt 335 2023-04-18 10:50:40Z ertl-honda $
 ----------------------------------------------------------------------
 
 ○目次
@@ -137,12 +137,12 @@ ZYBO_Z7ターゲット依存部（GNU開発環境向け）は，チップ依存�
 
 1.3 依存している個別パッケージのバージョン番号
 
-ZYBO_Z7ターゲット依存部（バージョン 3.0.0）の個別パッケージが依存している
+ZYBO_Z7ターゲット依存部（バージョン 3.3.0）の個別パッケージが依存している
 個別パッケージと，動作確認を行ったバージョンは次の通り．
 
 	個別パッケージの名称	バージョン	個別パッケージファイル名
 	------------------------------------------------------------------
-	ターゲット非依存部		3.0.0		fmp3-3.0.0.tar.gz
+	ターゲット非依存部		3.3.0		fmp3-3.3.0.tar.gz
 
 1.4 開発環境と動作確認条件
 
@@ -154,8 +154,8 @@ ZYBO_Z7ターゲット依存部（バージョン 3.0.0）の個別パッケー�
 
 動作確認を行ったバージョンは次の通り．
 
-	gcc: 7.3.1 20180622
-	binutils（objcopy，objdump）：2.30.0.20180329
+	gcc: 10.2.1 20201103
+	binutils（objcopy，objdump）：2.35.1.20201028
 
 また，Xilinx社のSDKに付属のコンパイラとIDEを用いることもできる．
 
@@ -309,6 +309,20 @@ ENABLE_GCOV = true
 		xilinx_sdk				ZYBO_Z7用のXilinx SDKプロジェクト
 
 5.2 バージョン履歴
+2023/04/14
+・Release 3.3.0 対応．
+
+2022年12月23日	キャッシュの初期化方法の見直し
+・初期化の順序やsta_kerを呼び出す時点のキャッシュの状態につい規定
+  ・詳細は arm_cache_init.txt を参照のこと．
+  
+2022/12/21
+・メモリの設定をアプリケーション依存で変更しやすいように変更．
+  ・arm_memory_areaとarm_tnum_memory_areaにweak属性を追加．
+  
+・FPUサポートに，常にFPUを使用する実装を追加
+  ・Makefile.target でFPUの使用方法を指定．
+
 2019/09/30
 ・ZYBO Z7 対応．
 

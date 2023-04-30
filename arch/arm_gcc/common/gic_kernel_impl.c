@@ -2,7 +2,7 @@
  *  TOPPERS Software
  *      Toyohashi Open Platform for Embedded Real-Time Systems
  *
- *  Copyright (C) 2006-2016 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2006-2023 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  *
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -34,7 +34,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: gic_kernel_impl.c 178 2019-10-08 13:55:00Z ertl-honda $
+ *  $Id: gic_kernel_impl.c 335 2023-04-18 10:50:40Z ertl-honda $
  */
 
 /*
@@ -181,8 +181,8 @@ gicd_terminate(void)
 /*
  *  割込み要求ラインの属性の設定
  *
- *  FMP3カーネルでの利用を想定して，パラメータエラーはアサーションでチェッ
- *  クしている．
+ *  FMP3カーネルでの利用を想定して，パラメータエラーはアサーションで
+ *  チェックしている．
  */
 Inline void
 config_int(PCB *p_my_pcb, INTNO intno, ATR intatr, PRI intpri, uint_t affinity)

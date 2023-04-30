@@ -5,7 +5,7 @@
  * 
  *  Copyright (C) 2000-2003 by Embedded and Real-Time Systems Laboratory
  *                              Toyohashi Univ. of Technology, JAPAN
- *  Copyright (C) 2006-2019 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2006-2023 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  * 
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: chip_kernel_impl.h 178 2019-10-08 13:55:00Z ertl-honda $
+ *  $Id: chip_kernel_impl.h 335 2023-04-18 10:50:40Z ertl-honda $
  */
 
 /*
@@ -55,6 +55,19 @@
  *  Zynq7000のハードウェア資源の定義
  */
 #include "zynq7000.h"
+#include "pl310.h"
+
+/*
+ *  Use the dispatch_handler bypass processing
+ *
+ *  Note: After one core (e.g. core0) changes the status of a task
+ *  in another core (e.g., act_tsk(CORE1TASK)) usually an interrupt is
+ *  sent to that core (e.g., core1) for dispatching. If we use the
+ *  USE_IPI_DIS_HANDER_BYPASS macro, instead of going to an interrupt
+ *  handler the dispatcher will be called automatically for reducing
+ *  overhead.
+ */
+//#define USE_DISPATCH_HANDER_BYPASS
 
 /*
  *  デフォルトの非タスクコンテキスト用のスタック領域の定義
@@ -62,6 +75,11 @@
 #ifndef DEFAULT_ISTKSZ
 #define DEFAULT_ISTKSZ  0x2000U			/* 8KB */
 #endif /* DEFAULT_ISTKSZ */
+
+/*
+ *  FPUに関する設定
+ */
+#define ASM_ARM_FPU_TYPE	vfpv3
 
 /*
  *  デフォルトのアイドル処理用のスタック領域の定義
@@ -89,6 +107,42 @@ extern void chip_initialize(PCB *p_my_pcb);
  *  チップ依存の終了処理
  */
 extern void chip_terminate(void);
+
+/*
+ *  L2キャッシュのイネーブル
+ */
+Inline void
+arm_enable_outer_cache(void) 
+{
+	pl310_initialize(0x0U, ~0x0U);
+}
+
+/*
+ *  L2キャッシュのディスエーブル
+*/
+Inline void
+arm_disable_outer_cache(void)
+{
+	pl310_disable();
+}
+
+/*
+ *  L2キャッシュの無効化
+ */
+Inline void
+arm_invalidate_outer_cache(void)
+{
+	pl310_invalidate_all();
+}
+
+/*
+ *  L2キャッシュのクリーン
+ */
+Inline void
+arm_clean_outer_cache(void) 
+{
+	pl310_clean_and_invalidate_all();
+}
 
 #endif /* TOPPERS_MACRO_ONLY */
 #endif /* TOPPERS_CHIP_KERNEL_IMPL_H */

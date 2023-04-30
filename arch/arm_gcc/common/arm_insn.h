@@ -4,7 +4,7 @@
  * 
  *  Copyright (C) 2000-2003 by Embedded and Real-Time Systems Laboratory
  *                              Toyohashi Univ. of Technology, JAPAN
- *  Copyright (C) 2006-2019 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2006-2023 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  * 
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -36,7 +36,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: arm_insn.h 263 2021-01-08 06:08:59Z ertl-honda $
+ *  $Id: arm_insn.h 335 2023-04-18 10:50:40Z ertl-honda $
  */
 
 /*
@@ -220,7 +220,7 @@ arm_send_event(void)
 /* メインIDレジスタ */
 #define CP15_READ_MIDR(reg)		Asm("mrc p15, 0, %0, c0, c0, 0":"=r"(reg))
 
-/* マルチプロセッサアフィニティレジスタ（ARMv6以降）*/
+/* マルチプロセッサアフィニティレジスタ */
 #define CP15_READ_MPIDR(reg)	Asm("mrc p15, 0, %0, c0, c0, 5":"=r"(reg))
 
 /* キャッシュタイプレジスタ */
@@ -274,6 +274,16 @@ arm_send_event(void)
 #define CP15_INVALIDATE_UCACHE() Asm("mcr p15, 0, %0, c7, c7, 0"::"r"(0))
 #endif /* __TARGET_ARCH_ARM <= 6 */
 
+/* データキャッシュ全体のクリーン（ARMv6のみ）*/
+#if __TARGET_ARCH_ARM == 6
+#define CP15_CLEAN_DCACHE() Asm("mcr p15, 0, %0, c7, c10, 0"::"r"(0))
+#endif /* __TARGET_ARCH_ARM == 6 */
+
+/* 統合キャッシュ全体のクリーン（ARMv6のみ）*/
+#if __TARGET_ARCH_ARM == 6
+#define CP15_CLEAN_UCACHE() Asm("mcr p15, 0, %0, c7, c11, 0"::"r"(0))
+#endif /* __TARGET_ARCH_ARM == 6 */
+
 /* データキャッシュ全体のクリーンと無効化（ARMv6のみ）*/
 #if __TARGET_ARCH_ARM == 6
 #define CP15_CLEAN_AND_INVALIDATE_DCACHE() \
@@ -288,6 +298,9 @@ arm_send_event(void)
 
 /* データキャッシュのセット／ウェイ単位の無効化 */
 #define CP15_WRITE_DCISW(reg)	Asm("mcr p15, 0, %0, c7, c6, 2"::"r"(reg))
+
+/* データキャッシュのセット／ウェイ単位のクリーン */
+#define CP15_WRITE_DCCSW(reg)	Asm("mcr p15, 0, %0, c7, c10, 2"::"r"(reg))
 
 /* データキャッシュのセット／ウェイ単位のクリーンと無効化 */
 #define CP15_WRITE_DCCISW(reg)	Asm("mcr p15, 0, %0, c7, c14, 2"::"r"(reg))
@@ -304,7 +317,7 @@ arm_send_event(void)
  *  CP15によるMMUの操作マクロ（VMSA）
  */
 
-/* 変換テーブルベース制御レジスタ（ARMv6以降）*/
+/* 変換テーブルベース制御レジスタ */
 #define CP15_WRITE_TTBCR(reg)	Asm("mcr p15, 0, %0, c2, c0, 2"::"r"(reg))
 
 /* 変換テーブルベースレジスタ0 */
@@ -314,7 +327,7 @@ arm_send_event(void)
 /* ドメインアクセス制御レジスタ */
 #define CP15_WRITE_DACR(reg)	Asm("mcr p15, 0, %0, c3, c0, 0"::"r"(reg))
 
-/* コンテキストIDレジスタ（ARMv6以降）*/
+/* コンテキストIDレジスタ */
 #define CP15_WRITE_CONTEXTIDR(reg) Asm("mcr p15, 0, %0, c13, c0, 1"::"r"(reg))
 
 /*
@@ -323,6 +336,8 @@ arm_send_event(void)
 
 /* TLB全体の無効化 */
 #define CP15_INVALIDATE_TLB()	Asm("mcr p15, 0, %0, c8, c7, 0"::"r"(0))
+#define CP15_INVALIDATE_DATA_TLB()	Asm("mcr p15, 0, %0, c8, c6, 0"::"r"(0))
+#define CP15_INVALIDATE_INST_TLB()	Asm("mcr p15, 0, %0, c8, c5, 0"::"r"(0))
 
 /*
  *  CP15のパフォーマンスモニタ操作マクロ（ARMv7のみ）
@@ -433,13 +448,15 @@ inst_sync_barrier(void)
 
 #endif /* __TARGET_ARCH_ARM == 7 */
 
-#if __TARGET_ARCH_ARM >= 7
+/*
+ *  スレッドIDレジスタ操作マクロ（ARMv7のみ）
+ */
+#if __TARGET_ARCH_ARM == 7
 
-/* Thread ID レジスタ */
 #define CP15_READ_TPIDRPRW(x)  Asm("mrc p15, 0, %0, c13, c0, 4":"=r"(x))
 #define CP15_WRITE_TPIDRPRW(x) Asm("mcr p15, 0, %0, c13, c0, 4":: "r"(x))
 
-#endif /* __TARGET_ARCH_ARM >= 7 */
+#endif /* __TARGET_ARCH_ARM == 7 */
 
 /*
  *  浮動小数点例外制御レジスタ（FPEXC）の現在値の読出し

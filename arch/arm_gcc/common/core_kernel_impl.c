@@ -5,7 +5,7 @@
  * 
  *  Copyright (C) 2000-2003 by Embedded and Real-Time Systems Laboratory
  *                              Toyohashi Univ. of Technology, JAPAN
- *  Copyright (C) 2006-2020 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2006-2023 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  * 
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: core_kernel_impl.c 263 2021-01-08 06:08:59Z ertl-honda $
+ *  $Id: core_kernel_impl.c 335 2023-04-18 10:50:40Z ertl-honda $
  */
 
 /*
@@ -77,7 +77,7 @@ LOCK giant_lock;
 /*
  *  セクションテーブル
  */
-static uint32_t section_table[ARM_SECTION_TABLE_ENTRY]
+static uint32_t section_table[TNUM_PRCID][ARM_SECTION_TABLE_ENTRY]
 							__attribute__((aligned(ARM_SECTION_TABLE_ALIGN)));
 
 /*
@@ -89,7 +89,10 @@ config_section_entry(ARM_MMU_CONFIG *p_ammuc)
 	uint32_t	vaddr = p_ammuc->vaddr;
 	uint32_t	paddr = p_ammuc->paddr;
 	uint32_t	size = p_ammuc->size;
+#ifdef USE_ARM_SSECTION    
 	uint_t		i;
+#endif /* USE_ARM_SSECTION */    
+	uint32_t	*p_my_section_table = &(section_table[get_my_prcidx()][0]);
 
 	assert(vaddr % ARM_SECTION_SIZE == 0);
 	assert(paddr % ARM_SECTION_SIZE == 0);
@@ -98,7 +101,7 @@ config_section_entry(ARM_MMU_CONFIG *p_ammuc)
 #ifdef USE_ARM_SSECTION
 		if (size >= ARM_SSECTION_SIZE && (vaddr % ARM_SSECTION_SIZE) == 0) {
 			for (i = 0; i < 16; i++) {
-				section_table[vaddr / ARM_SECTION_SIZE] = paddr
+				p_my_section_table[vaddr / ARM_SECTION_SIZE] = paddr
 									|ARM_MMU_DSCR1_SSECTION|p_ammuc->attr;
 				vaddr += ARM_SECTION_SIZE;
 			}
@@ -107,7 +110,7 @@ config_section_entry(ARM_MMU_CONFIG *p_ammuc)
 		}
 		else {
 #endif /* USE_ARM_SSECTION */
-			section_table[vaddr / ARM_SECTION_SIZE] = paddr
+			p_my_section_table[vaddr / ARM_SECTION_SIZE] = paddr
 									|ARM_MMU_DSCR1_SECTION|p_ammuc->attr;
 			vaddr += ARM_SECTION_SIZE;
 			paddr += ARM_SECTION_SIZE;
@@ -126,12 +129,13 @@ arm_mmu_initialize(void)
 {
 	uint32_t	reg;
 	uint_t		i;
+	uint32_t	*p_my_section_table = &(section_table[get_my_prcidx()][0]);
 
 	/*
 	 *  MMUのセクションテーブルの設定
 	 */
 	for (i = 0; i < ARM_SECTION_TABLE_ENTRY; i++) {
-		section_table[i] = ARM_MMU_DSCR1_FAULT;
+		p_my_section_table[i] = ARM_MMU_DSCR1_FAULT;
 	}
 	for (i = 0; i < arm_tnum_memory_area; i++) {
 		config_section_entry(&(arm_memory_area[i]));
@@ -145,7 +149,7 @@ arm_mmu_initialize(void)
 	/*
 	 *  変換テーブルとして，section_tableを使用する．
 	 */
-	reg = ((uint32_t) &(section_table[0])) | TTBR_CONFIG;
+	reg = ((uint32_t) &(p_my_section_table[0])) | TTBR_CONFIG;
 	CP15_WRITE_TTBR0(reg);
 
 	/*
@@ -169,40 +173,23 @@ arm_mmu_initialize(void)
 	 */
 	CP15_READ_SCTLR(reg);
 #if __TARGET_ARCH_ARM == 6
-	reg |= (CP15_SCTLR_MMU|CP15_SCTLR_EXTPAGE);
-#else /* __TARGET_ARCH_ARM == 6 */
-	reg |= CP15_SCTLR_MMU;
+	/* Armv6-A : 拡張ページテーブル設定を使う（サブページは使わない）*/
+	reg |= CP15_SCTLR_EXTPAGE;
 #endif /* __TARGET_ARCH_ARM == 6 */
+#if __TARGET_ARCH_ARM >= 7
+	/* Armv7-A以上 : TBLのXN, pXN bit指定通りに実行権限を設定する */
+	reg &= ~(CP15_SCTLR_UWXN | CP15_SCTLR_WXN);
+	/* Armv7-A以上 : TBLのAP[2:1] bit指定通りにアクセス権限を設定する */
+	reg &= ~(CP15_SCTLR_AFE | CP15_SCTLR_TRE);
+	/* Armv7-A以上 : TBLのTEX[2:0]指定通りにキャッシュ属性を設定する */
+	reg &= ~(CP15_SCTLR_TRE);
+#endif /* __TARGET_ARCH_ARM >= 7 */
+	reg |= CP15_SCTLR_MMU;
 	CP15_WRITE_SCTLR(reg);
 	inst_sync_barrier();
 }
 
 #endif /* USE_ARM_MMU */
-
-/*
- *  FPUの初期化
- */
-#ifdef USE_ARM_FPU
-
-void
-arm_fpu_initialize(void)
-{
-	uint32_t	reg;
-
-	/*
-	 *  CP10とCP11をアクセス可能に設定する．
-	 */
-	CP15_READ_CPACR(reg);
-	reg |= (CP15_CPACR_CP10_FULLACCESS | CP15_CPACR_CP11_FULLACCESS);
-	CP15_WRITE_CPACR(reg);
-
-	/*
-	 *  FPUをディスエーブルする．
-	 */
-	set_fpexc(current_fpexc() & ~FPEXC_ENABLE);
-}
-
-#endif /* USE_ARM_FPU */
 
 /*
  *  パフォーマンスモニタの初期化
@@ -288,14 +275,7 @@ core_initialize(PCB *p_my_pcb)
 #ifdef USE_ARM_MMU
 	arm_mmu_initialize();
 #endif /* USE_ARM_MMU */
-
-	/*
-	 *  FPUの初期化
-	 */
-#ifdef USE_ARM_FPU
-	arm_fpu_initialize();
-#endif /* USE_ARM_FPU */
-
+    
 	/*
 	 *  パフォーマンスモニタの初期化
 	 */

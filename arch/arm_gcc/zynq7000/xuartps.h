@@ -36,7 +36,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: xuartps.h 263 2021-01-08 06:08:59Z ertl-honda $
+ *  $Id: xuartps.h 334 2023-04-14 07:39:43Z ertl-honda $
  */
 
 /*
@@ -57,6 +57,7 @@
 #define XUARTPS_MR(base)		((uint32_t *)((base) + 0x04U))
 #define XUARTPS_IER(base)		((uint32_t *)((base) + 0x08U))
 #define XUARTPS_IDR(base)		((uint32_t *)((base) + 0x0cU))
+#define XUARTPS_IMR(base)		((uint32_t *)((base) + 0x10U))
 #define XUARTPS_ISR(base)		((uint32_t *)((base) + 0x14U))
 #define XUARTPS_BAUDGEN(base)	((uint32_t *)((base) + 0x18U))
 #define XUARTPS_RXTOUT(base)	((uint32_t *)((base) + 0x1cU))
