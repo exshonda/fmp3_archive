@@ -3,7 +3,7 @@
  *      Toyohashi Open Platform for Embedded Real-Time Systems/
  *      Flexible MultiProcessor Kernel
  *
- *  Copyright (C) 2009-2020 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2009-2021 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN  
  *
  *  上記著作権者は，以下の(1)～(4)の条件を満たす場合に限り，本ソフトウェ
@@ -35,7 +35,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  @(#) $Id: pcb.h 263 2021-01-08 06:08:59Z ertl-honda $
+ *  $Id: pcb.h 335 2023-04-18 10:50:40Z ertl-honda $
  */
 
 /*
@@ -45,12 +45,15 @@
 #ifndef TOPPERS_PCB_H
 #define TOPPERS_PCB_H
 
-#include <queue.h>
-
 /*
  *  タイムイベントブロックの定義
  */
 #include "tmevt.h"
+
+/*
+ *  キューのデータ構造の定義
+ */  
+#include "queue.h"
 
 /*
  *  PCB定義のための前方参照
@@ -61,6 +64,16 @@ typedef struct spin_lock_initialization_block SPNINIB;
  *  プロセッサ管理ブロック（PCB）の定義
  */
 typedef struct processor_control_block {
+#ifndef OMIT_TARGET_PCB
+	/*
+	 *  プロセッサ管理ブロックのターゲット依存部
+	 *        
+	 *  オフセット値が小さいアーキテクチャに対応できるようPCBの先頭に
+	 *  配置する．      
+	 */
+	TPCB	target_pcb;
+#endif /* OMIT_TARGET_PCB */
+
 	/*
 	 *  プロセッサID
 	 */
@@ -122,13 +135,6 @@ typedef struct processor_control_block {
 	 *  トロックを取らずにアクセスして良い．
 	 */
 	const SPNINIB	*p_locspn;
-
-#ifndef OMIT_TARGET_PCB
-	/*
-	 *  プロセッサ管理ブロックのターゲット依存部
-	 */
-	TPCB	target_pcb;
-#endif /* OMIT_TARGET_PCB */
 
 	/*
 	 *  レディキュー

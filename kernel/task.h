@@ -5,7 +5,7 @@
  * 
  *  Copyright (C) 2000-2003 by Embedded and Real-Time Systems Laboratory
  *                              Toyohashi Univ. of Technology, JAPAN
- *  Copyright (C) 2005-2020 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2005-2023 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  * 
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: task.h 263 2021-01-08 06:08:59Z ertl-honda $
+ *  $Id: task.h 335 2023-04-18 10:50:40Z ertl-honda $
  */
 
 /*
@@ -182,7 +182,8 @@ typedef struct task_initialization_block {
  *  ・初期化後は常に有効：
  *  		p_tinib，p_dominib，p_schedcb，tstat，actque，p_pcb，actprc
  *  ・休止状態以外で有効（休止状態では初期値になっている）：
- *  		bpriority，priority，wupque，raster，enater，p_lastmtx
+ *  		svclevel，bpriority，priority，wupque，raster，enater，
+ *  		boosted，p_lastmtx
  *  ・待ち状態（二重待ち状態を含む）で有効：
  *  		winfo，p_wobjcb，winfo_obj
  *  ・実行できる状態と同期・通信オブジェクトに対する待ち状態で有効：
@@ -205,8 +206,10 @@ typedef struct task_control_block {
 #endif /* UINT8_MAX */
 	BIT_FIELD_BOOL	actque : 1;		/* 起動要求キューイング */
 	BIT_FIELD_BOOL	wupque : 1;		/* 起床要求キューイング */
-	BIT_FIELD_BOOL	raster : 1;		/* タスク終了要求状態 */
+	BIT_FIELD_BOOL	raster : 1;		/* タスク終了要求フラグ */
 	BIT_FIELD_BOOL	enater : 1;		/* タスク終了許可状態 */
+	BIT_FIELD_BOOL	boosted : 1;	/* 優先度上昇状態 */
+
 	uint_t			subpri;			/* サブ優先度 */
 
 	MTXCB			*p_lastmtx;		/* 最後にロックしたミューテックス */

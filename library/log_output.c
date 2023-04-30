@@ -4,7 +4,7 @@
  * 
  *  Copyright (C) 2000-2003 by Embedded and Real-Time Systems Laboratory
  *                              Toyohashi Univ. of Technology, JAPAN
- *  Copyright (C) 2004-2021 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2004-2023 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  * 
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -36,7 +36,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: log_output.c 263 2021-01-08 06:08:59Z ertl-honda $
+ *  $Id: log_output.c 335 2023-04-18 10:50:40Z ertl-honda $
  */
 
 /*
@@ -178,7 +178,7 @@ syslog_print(const SYSLOG *p_syslog, void (*putc)(char))
 		(*putc)('\n');
 		break;
 	case LOG_TYPE_ASSERT:
-		syslog_printf("%s:%u: Assertion `%s' failed.",
+		syslog_printf("%s:%u: Assertion `%s' failed. \007",
 								&(p_syslog->logpar[0]), putc);
 		(*putc)('\n');
 		break;

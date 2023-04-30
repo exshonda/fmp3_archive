@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: kernel_impl.h 263 2021-01-08 06:08:59Z ertl-honda $
+ *  $Id: kernel_impl.h 335 2023-04-18 10:50:40Z ertl-honda $
  */
 
 /*
@@ -107,6 +107,14 @@
  */
 #define EXCNO_PRCID(intno)		(intno >> 16U)
 
+/*
+ *  優先度の段階数の定義
+ *   pcb.hで参照するためにincludeする前に定義．
+ */
+#define TNUM_TPRI		(TMAX_TPRI - TMIN_TPRI + 1)
+#define TNUM_DPRI		(TMAX_DPRI - TMIN_DPRI + 1)
+#define TNUM_INTPRI		(TMAX_INTPRI - TMIN_INTPRI + 1)
+
 #ifndef TOPPERS_MACRO_ONLY
 /*
  *  プロセッサ管理ブロックの前方参照（pcb.h）
@@ -126,11 +134,11 @@ typedef struct task_control_block TCB;
 #include "target_kernel_impl.h"
 
 /*
- *  優先度の段階数の定義
+ *  タイムマスタプロセッサ
  */
-#define TNUM_TPRI		(TMAX_TPRI - TMIN_TPRI + 1)
-#define TNUM_DPRI		(TMAX_DPRI - TMIN_DPRI + 1)
-#define TNUM_INTPRI		(TMAX_INTPRI - TMIN_INTPRI + 1)
+#ifndef TOPPERS_TMASTER_PRCID
+#define TOPPERS_TMASTER_PRCID	TOPPERS_MASTER_PRCID
+#endif /* TOPPERS_TMASTER_PRCID */
 
 #ifndef TOPPERS_MACRO_ONLY
 /*

@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: semaphore.c 263 2021-01-08 06:08:59Z ertl-honda $
+ *  $Id: semaphore.c 335 2023-04-18 10:50:40Z ertl-honda $
  */
 
 /*
@@ -136,7 +136,7 @@ initialize_semaphore(PCB *p_my_pcb)
 #endif /* TOPPERS_semini */
 
 /*
- *  セマフォ資源の返却
+ *  セマフォ資源の返却［NGKI3533］
  */
 #ifdef TOPPERS_sig_sem
 
@@ -151,8 +151,8 @@ sig_sem(ID semid)
 	PCB		*p_my_pcb;
 
 	LOG_SIG_SEM_ENTER(semid);
-	CHECK_UNL_MYSTATE(&p_selftsk, &context);
-	CHECK_ID(VALID_SEMID(semid));
+	CHECK_UNL_MYSTATE(&p_selftsk, &context);	/*［NGKI1501］*/
+	CHECK_ID(VALID_SEMID(semid));	/*［NGKI1502］*/
 	p_semcb = get_semcb(semid);
 
 	lock_cpu();
@@ -160,7 +160,7 @@ sig_sem(ID semid)
 	p_my_pcb = get_my_pcb();
 	if (!queue_empty(&(p_semcb->wait_queue))) {
 		p_tcb = (TCB *) queue_delete_next(&(p_semcb->wait_queue));
-		wait_complete(p_my_pcb, p_tcb);
+		wait_complete(p_my_pcb, p_tcb);	/*［NGKI1505］［NGKI1506］［NGKI1507］*/
 		if (p_selftsk != p_my_pcb->p_schedtsk) {
 			if (!context) {
 				release_glock();
@@ -175,11 +175,11 @@ sig_sem(ID semid)
 		ercd = E_OK;
 	}
 	else if (p_semcb->semcnt < p_semcb->p_seminib->maxsem) {
-		p_semcb->semcnt += 1;
+		p_semcb->semcnt += 1;					/*［NGKI1508］*/
 		ercd = E_OK;
 	}
 	else {
-		ercd = E_QOVR;
+		ercd = E_QOVR;							/*［NGKI1509］*/
 	}
 	release_glock();
   unlock_and_exit:
@@ -193,7 +193,7 @@ sig_sem(ID semid)
 #endif /* TOPPERS_sig_sem */
 
 /*
- *  セマフォ資源の獲得
+ *  セマフォ資源の獲得［NGKI1510］
  */
 #ifdef TOPPERS_wai_sem
 
@@ -206,21 +206,21 @@ wai_sem(ID semid)
 	PCB		*p_my_pcb;
 
 	LOG_WAI_SEM_ENTER(semid);
-	CHECK_DISPATCH_MYSTATE(&p_selftsk);
-	CHECK_ID(VALID_SEMID(semid));
+	CHECK_DISPATCH_MYSTATE(&p_selftsk);	/*［NGKI1515］*/
+	CHECK_ID(VALID_SEMID(semid));				/*［NGKI1517］*/
 	p_semcb = get_semcb(semid);
 
 	lock_cpu_dsp();
 	acquire_glock();
 	p_my_pcb = get_my_pcb();
 	if (p_selftsk->raster) {
-		ercd = E_RASTER;
+		ercd = E_RASTER;						/*［NGKI3457］*/
 	}
 	else if (p_semcb->semcnt >= 1) {
-		p_semcb->semcnt -= 1;
+		p_semcb->semcnt -= 1;					/*［NGKI1524］*/
 		ercd = E_OK;
 	}
-	else {
+	else {										/*［NGKI1525］*/
 		wobj_make_wait(p_my_pcb, (WOBJCB *) p_semcb, TS_WAITING_SEM, p_selftsk);
 		release_glock();
 		dispatch();
@@ -239,7 +239,7 @@ wai_sem(ID semid)
 #endif /* TOPPERS_wai_sem */
 
 /*
- *  セマフォ資源の獲得（ポーリング）
+ *  セマフォ資源の獲得（ポーリング）［NGKI1511］
  */
 #ifdef TOPPERS_pol_sem
 
@@ -250,18 +250,18 @@ pol_sem(ID semid)
 	ER		ercd;
 
 	LOG_POL_SEM_ENTER(semid);
-	CHECK_TSKCTX_UNL();
-	CHECK_ID(VALID_SEMID(semid));
+	CHECK_TSKCTX_UNL();	/*［NGKI1513］［NGKI1514］*/
+	CHECK_ID(VALID_SEMID(semid));				/*［NGKI1517］*/
 	p_semcb = get_semcb(semid);
 
 	lock_cpu();
 	acquire_glock();
 	if (p_semcb->semcnt >= 1) {
-		p_semcb->semcnt -= 1;
+		p_semcb->semcnt -= 1;					/*［NGKI1524］*/
 		ercd = E_OK;
 	}
 	else {
-		ercd = E_TMOUT;
+		ercd = E_TMOUT;							/*［NGKI1521］*/
 	}
 	release_glock();
 	unlock_cpu();
@@ -274,7 +274,7 @@ pol_sem(ID semid)
 #endif /* TOPPERS_pol_sem */
 
 /*
- *  セマフォ資源の獲得（タイムアウトあり）
+ *  セマフォ資源の獲得（タイムアウトあり）［NGKI1512］
  */
 #ifdef TOPPERS_twai_sem
 
@@ -287,26 +287,25 @@ twai_sem(ID semid, TMO tmout)
 	PCB		*p_my_pcb;
 
 	LOG_TWAI_SEM_ENTER(semid, tmout);
-	CHECK_DISPATCH_MYSTATE(&p_selftsk);
-	CHECK_ID(VALID_SEMID(semid));
-	CHECK_PAR(VALID_TMOUT(tmout));
+	CHECK_DISPATCH_MYSTATE(&p_selftsk);	/*［NGKI1515］*/
+	CHECK_ID(VALID_SEMID(semid));		/*［NGKI1517］*/
+	CHECK_PAR(VALID_TMOUT(tmout));		/*［NGKI1518］*/
 	p_semcb = get_semcb(semid);
 
 	lock_cpu_dsp();
 	acquire_glock();
 	p_my_pcb = get_my_pcb();
-	p_selftsk = p_my_pcb->p_runtsk;
 	if (p_selftsk->raster) {
-		ercd = E_RASTER;
+		ercd = E_RASTER;						/*［NGKI3457］*/
 	}
 	else if (p_semcb->semcnt >= 1) {
-		p_semcb->semcnt -= 1;
+		p_semcb->semcnt -= 1;					/*［NGKI1524］*/
 		ercd = E_OK;
 	}
 	else if (tmout == TMO_POL) {
-		ercd = E_TMOUT;
+		ercd = E_TMOUT;							/*［NGKI1521］*/
 	}
-	else {
+	else {										/*［NGKI1525］*/
 		wobj_make_wait_tmout(p_my_pcb, (WOBJCB *) p_semcb, TS_WAITING_SEM,
 															p_selftsk, tmout);
 		release_glock();
@@ -326,7 +325,7 @@ twai_sem(ID semid, TMO tmout)
 #endif /* TOPPERS_twai_sem */
 
 /*
- *  セマフォの再初期化
+ *  セマフォの再初期化［NGKI1526］
  */
 #ifdef TOPPERS_ini_sem
 
@@ -338,15 +337,16 @@ ini_sem(ID semid)
 	PCB		*p_my_pcb;
 
 	LOG_INI_SEM_ENTER(semid);
-	CHECK_TSKCTX_UNL();
-	CHECK_ID(VALID_SEMID(semid));
+	CHECK_TSKCTX_UNL();	/*［NGKI1527］［NGKI1528］*/
+	CHECK_ID(VALID_SEMID(semid));				/*［NGKI1529］*/
 	p_semcb = get_semcb(semid);
 
 	lock_cpu();
 	acquire_glock();
 	p_my_pcb = get_my_pcb();
 	init_wait_queue(p_my_pcb, &(p_semcb->wait_queue));
-	p_semcb->semcnt = p_semcb->p_seminib->isemcnt;
+													/*［NGKI1533］［NGKI1534］*/
+	p_semcb->semcnt = p_semcb->p_seminib->isemcnt;	/*［NGKI1532］*/
 	if (p_my_pcb->p_runtsk != p_my_pcb->p_schedtsk) {
 		release_glock();
 		dispatch();
@@ -366,7 +366,7 @@ ini_sem(ID semid)
 #endif /* TOPPERS_ini_sem */
 
 /*
- *  セマフォの状態参照
+ *  セマフォの状態参照［NGKI1535］
  */
 #ifdef TOPPERS_ref_sem
 
@@ -377,14 +377,15 @@ ref_sem(ID semid, T_RSEM *pk_rsem)
 	ER		ercd;
 
 	LOG_REF_SEM_ENTER(semid, pk_rsem);
-	CHECK_TSKCTX_UNL();
-	CHECK_ID(VALID_SEMID(semid));
+	CHECK_TSKCTX_UNL();	/*［NGKI1536］［NGKI1537］*/
+	CHECK_ID(VALID_SEMID(semid));				/*［NGKI1538］*/
 	p_semcb = get_semcb(semid);
 
 	lock_cpu();
 	acquire_glock();
 	pk_rsem->wtskid = wait_tskid(&(p_semcb->wait_queue));
-	pk_rsem->semcnt = p_semcb->semcnt;
+												/*［NGKI1542］［NGKI1543］*/
+	pk_rsem->semcnt = p_semcb->semcnt;			/*［NGKI1542］*/
 	ercd = E_OK;
 	release_glock();
 	unlock_cpu();

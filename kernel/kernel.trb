@@ -5,7 +5,7 @@
 #       Flexible MultiProcessor Kernel
 # 
 #   Copyright (C) 2015 by FUJI SOFT INCORPORATED, JAPAN
-#   Copyright (C) 2015-2020 by Embedded and Real-Time Systems Laboratory
+#   Copyright (C) 2015-2023 by Embedded and Real-Time Systems Laboratory
 #               Graduate School of Information Science, Nagoya Univ., JAPAN
 # 
 #   上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -37,7 +37,7 @@
 #   アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
 #   の責任を負わない．
 # 
-#   $Id: kernel.trb 263 2021-01-08 06:08:59Z ertl-honda $
+#   $Id: kernel.trb 335 2023-04-18 10:50:40Z ertl-honda $
 # 
 
 #
@@ -162,14 +162,6 @@ class KernelObject
         if !params.has_key?(:class)
           error_ercd("E_RSATR", params, "#{@api} of %#{@objid} " \
 												"must be within a class")
-          # 以降のエラーの抑止
-          params[:class] = $TCLS_ERROR
-        # 属するクラスの指定が有効範囲外の場合（E_RSATR）
-        # ［NGKI1031］［NGKI1458］［NGKI1564］［NGKI1671］［NGKI1806］
-        # ［NGKI2027］［NGKI3305］［NGKI2135］［NGKI2227］［NGKI2386］
-        # ［NGKI2494］
-        elsif !$clsData.has_key?(params[:class])
-          error_illegal_id("E_RSATR", params, :class, @objid)
           # 以降のエラーの抑止
           params[:class] = $TCLS_ERROR
         end
@@ -368,22 +360,6 @@ def generateNotifyHandler(key, params, objid)
 end
 
 #
-#  クラスのリストの加工
-#
-$clsData.each do |_, params|
-  bitmap = 0
-  params[:affinityPrcList].each do |prcid|
-    bitmap |= (1 << (prcid - 1))
-  end
-  params[:affinityPrcBitmap] = bitmap
-end
-
-#
-#  エラー処理用のクラス
-#
-$TCLS_ERROR = $clsData.keys.first
-
-#
 #  プロセッサ毎のデータ構造を置くセクションを決定するクラスの決定
 #
 $prcClass = {}
@@ -392,8 +368,8 @@ $prcClass = {}
   # 最初のクラスを用いる．
   cls = $clsData.find {|_, params2| prcid == params2[:initPrc]}
   if cls.nil?
-    # 初期割付けプロセッサがprcidに一致するクラスがない時はセクション
-    # 指定を行わない．
+    # 初期割付けプロセッサがprcidに一致するクラスがない時は，クラス共
+    # 通の標準メモリリージョンを用いる．
     $prcClass[prcid] = $TCLS_NONE
   else
     $prcClass[prcid] = cls[0]
@@ -441,134 +417,139 @@ IncludeTrb("kernel/exception.trb")
 #
 #  非タスクコンテキスト用のスタック領域
 #
-$kernelCfgC.comment_header("Stack Area for Non-task Context")
+if !$OMIT_ISTACK
+  $kernelCfgC.comment_header("Stack Area for Non-task Context")
 
-$icsData = {}
-$cfgData[:DEF_ICS].each do |_, params|
-  # パラメータが省略された時のデフォルト値の設定
-  params[:istk] ||= "NULL"
+  $icsData = {}
+  $cfgData[:DEF_ICS].each do |_, params|
+    # パラメータが省略された時のデフォルト値の設定
+    params[:istk] ||= "NULL"
 
-  # クラスの囲みの中に記述されていない場合（E_RSATR）［NGKI3214］
-  if !params.has_key?(:class)
-    error_ercd("E_RSATR", params, "%apiname must be within a class")
-    # 以降のエラーの抑止
-    params[:class] = $TCLS_ERROR
-  # 属するクラスの指定が有効範囲外の場合（E_RSATR）［NGKI5128］
-  elsif !$clsData.has_key?(params[:class])
-    error_illegal("E_RSATR", params, :class)
-    # 以降のエラーの抑止
-    params[:class] = $TCLS_ERROR
-  end
+    # カーネルドメインの囲みの中に記述されていない場合（E_RSATR）［NGKI3213］
+    if !params.has_key?(:domain) || params[:domain] != $TDOM_KERNEL
+      error_ercd("E_RSATR", params, "%apiname must be within the kernel domain")
+    end
 
-  # istkszがターゲット定義の最小値（TARGET_MIN_ISTKSZ，未定義の場合は1）
-  # よりも小さい場合（E_PAR）［NGKI3254］
-  if params[:istksz] < $TARGET_MIN_ISTKSZ
-    error_wrong("E_PAR", params, :istksz, "too small")
-  end
+    # クラスの囲みの中に記述されていない場合（E_RSATR）［NGKI3214］
+    if !params.has_key?(:class)
+      error_ercd("E_RSATR", params, "%apiname must be within a class")
+      # 以降のエラーの抑止
+      params[:class] = $TCLS_ERROR
+    end
 
-  # istkszがターゲット定義の制約に合致しない場合（E_PAR）［NGKI3222］
-  if params[:istk] != "NULL" \
+    # istkszがターゲット定義の最小値（TARGET_MIN_ISTKSZ，未定義の場合は1）
+    # よりも小さい場合（E_PAR）［NGKI3254］
+    if params[:istksz] < $TARGET_MIN_ISTKSZ
+      error_wrong("E_PAR", params, :istksz, "too small")
+    end
+
+    # istkszがターゲット定義の制約に合致しない場合（E_PAR）［NGKI3222］
+    if params[:istk] != "NULL" \
 				&& (params[:istksz] & ($CHECK_STKSZ_ALIGN - 1)) != 0
-    error_wrong("E_PAR", params, :istksz, "not aligned")
+      error_wrong("E_PAR", params, :istksz, "not aligned")
+    end
+
+    # プロセッサに対して非タスクコンテキスト用スタック領域が設定されてい
+    # る場合（E_OBJ）［NGKI3216］［NGKI3227］
+    prcid = $clsData[params[:class]][:initPrc]
+    if $icsData.has_key?(prcid)
+      error_ercd("E_OBJ", params, \
+				"%apiname is duplicated for processor #{prcid}")
+    end
+
+    # $icsDataにパラメータ情報を格納
+    $icsData[prcid] = params.dup
   end
 
-  # プロセッサに対して非タスクコンテキスト用スタック領域が設定されてい
-  # る場合（E_OBJ）［NGKI3216］［NGKI3227］
-  prcid = $clsData[params[:class]][:initPrc]
-  if $icsData.has_key?(prcid)
-    error_ercd("E_OBJ", params, "%apiname is duplicated for processor #{prcid}")
-  end
-
-  # $icsDataにパラメータ情報を格納
-  $icsData[prcid] = params.dup
-end
-
-1.upto($TNUM_PRCID).each do |prcid|
-  if !$icsData.has_key?(prcid)
-    # DEF_ICSがない場合，スタックを配置するセクションの決定にどのクラ
-    # スを用いるかは，仕様上はターゲット定義である［NGKI5138］．
-    # $prcClass[prcid]は，ターゲット依存部で定義するクラスのリストから
-    # 決めているため，以下の処理でターゲット定義で決まることになる．
-    params = {}
-    params[:istksz] = AllocStack("_kernel_istack_prc#{prcid}", \
-						"DEFAULT_ISTKSZ", SecnameStack($prcClass[prcid]))
-    params[:istk] = "_kernel_istack_prc#{prcid}"
-    $icsData[prcid] = params
-  else
-    params = $icsData[prcid]
-    if params[:istk] == "NULL"
-      # スタック領域の自動割付け
-      stkSecname = SecnameStack(params[:class])
+  1.upto($TNUM_PRCID).each do |prcid|
+    if !$icsData.has_key?(prcid)
+      # DEF_ICSがない場合，スタックを配置するセクションの決定にどのクラ
+      # スを用いるかは，仕様上はターゲット定義である［NGKI5138］．
+      # $prcClass[prcid]は，ターゲット依存部で定義するクラスのリストから
+      # 決めているため，以下の処理でターゲット定義で決まることになる．
+      params = {}
       params[:istksz] = AllocStack("_kernel_istack_prc#{prcid}", \
-											params[:istksz], stkSecname)
+						"DEFAULT_ISTKSZ", SecnameStack($prcClass[prcid]))
       params[:istk] = "_kernel_istack_prc#{prcid}"
+      $icsData[prcid] = params
     else
-      params[:istksz] = "(#{params[:istksz]})"
-      params[:istk] = "(void *)(#{params[:istk]})"
+      params = $icsData[prcid]
+      if params[:istk] == "NULL"
+        # スタック領域の自動割付け
+        stkSecname = SecnameStack(params[:class])
+        params[:istksz] = AllocStack("_kernel_istack_prc#{prcid}", \
+											params[:istksz], stkSecname)
+        params[:istk] = "_kernel_istack_prc#{prcid}"
+      else
+        params[:istksz] = "(#{params[:istksz]})"
+        params[:istk] = "(void *)(#{params[:istk]})"
+      end
     end
   end
-end
-$kernelCfgC.add()
+  $kernelCfgC.add()
 
-$kernelCfgC.add("const size_t _kernel_istksz_table[TNUM_PRCID] = {")
-1.upto($TNUM_PRCID).each_with_index do |prcid, index|
-  $kernelCfgC.add(",") if index > 0
-  $kernelCfgC.append("\t#{$icsData[prcid][:istksz]}")
-end
-$kernelCfgC.add
-$kernelCfgC.add2("};")
+  $kernelCfgC.add("const size_t _kernel_istksz_table[TNUM_PRCID] = {")
+  1.upto($TNUM_PRCID).each_with_index do |prcid, index|
+    $kernelCfgC.add(",") if index > 0
+    $kernelCfgC.append("\t#{$icsData[prcid][:istksz]}")
+  end
+  $kernelCfgC.add
+  $kernelCfgC.add2("};")
 
-$kernelCfgC.add("STK_T *const _kernel_istk_table[TNUM_PRCID] = {")
-1.upto($TNUM_PRCID).each_with_index do |prcid, index|
-  $kernelCfgC.add(",") if index > 0
-  $kernelCfgC.append("\t#{$icsData[prcid][:istk]}")
-end
-$kernelCfgC.add
-$kernelCfgC.add2("};")
+  $kernelCfgC.add("STK_T *const _kernel_istk_table[TNUM_PRCID] = {")
+  1.upto($TNUM_PRCID).each_with_index do |prcid, index|
+    $kernelCfgC.add(",") if index > 0
+    $kernelCfgC.append("\t#{$icsData[prcid][:istk]}")
+  end
+  $kernelCfgC.add
+  $kernelCfgC.add2("};")
 
-$kernelCfgC.add("#ifdef TOPPERS_ISTKPT")
-$kernelCfgC.add("STK_T *const _kernel_istkpt_table[TNUM_PRCID] = {")
-1.upto($TNUM_PRCID).each_with_index do |prcid, index|
-  $kernelCfgC.add(",") if index > 0
-  $kernelCfgC.append("\tTOPPERS_ISTKPT(#{$icsData[prcid][:istk]}, " \
+  $kernelCfgC.add("#ifdef TOPPERS_ISTKPT")
+  $kernelCfgC.add("STK_T *const _kernel_istkpt_table[TNUM_PRCID] = {")
+  1.upto($TNUM_PRCID).each_with_index do |prcid, index|
+    $kernelCfgC.add(",") if index > 0
+    $kernelCfgC.append("\tTOPPERS_ISTKPT(#{$icsData[prcid][:istk]}, " \
 										+ "#{$icsData[prcid][:istksz]})")
+  end
+  $kernelCfgC.add
+  $kernelCfgC.add("};")
+  $kernelCfgC.add2("#endif /* TOPPERS_ISTKPT */")
 end
-$kernelCfgC.add
-$kernelCfgC.add("};")
-$kernelCfgC.add2("#endif /* TOPPERS_ISTKPT */")
 
 #
 #  アイドルスタック
 #
-$kernelCfgC.comment_header("Stack Area for Idle")
+if !$OMIT_IDSTACK
+  $kernelCfgC.comment_header("Stack Area for Idle")
 
-idstksz = ""
-1.upto($TNUM_PRCID) do |prcid|
-  idstksz = AllocStack("_kernel_idstack_prc#{prcid}", \
+  idstksz = ""
+  1.upto($TNUM_PRCID) do |prcid|
+    idstksz = AllocStack("_kernel_idstack_prc#{prcid}", \
 					"DEFAULT_IDSTKSZ", SecnameStack($prcClass[prcid]))
-end
-$kernelCfgC.add
+  end
+  $kernelCfgC.add
 
-$kernelCfgC.add("#ifndef TOPPERS_ISTKPT")
-$kernelCfgC.add("STK_T *const _kernel_idstk_table[TNUM_PRCID] = {")
-1.upto($TNUM_PRCID).each_with_index do |prcid, index|
-  $kernelCfgC.add(",") if index > 0
-  $kernelCfgC.append("\t_kernel_idstack_prc#{prcid}")
-end
-$kernelCfgC.add
-$kernelCfgC.add("};")
-$kernelCfgC.add2("#endif /* TOPPERS_ISTKPT */")
+  $kernelCfgC.add("#ifndef TOPPERS_ISTKPT")
+  $kernelCfgC.add("STK_T *const _kernel_idstk_table[TNUM_PRCID] = {")
+  1.upto($TNUM_PRCID).each_with_index do |prcid, index|
+    $kernelCfgC.add(",") if index > 0
+    $kernelCfgC.append("\t_kernel_idstack_prc#{prcid}")
+  end
+  $kernelCfgC.add
+  $kernelCfgC.add("};")
+  $kernelCfgC.add2("#endif /* TOPPERS_ISTKPT */")
 
-$kernelCfgC.add("#ifdef TOPPERS_ISTKPT")
-$kernelCfgC.add("STK_T *const _kernel_idstkpt_table[TNUM_PRCID] = {")
-1.upto($TNUM_PRCID).each_with_index do |prcid, index|
-  $kernelCfgC.add(",") if index > 0
-  $kernelCfgC.append("\tTOPPERS_ISTKPT(_kernel_idstack_prc#{prcid}, " \
+  $kernelCfgC.add("#ifdef TOPPERS_ISTKPT")
+  $kernelCfgC.add("STK_T *const _kernel_idstkpt_table[TNUM_PRCID] = {")
+  1.upto($TNUM_PRCID).each_with_index do |prcid, index|
+    $kernelCfgC.add(",") if index > 0
+    $kernelCfgC.append("\tTOPPERS_ISTKPT(_kernel_idstack_prc#{prcid}, " \
 															"#{idstksz})")
+  end
+  $kernelCfgC.add
+  $kernelCfgC.add("};")
+  $kernelCfgC.add2("#endif /* TOPPERS_ISTKPT */")
 end
-$kernelCfgC.add
-$kernelCfgC.add("};")
-$kernelCfgC.add2("#endif /* TOPPERS_ISTKPT */")
 
 #
 #  タイムイベント管理
@@ -725,14 +706,6 @@ $kernelCfgC.comment_header("Termination Routine")
 
 # エラーチェック
 $cfgData[:ATT_TER].each do |_, params|
-  # クラスに属していて，属するクラスの指定が有効範囲外の場合（E_RSATR）
-  # ［NGKI5165］
-  if (params.has_key?(:class) && !$clsData.has_key?(params[:class]))
-    error_illegal("E_RSATR", params, :class)
-    # 以降のエラーの抑止
-    params[:class] = $TCLS_ERROR
-  end
-
   # teratrが無効の場合（E_RSATR）［NGKI3248］［NGKI3208］［NGKI3209］
   #（TA_NULLでない場合）
   if (params[:teratr] != $TA_NULL)

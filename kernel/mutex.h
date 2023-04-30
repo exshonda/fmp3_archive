@@ -35,7 +35,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: mutex.h 263 2021-01-08 06:08:59Z ertl-honda $
+ *  $Id: mutex.h 335 2023-04-18 10:50:40Z ertl-honda $
  */
 
 /*
@@ -112,22 +112,6 @@ extern void	initialize_mutex(PCB *p_my_pcb);
  *  bpriorityよりも低いものがあればfalseを，そうでなければtrueを返す．
  */
 extern bool_t	mutex_check_ceilpri(TCB *p_tcb, uint_t bpriority);
-
-/* 
- *  優先度上限ミューテックスをロックしているかのチェック
- *
- *  p_tcbで指定されるタスクが優先度上限ミューテックスをロックしていれば
- *  true，そうでなければfalseを返す．
- */
-extern bool_t	mutex_scan_ceilmtx(TCB *p_tcb);
-
-/*
- *  ミューテックスをロック解除した場合の現在優先度変更処理
- *
- *  p_tcbで指定されるタスクが，p_mtxcbで指定されるミューテックスをロッ
- *  ク解除した際の現在優先度変更処理を行う．
- */
-extern void	mutex_drop_priority(PCB *p_my_pcb, TCB *p_tcb, MTXCB *p_mtxcb);
 
 /*
  *  ミューテックスのロック

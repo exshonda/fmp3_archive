@@ -5,7 +5,7 @@
  * 
  *  Copyright (C) 2000 by Embedded and Real-Time Systems Laboratory
  *                              Toyohashi Univ. of Technology, JAPAN
- *  Copyright (C) 2005-2019 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2005-2023 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  * 
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: exception.h 145 2019-03-10 15:27:01Z ertl-honda $
+ *  $Id: exception.h 335 2023-04-18 10:50:40Z ertl-honda $
  */
 
 /*
@@ -58,6 +58,8 @@ typedef struct cpu_exception_handler_initialization_block {
 	EXCNO		excno;			/* CPU例外ハンドラ番号 */
 	ATR			excatr;			/* CPU例外ハンドラ属性 */
 	FP			exc_entry;		/* CPU例外ハンドラの出入口処理の番地 */
+	ID			iprcid;			/* CPU例外ハンドラの初期割付けプロセッサ */
+	uint_t		affinity;		/* CPU例外ハンドラの割付け可能プロセッサ */
 } EXCINIB;
 
 /*

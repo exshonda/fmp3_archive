@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: sample1.c 263 2021-01-08 06:08:59Z ertl-honda $
+ *  $Id: sample1.c 335 2023-04-18 10:50:40Z ertl-honda $
  */
 
 /* 
@@ -351,8 +351,8 @@ task(EXINF exinf)
 	int_t		n = 0;
 	int_t		tskno = (int_t) (exinf & 0xffff);
 	int_t		classno = (int_t) (exinf >> 16);
-	const char	*tskname = task_name[classno-1][tskno-1];
-	const char	*graph[] = { "|", "  +", "    *" };
+	const char *tskname = task_name[classno-1][tskno-1];
+	const char *graph[] = { "|", "  +", "    *" };
 	char		c;
 	ID		prcid;
 	ER		ercd;

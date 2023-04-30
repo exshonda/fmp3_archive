@@ -1,8 +1,8 @@
 
 		TOPPERS/FMP3カーネルの仕様概要
 
-		対応バージョン: Release 3.1
-		最終更新: 2019年3月19日
+		対応バージョン: Release 3.3
+		最終更新: 2023年4月14日
 
 このドキュメントは，TOPPERS/FMP3カーネル（TOPPERS/FMPカーネル Release 
 3.X）の仕様概要について説明したものである．TOPPERS/ASP3カーネルに対す
@@ -16,7 +16,7 @@
      Toyohashi Open Platform for Embedded Real-Time Systems/
      Flexible MultiProcessor Kernel
 
- Copyright (C) 2005-2019 by Embedded and Real-Time Systems Laboratory
+ Copyright (C) 2005-2023 by Embedded and Real-Time Systems Laboratory
              Graduate School of Information Science, Nagoya Univ., JAPAN
  
  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -48,7 +48,7 @@
  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  の責任を負わない．
  
- $Id: fmp_spec.txt 178 2019-10-08 13:55:00Z ertl-honda $
+ $Id: fmp_spec.txt 335 2023-04-18 10:50:40Z ertl-honda $
 ----------------------------------------------------------------------
 
 ○目次
@@ -83,7 +83,7 @@
 	Release 1.9.3，最終更新: 2017年4月29日．
 
 [6] TOPPERSプロジェクト: TOPPERS第3世代カーネル（ITRON系）統合仕様書，
-	Release 3.2.0，最終更新: 2018年__月__日．
+	Release 3.6.0，最終更新: 2023年3月11日
 
 [7] TOPPERSプロジェクト: TOPPERS/FMPカーネル ユーザーズマニュアル，
 	Release 1.4.0，最終更新: 2017年2月20日．

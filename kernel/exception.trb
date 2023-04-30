@@ -5,7 +5,7 @@
 #       Flexible MultiProcessor Kernel
 # 
 #   Copyright (C) 2015 by FUJI SOFT INCORPORATED, JAPAN
-#   Copyright (C) 2015-2020 by Embedded and Real-Time Systems Laboratory
+#   Copyright (C) 2015-2023 by Embedded and Real-Time Systems Laboratory
 #               Graduate School of Information Science, Nagoya Univ., JAPAN
 # 
 #   上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -37,7 +37,7 @@
 #   アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
 #   の責任を負わない．
 # 
-#   $Id: exception.trb 209 2020-01-30 09:59:08Z ertl-honda $
+#   $Id: exception.trb 335 2023-04-18 10:50:40Z ertl-honda $
 # 
 
 #
@@ -65,24 +65,26 @@ $cfgData[:DEF_EXC].each do |_, params|
     error_ercd("E_RSATR", params, "%apiname must be within a class")
     # 以降のエラーの抑止
     params[:class] = $TCLS_ERROR
-  # 属するクラスの指定が有効範囲外の場合（E_RSATR）［NGKI3132］
-  elsif !$clsData.has_key?(params[:class])
-    error_illegal("E_RSATR", params, :class)
-    # 以降のエラーの抑止
-    params[:class] = $TCLS_ERROR
   end
 
-  prcid = $clsData[params[:class]][:initPrc]
-  if !$EXCNO_DEFEXC_VALID[prcid].include?(params[:excno])
-    if !$EXCNO_DEFEXC_VALID.values.flatten.include?(params[:excno])
-      # excnoが有効範囲外の場合（E_PAR）［NGKI3134］
-      error_illegal("E_PAR", params, :excno)
-    else
-      # クラスの初期割付けプロセッサが，CPU例外が発生するプロセッサで
-      # ない場合（E_RSATR）［NGKI3146］
-      error_ercd("E_RSATR", params, "The initial assignment processor " \
-					"of the class in which %apiname of `%excno' is described " \
-					"must be the processor in which the CPU exception occurs.")
+  if !$EXCNO_DEFEXC_VALID.values.flatten.include?(params[:excno])
+    # excnoが有効範囲外の場合（E_PAR）［NGKI3134］
+    error_illegal("E_PAR", params, :excno)
+  else
+    # CPU例外が有効なプロセッサのリストを求める
+    bitmap = 0
+    $EXCNO_DEFEXC_VALID.each do |prcid, excno_list|
+      if excno_list.include?(params[:excno])
+        bitmap |= (1 << (prcid - 1))
+      end
+    end
+
+    # クラスの割付け可能プロセッサが，CPU例外が発生する可能性があるプ
+    # ロセッサと一致していない場合（E_RSATR）［NGKI3146］
+    if bitmap != $clsData[params[:class]][:affinityPrcBitmap]
+      error_ercd("E_RSATR", params, "the assignable processors of the class " \
+			"in which %apiname of `%excno' is described must correspond " \
+			"with the processors on which the CPU exception occurs")
     end
   end
 
@@ -127,7 +129,9 @@ EOS
     $cfgData[:DEF_EXC].each_with_index do |(_, params), index|
       $kernelCfgC.add(",") if index > 0
       $kernelCfgC.append("\t{ (#{params[:excno]}), (#{params[:excatr]}), " \
-				"(FP)(EXC_ENTRY(#{params[:excno]}, #{params[:exchdr]})) }")
+				"(FP)(EXC_ENTRY(#{params[:excno]}, #{params[:exchdr]})), " \
+				"#{$clsData[params[:class]][:initPrc]}, " \
+      			"0x#{$clsData[params[:class]][:affinityPrcBitmap].to_s(16)}U }")
     end
     $kernelCfgC.add
     $kernelCfgC.add2("};")

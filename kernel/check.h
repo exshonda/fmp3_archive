@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: check.h 263 2021-01-08 06:08:59Z ertl-honda $
+ *  $Id: check.h 335 2023-04-18 10:50:40Z ertl-honda $
  */
 
 /*
@@ -48,6 +48,7 @@
 #define TOPPERS_CHECK_H
 
 #include "kernel_impl.h"
+#include <sil.h>
 
 /*
  *  オブジェクトIDの範囲の判定

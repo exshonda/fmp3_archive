@@ -3,7 +3,7 @@
  *      Toyohashi Open Platform for Embedded Real-Time Systems/
  *      Flexible MultiProcessor Kernel
  * 
- *  Copyright (C) 2005-2020 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2005-2023 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  * 
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -35,7 +35,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: task_refer.c 263 2021-01-08 06:08:59Z ertl-honda $
+ *  $Id: task_refer.c 335 2023-04-18 10:50:40Z ertl-honda $
  */
 
 /*
@@ -191,7 +191,7 @@ ref_tsk(ID tskid, T_RTSK *pk_rtsk)
 		pk_rtsk->wupcnt = p_tcb->wupque ? 1U : 0U;
 
 		/*
-		 *  タスク終了要求状態の取出し［NGKI3467］
+		 *  タスク終了要求フラグの取出し［NGKI3467］
 		 */
 		pk_rtsk->raster = p_tcb->raster;
 

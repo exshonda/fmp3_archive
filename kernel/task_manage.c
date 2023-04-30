@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: task_manage.c 263 2021-01-08 06:08:59Z ertl-honda $
+ *  $Id: task_manage.c 335 2023-04-18 10:50:40Z ertl-honda $
  */
 
 /*
@@ -497,13 +497,13 @@ chg_pri(ID tskid, PRI tskpri)
 	if (TSTAT_DORMANT(p_tcb->tstat)) {
 		ercd = E_OBJ;							/*［NGKI1191］*/
 	}
-	else if ((p_tcb->p_lastmtx != NULL || TSTAT_WAIT_MTX(p_tcb->tstat))
+	else if ((p_tcb->boosted || TSTAT_WAIT_MTX(p_tcb->tstat))
 						&& !((*mtxhook_check_ceilpri)(p_tcb, newbpri))) {
 		ercd = E_ILUSE;							/*［NGKI1201］*/
 	}
 	else {
 		p_tcb->bpriority = newbpri;				/*［NGKI1192］*/
-		if (p_tcb->p_lastmtx == NULL || !((*mtxhook_scan_ceilmtx)(p_tcb))) {
+		if (!(p_tcb->boosted)) {
 			change_priority(p_my_pcb, p_tcb, newbpri, false);
 												/*［NGKI1193］*/
 			if (p_selftsk != p_my_pcb->p_schedtsk) {

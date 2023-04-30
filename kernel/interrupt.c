@@ -5,7 +5,7 @@
  * 
  *  Copyright (C) 2000-2003 by Embedded and Real-Time Systems Laboratory
  *                              Toyohashi Univ. of Technology, JAPAN
- *  Copyright (C) 2005-2020 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2005-2023 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  * 
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: interrupt.c 263 2021-01-08 06:08:59Z ertl-honda $
+ *  $Id: interrupt.c 335 2023-04-18 10:50:40Z ertl-honda $
  */
 
 /*
@@ -150,7 +150,7 @@ initialize_interrupt(PCB *p_my_pcb)
 
 	for (i = 0; i < tnum_def_inhno; i++) {
 		p_inhinib = &(inhinib_table[i]);
-		if (p_inhinib->iprcid == p_my_pcb->prcid) {
+		if (p_inhinib->prcid == p_my_pcb->prcid) {
 			define_inh(p_my_pcb, p_inhinib->inhno, p_inhinib->int_entry);
 		}
 	}
@@ -342,8 +342,9 @@ prb_int(INTNO intno)
 	}
 	if (!VALID_INTNO_PRBINT(get_my_pcb()->prcid, intno)) {
 		ercd = E_PAR;							/*［NGKI3945］［NGKI3952］*/
-	} else if (check_intno_cfg(intno)) {
-		ercd = (ER_BOOL) probe_int(intno);		/*［NGKI3948］*/
+	}
+	else if (check_intno_cfg(intno)) {
+		ercd = (ER_BOOL) probe_int(intno);		/*［NGKI5214］［NGKI5215］*/
 	}
 	else {
 		ercd = E_OBJ;							/*［NGKI3947］*/

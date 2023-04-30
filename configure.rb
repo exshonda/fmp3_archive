@@ -6,7 +6,7 @@
 # 
 #  Copyright (C) 2001-2003 by Embedded and Real-Time Systems Laboratory
 #                              Toyohashi Univ. of Technology, JAPAN
-#  Copyright (C) 2006-2020 by Embedded and Real-Time Systems Laboratory
+#  Copyright (C) 2006-2022 by Embedded and Real-Time Systems Laboratory
 #              Graduate School of Information Science, Nagoya Univ., JAPAN
 # 
 #  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -38,12 +38,11 @@
 #  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
 #  の責任を負わない．
 # 
-#  $Id: configure.rb 263 2021-01-08 06:08:59Z ertl-honda $
+#  $Id: configure.rb 335 2023-04-18 10:50:40Z ertl-honda $
 # 
 
 Encoding.default_external = 'utf-8'
 require "optparse"
-require "fileutils"
 
 #  オプションの定義
 #
@@ -116,14 +115,11 @@ $applobjs = []
 $syssvcobjs = []
 $bannerobj = nil
 $kernel_lib = ""
-$kernel_funcobjs = ""
 $srcdir = nil
 $srclang = "c"
 $tempmakefile = nil
 $objdir = "objs"
-$omit_tecs = ""
 $tecsdir = nil
-$enable_trace = ""
 $devtooldir = ""
 $ruby = "ruby"
 $cfg = nil
@@ -132,6 +128,7 @@ $copts = []
 $cdefs = []
 $ldflags = []
 $libs = []
+$vartable = Hash.new("")
 
 #
 #  オプションの処理
@@ -168,7 +165,7 @@ OptionParser.new(nil, 22) do |opt|
     $kernel_lib = val
   end
   opt.on("-f", "each function is compiled separately in kernel") do |val|
-    $kernel_funcobjs = "true"
+    $vartable["KERNEL_FUNCOBJS"] = "true"
   end
   opt.on("-D srcdir",		"path of source code directory") do |val|
     $srcdir = val
@@ -183,13 +180,13 @@ OptionParser.new(nil, 22) do |opt|
     $objdir = val
   end
   opt.on("-w",				"TECS is not used at all") do |val|
-    $omit_tecs = "true"
+    $vartable["OMIT_TECS"] = "true"
   end
   opt.on("-W tecsdir",		"path of TECS file directory") do |val|
     $tecsdir = val
   end
   opt.on("-r",				"use the sample code for trace log") do |val|
-    $enable_trace = "true"
+    $vartable["ENABLE_TRACE"] = "true"
   end
   opt.on("-V devtooldir",	"development tools directory") do |val|
     $devtooldir = val
@@ -219,6 +216,17 @@ OptionParser.new(nil, 22) do |opt|
 end
 
 #
+#  パラメータの処理
+#
+ARGV.each do |arg|
+  if /^([A-Za-z0-9_]+)\s*\=\s*(.*)$/ =~ arg
+    $vartable[$1] = $2
+  else
+    $vartable[arg] = true
+  end
+end
+
+#
 #  オブジェクトファイル名の拡張子を返す
 #
 def GetObjectExtension
@@ -239,7 +247,7 @@ $applname ||= "sample1"
 $cfgfile ||= $applname + ".cfg"
 $cdlfile ||= $applname + ".cdl"
 $applobjs.unshift($applname + ".o") if !$option_t
-$bannerobj ||= ($omit_tecs == "") ? "tBannerMain.o" : "banner.o"
+$bannerobj ||= $vartable.has_key?("OMIT_TECS") ? "banner.o" : "tBannerMain.o"
 if $srcdir.nil?
   # ソースディレクトリ名を取り出す
   if /^(.*)\/configure/ =~ $0
@@ -280,7 +288,6 @@ end
 #
 #  変数テーブルの作成
 #
-$vartable = Hash.new("")
 $vartable["TARGET"] = $target
 $vartable["APPLDIRS"] = $appldirs.join(" ")
 $vartable["APPLNAME"] = $applname
@@ -290,14 +297,11 @@ $vartable["APPLOBJS"] = $applobjs.join(" ")
 $vartable["SYSSVCOBJS"] = $syssvcobjs.join(" ")
 $vartable["BANNEROBJ"] = $bannerobj
 $vartable["KERNEL_LIB"] = $kernel_lib
-$vartable["KERNEL_FUNCOBJS"] = $kernel_funcobjs
 $vartable["SRCDIR"] = $srcdir
 $vartable["SRCABSDIR"] = $srcabsdir
 $vartable["SRCLANG"] = $srclang
 $vartable["OBJDIR"] = $objdir
-$vartable["OMIT_TECS"] = $omit_tecs
 $vartable["TECSDIR"] = $tecsdir
-$vartable["ENABLE_TRACE"] = $enable_trace
 $vartable["DEVTOOLDIR"] = $devtooldir
 $vartable["RUBY"] = $ruby
 $vartable["CFG"] = $cfg
@@ -307,13 +311,6 @@ $vartable["CDEFS"] = $cdefs.join(" ")
 $vartable["LDFLAGS"] = $ldflags.join(" ")
 $vartable["LIBS"] = $libs.join(" ")
 $vartable["OBJEXT"] = GetObjectExtension()
-ARGV.each do |arg|
-  if /^([A-Za-z0-9_]+)\s*\=\s*(.*)$/ =~ arg
-    $vartable[$1] = $2
-  else
-    $vartable[arg] = true
-  end
-end
 
 #
 #  ファイルを変換する
@@ -322,7 +319,7 @@ def convert(inFileName, outFileName)
   puts("Generating #{outFileName} from #{inFileName}.\n")
   if (File.file?(outFileName))
     puts("#{outFileName} exists.  Save as #{outFileName}.bak.\n")
-    FileUtils.move(outFileName, outFileName + ".bak")
+    File.rename(outFileName, outFileName + ".bak")
   end
 
   begin

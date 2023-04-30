@@ -5,7 +5,7 @@
  * 
  *  Copyright (C) 2000-2003 by Embedded and Real-Time Systems Laboratory
  *                              Toyohashi Univ. of Technology, JAPAN
- *  Copyright (C) 2005-2020 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2005-2023 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  * 
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: exception.c 263 2021-01-08 06:08:59Z ertl-honda $
+ *  $Id: exception.c 335 2023-04-18 10:50:40Z ertl-honda $
  */
 
 /*
@@ -74,7 +74,9 @@ initialize_exception(PCB *p_my_pcb)
 
 	for (i = 0; i < tnum_def_excno; i++) {
 		p_excinib = &(excinib_table[i]);
-		define_exc(p_excinib->excno, p_excinib->exc_entry);
+		if (p_excinib->iprcid == p_my_pcb->prcid) {
+			define_exc(p_excinib->excno, p_excinib->exc_entry);
+		}            
 	}
 }
 

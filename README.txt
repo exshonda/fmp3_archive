@@ -1,5 +1,5 @@
 
-	TOPPERS/FMP3 Kernel（Release 3.2）without TECS
+	TOPPERS/FMP3 Kernel（Release 3.3）without TECS
 		Toyohashi Open Platform for Embedded Real-Time Systems/
 		Flexible MultiProcessor Kernel
 
@@ -34,18 +34,13 @@ FMP3カーネルの利用条件は，各ファイルの先頭に表示されて�
 
 FMP3カーネルをより良いものにするためのご意見等を歓迎します．FMP3カーネ
 ルに関する質問やバグレポート，ご意見等は，TOPPERSプロジェクトの会員は
-TOPPERS開発者メーリングリスト（dev@toppers.jp）宛またはFMP3カーネルのバ
-グトラッキングシステム（Trac）に，その他の方はTOPPERSユーザーズメーリン
-グリスト（users@toppers.jp）宛にお願いします．
+TOPPERS開発者メーリングリスト（dev@toppers.jp）宛またはFMP3カーネルの
+バグトラッキングシステム（Trac）に，その他の方はTOPPERSユーザーズフォー
+ラム（https://github.com/toppers/users-forum）にお願いします．
 
-これらのメーリングリストに投稿されたメールは，ウェブサイトのメーリング
-リストアーカイブから読むことができますので，公開すべきでない情報（個人
-情報など）をメール中に含めないように注意をお願いします．
-
-TOPPERSユーザーズメーリングリストへの登録方法については，以下のページに
-説明があります．
-
-	http://www.toppers.jp/community.html
+TOPPERS開発者メーリングリストに投稿されたメールは，ウェブサイトのメー
+リングリストアーカイブから読むことができますので，公開すべきでない情報
+（個人情報など）をメール中に含めないように注意をお願いします．
 
 【ポーティングにあたって】
 

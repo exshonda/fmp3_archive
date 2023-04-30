@@ -37,7 +37,7 @@
 #   アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
 #   の責任を負わない．
 # 
-#   $Id: kernel_check.trb 263 2021-01-08 06:08:59Z ertl-honda $
+#   $Id: kernel_check.trb 335 2023-04-18 10:50:40Z ertl-honda $
 #  
 
 #
@@ -297,17 +297,19 @@ end
 #
 #  非タスクコンテキスト用のスタック領域に関するチェック
 #
-istkTable = SYMBOL("_kernel_istk_table")
-$cfgData[:DEF_ICS].each do |_, params|
-  prcid = $clsData[params[:class]][:initPrc]
-  istk = PEEK(istkTable + (prcid - 1) * $sizeof_void_ptr, $sizeof_void_ptr)
+if !$OMIT_ISTACK
+  istkTable = SYMBOL("_kernel_istk_table")
+  $cfgData[:DEF_ICS].each do |_, params|
+    prcid = $clsData[params[:class]][:initPrc]
+    istk = PEEK(istkTable + (prcid - 1) * $sizeof_void_ptr, $sizeof_void_ptr)
 
-  # istkがターゲット定義の制約に合致しない場合（E_PAR）［NGKI3222］
-  if (istk & ($CHECK_STACK_ALIGN - 1)) != 0
-    error_wrong("E_PAR", params, :istk, "not aligned")
-  end
-  if $CHECK_STACK_NONNULL && istk == 0
-    error_wrong("E_PAR", params, :istk, "null")
+    # istkがターゲット定義の制約に合致しない場合（E_PAR）［NGKI3222］
+    if (istk & ($CHECK_STACK_ALIGN - 1)) != 0
+      error_wrong("E_PAR", params, :istk, "not aligned")
+    end
+    if $CHECK_STACK_NONNULL && istk == 0
+      error_wrong("E_PAR", params, :istk, "null")
+    end
   end
 end
 

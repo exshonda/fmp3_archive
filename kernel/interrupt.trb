@@ -37,7 +37,7 @@
 #   アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
 #   の責任を負わない．
 # 
-#   $Id: interrupt.trb 263 2021-01-08 06:08:59Z ertl-honda $
+#   $Id: interrupt.trb 335 2023-04-18 10:50:40Z ertl-honda $
 # 
 
 #
@@ -126,11 +126,6 @@ $cfgData[:CFG_INT].each do |_, params|
     error_ercd("E_RSATR", params, "%apiname must be within a class")
     # 以降のエラーの抑止
     params[:class] = $TCLS_ERROR
-  # 属するクラスの指定が有効範囲外の場合（E_RSATR）［NGKI2970］
-  elsif !$clsData.has_key?(params[:class])
-    error_illegal("E_RSATR", params, :class)
-    # 以降のエラーの抑止
-    params[:class] = $TCLS_ERROR
   end
 
   # intnoが有効範囲外の場合（E_PAR）［NGKI2972］
@@ -184,11 +179,6 @@ $cfgData[:DEF_INH].each do |_, params|
     error_ercd("E_RSATR", params, "%apiname must be within a class")
     # 以降のエラーの抑止
     params[:class] = $TCLS_ERROR
-  # 属するクラスの指定が有効範囲外の場合（E_RSATR）［NGKI3053］
-  elsif !$clsData.has_key?(params[:class])
-    error_illegal("E_RSATR", params, :class)
-    # 以降のエラーの抑止
-    params[:class] = $TCLS_ERROR
   end
   prcid = $clsData[params[:class]][:initPrc]
 
@@ -206,7 +196,7 @@ $cfgData[:DEF_INH].each do |_, params|
   end
 
   # inhatrが無効の場合（E_RSATR）［NGKI3052］［NGKI2957］［NGKI2959］
-  # （TARGET_INHATR以外のビットがセットされている場合）
+  #（TARGET_INHATR以外のビットがセットされている場合）
   if (params[:inhatr] & ~($TARGET_INHATR)) != 0
     error_illegal_sym("E_RSATR", params, :inhatr, :inhno)
   end
@@ -259,7 +249,7 @@ $cfgData[:DEF_INH].each do |_, params|
         # inhnoに対応するintnoに対してCFG_INTで設定された割込み優先度
         # がTMIN_INTPRIよりも小さく，inhatrにTA_NONKERNELが指定されて
         # いない場合（E_OBJ）［NGKI3065］
-      if (params[:inhatr] & $TA_NONKERNEL) == 0
+        if (params[:inhatr] & $TA_NONKERNEL) == 0
           error_ercd("E_OBJ", params, "TA_NONKERNEL must be set for " \
 						"non-kernel interrupt handler in %apiname of %%inhno")
         end
@@ -290,11 +280,6 @@ $cfgData[:CRE_ISR].sort.each do |_, params|
     error_ercd("E_RSATR", params, "%apiname must be within a class")
     # 以降のエラーの抑止
     params[:class] = $TCLS_ERROR
-  # 属するクラスの指定が有効範囲外の場合（E_RSATR）［NGKI3001］
-  elsif !$clsData.has_key?(params[:class])
-    error_illegal_id("E_RSATR", params, :class, :isrid)
-    # 以降のエラーの抑止
-    params[:class] = $TCLS_ERROR
   end
 
   # isratrが無効の場合（E_RSATR）［NGKI2998］［NGKI2952］［NGKI5176］
@@ -307,17 +292,21 @@ $cfgData[:CRE_ISR].sort.each do |_, params|
   if !$INTNO_CREISR_VALID_ALL.include?(params[:intno])
     error_illegal("E_PAR", params, "intno")
   else
-  # クラスの割付け可能プロッサが，intnoで指定した割込み要求ラインが接
-  # 続されたプロセッサの集合に含まれていない場合（E_RSATR）［NGKI3016］
-  $clsData[params[:class]][:affinityPrcList].each do |prcid|
-    if !$INTNO_CREISR_VALID[prcid].include?(params[:intno])
-        error_ercd("E_RSATR", params, "the assignable processors " \
+    # クラスIDがエラーの場合は，エラーチェックをスキップする
+    if params[:class].str != ""
+      # クラスの割付け可能プロッサが，intnoで指定した割込み要求ライン
+      # が接続されたプロセッサの集合に含まれていない場合（E_RSATR）
+      # ［NGKI3016］
+      $clsData[params[:class]][:affinityPrcList].each do |prcid|
+        if !$INTNO_CREISR_VALID[prcid].include?(params[:intno])
+          error_ercd("E_RSATR", params, "the assignable processors " \
 				"of the class in which %apiname of `%intno' is described " \
 				"must be included in the set of processors " \
 				"to which the interrupt is requested")
-      break
+          break
+        end
+      end
     end
-  end
   end
 
   # isrpriが有効範囲外の場合（E_PAR）［NGKI3005］
@@ -393,6 +382,10 @@ isr_flag = {}
     # 割込み番号intnoValに対して登録されたISRが存在する場合
     if isrParamsList.size > 0
       inhnoVal = $toInhnoVal[prcid][intnoVal]
+      clsid = isrParamsList[0][:class]
+
+      # 割込みを受け付けるプロセッサでない場合はスキップ
+      next if !$clsData[clsid][:affinityPrcList].include?(prcid)
 
       # 次の静的APIに相当するデータを生成
       # KERNEL_DOMAIN {
@@ -404,7 +397,7 @@ isr_flag = {}
         inhno: NumStr.new(inhnoVal),
         inhatr: NumStr.new($TA_NULL, "TA_NULL"),
         inthdr: "_kernel_inthdr_#{intnoVal}",
-        class: isrParamsList[0][:class]
+        class: clsid
       }
 
       if (!isr_flag[intnoVal])
@@ -426,9 +419,9 @@ isr_flag = {}
 										.each_with_index do |params, index|
           if index > 0
             $kernelCfgC.add
-            $kernelCfgC.add("\tif (sense_lock()) {")
+            $kernelCfgC.add("\tif (_kernel_sense_lock()) {")
             $kernelCfgC.add("\t\t_kernel_force_unlock_spin(p_my_pcb);")
-            $kernelCfgC.add("\t\tunlock_cpu();")
+            $kernelCfgC.add("\t\t_kernel_unlock_cpu();")
             $kernelCfgC.add2("\t}")
           end
           $kernelCfgC.add("\tLOG_ISR_ENTER(#{params[:isrid]});")

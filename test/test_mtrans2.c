@@ -34,7 +34,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: test_mtrans2.c 265 2021-01-08 06:17:00Z ertl-honda $
+ *  $Id: test_mtrans2.c 312 2022-12-07 14:27:02Z ertl-honda $
  */
 
 /* 
@@ -103,9 +103,7 @@ get_rand(uint_t scale)
 Inline void
 delay_count(uint_t count)
 {
-	volatile uint_t	i;
-
-	for (i = 0; i < count; i++);
+	sil_dly_nse(count + 1);
 }
 
 void

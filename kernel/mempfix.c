@@ -5,7 +5,7 @@
  * 
  *  Copyright (C) 2000-2003 by Embedded and Real-Time Systems Laboratory
  *                              Toyohashi Univ. of Technology, JAPAN
- *  Copyright (C) 2005-2019 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2005-2023 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  * 
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: mempfix.c 263 2021-01-08 06:08:59Z ertl-honda $
+ *  $Id: mempfix.c 335 2023-04-18 10:50:40Z ertl-honda $
  */
 
 /*
@@ -114,12 +114,6 @@
 #define get_mpfcb(mpfid)	(p_mpfcb_table[INDEX_MPF(mpfid)])
 
 /*
- *  特殊なインデックス値の定義
- */
-#define INDEX_NULL		(~0U)		/* 空きブロックリストの最後 */
-#define INDEX_ALLOC		(~1U)		/* 割当て済みのブロック */
-
-/*
  *  固定長メモリプール機能の初期化
  */
 #ifdef TOPPERS_mpfini
@@ -156,7 +150,7 @@ get_mpf_block(MPFCB *p_mpfcb, void **p_blk)
 
 	if (p_mpfcb->freelist != INDEX_NULL) {
 		blkidx = p_mpfcb->freelist;
-		p_mpfcb->freelist = (p_mpfcb->p_mpfinib->p_mpfmb + blkidx)->next;
+		p_mpfcb->freelist = p_mpfcb->p_mpfinib->p_mpfmb[blkidx].next;
 	}
 	else {
 		blkidx = p_mpfcb->unused;
@@ -165,7 +159,7 @@ get_mpf_block(MPFCB *p_mpfcb, void **p_blk)
 	*p_blk = (void *)((char *)(p_mpfcb->p_mpfinib->mpf)
 								+ p_mpfcb->p_mpfinib->blksz * blkidx);
 	p_mpfcb->fblkcnt--;
-	(p_mpfcb->p_mpfinib->p_mpfmb + blkidx)->next = INDEX_ALLOC;
+	p_mpfcb->p_mpfinib->p_mpfmb[blkidx].next = INDEX_ALLOC;
 }
 
 #endif /* TOPPERS_mpfget */
@@ -333,7 +327,7 @@ rel_mpf(ID mpfid, void *blk)
 	CHECK_PAR(blkoffset % p_mpfcb->p_mpfinib->blksz == 0U);
 	CHECK_PAR(blkoffset / p_mpfcb->p_mpfinib->blksz < p_mpfcb->unused);
 	blkidx = (uint_t)(blkoffset / p_mpfcb->p_mpfinib->blksz);
-	CHECK_PAR((p_mpfcb->p_mpfinib->p_mpfmb + blkidx)->next == INDEX_ALLOC);
+	CHECK_PAR(p_mpfcb->p_mpfinib->p_mpfmb[blkidx].next == INDEX_ALLOC);
 
 	lock_cpu();
 	acquire_glock();
@@ -352,7 +346,7 @@ rel_mpf(ID mpfid, void *blk)
 	}
 	else {
 		p_mpfcb->fblkcnt++;
-		(p_mpfcb->p_mpfinib->p_mpfmb + blkidx)->next = p_mpfcb->freelist;
+		p_mpfcb->p_mpfinib->p_mpfmb[blkidx].next = p_mpfcb->freelist;
 		p_mpfcb->freelist = blkidx;
 		ercd = E_OK;
 	}

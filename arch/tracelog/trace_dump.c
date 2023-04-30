@@ -35,7 +35,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  @(#) $Id: trace_dump.c 43 2018-08-01 02:15:14Z ertl-honda $
+ *  @(#) $Id: trace_dump.c 311 2022-09-01 02:40:39Z ertl-honda $
  */
 
 /*
@@ -462,7 +462,7 @@ trace_print_semleave(TRACE *trace, intptr_t *info)
 		tracemsg = "leave from ref_sem ercd=%d.";
 		break;
 	default:
-		tracemsg = "unknown servic call";
+		tracemsg = "unknown service call";
 		break;
 	}
 
@@ -1793,6 +1793,7 @@ trace_print_svcenter(TRACE *trace, intptr_t *info)
 	  case TFN_GET_TIM:
 	  case TFN_ADJ_TIM:
 	  case TFN_SET_DFT:
+	  case TFN_FCH_HRT:
 		tracemsg = (const char*)trace_print_timenter(trace, info);
 		break;
 
@@ -1809,7 +1810,6 @@ trace_print_svcenter(TRACE *trace, intptr_t *info)
 	  case TFN_MSTA_ALM:
 	  case TFN_STP_ALM:
 	  case TFN_REF_ALM:
-	  case TFN_FCH_HRT:
 		tracemsg = (const char*)trace_print_almenter(trace, info);
 		break;
 
@@ -1837,6 +1837,9 @@ trace_print_svcenter(TRACE *trace, intptr_t *info)
 		/* 割込み管理機能 */
 	  case TFN_DIS_INT:
 	  case TFN_ENA_INT:
+	  case TFN_CLR_INT:
+	  case TFN_RAS_INT:
+	  case TFN_PRB_INT:
 	  case TFN_CHG_IPM:
 	  case TFN_GET_IPM:
 		tracemsg = (const char*)trace_print_intenter(trace, info);

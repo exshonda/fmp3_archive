@@ -3,7 +3,7 @@
  *      Toyohashi Open Platform for Embedded Real-Time Systems/
  *      Flexible MultiProcessor Kernel
  * 
- *  Copyright (C) 2005-2019 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2005-2023 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  * 
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -35,7 +35,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: taskhook.c 135 2019-01-28 14:31:50Z ertl-honda $
+ *  $Id: taskhook.c 335 2023-04-18 10:50:40Z ertl-honda $
  */
 
 /*
@@ -52,7 +52,6 @@
 #ifdef TOPPERS_mtxhook
 
 bool_t	(*mtxhook_check_ceilpri)(TCB *p_tcb, uint_t bpriority) = NULL;
-bool_t	(*mtxhook_scan_ceilmtx)(TCB *p_tcb) = NULL;
 void	(*mtxhook_release_all)(PCB *p_my_pcb, TCB *p_tcb) = NULL;
 
 #endif /* TOPPERS_mtxhook */
