@@ -1,7 +1,7 @@
 =====================================================================
                      i.MX8M_A53(AArch64)ターゲット依存部
                               2018-2020 (C) Shinya Honda honda@ertl.jp
-                                  Last Modified:2020 Jul 20 20:33:21
+                                  Last Modified:2023 Apr 20 21:45:47
 =====================================================================
 
 ○概要
@@ -28,7 +28,7 @@ IMX8MM_EVK依存部は，NXP社のi.MX8M Mini EVKのCortex-A53のAArch64モー�
 
 動作確認を行ったGCCは，ARMから提供されている
 
-   gcc Version 9.2-2019.12 
+   gcc version 11.2.1 20220111 
    https://developer.arm.com/tools-and-software/open-source-software/developer-tools/gnu-toolchain/gnu-a/downloads
 
 である．
@@ -182,7 +182,7 @@ $ sudo dd if=core-image-minimal-imx8mmevk.sdcard of=/dev/sdx bs=1M && sync
 $ cd fmp_3.0
 $ mkdir OBJ
 $ cd OBJ
-$ ruby ../configure.rb -T imx8mm_evk_arm64_gcc -a ../sample -A sample1 -S 'syslog.o banner.o serial.o logtask.o imx8uart.o chip_serial.o'
+$ ruby ../configure.rb -T imx8mm_evk_arm64_gcc -w -S 'syslog.o banner.o serial.o logtask.o imx8uart.o chip_serial.o'
 $ make clean
 $ make fmp.bin
 
@@ -201,7 +201,7 @@ FMP3のコンソールにUART4(デフォルト)を使用する場合，ATFでCor
 
 (1) ATFソースコードのダウンロード
 
-$ git clone -b rel_imx_4.14.98_2.0.0_ga https://source.codeaurora.org/external/imx/imx-atf
+$ git clone -b rel_imx_4.14.98_2.0.0_ga https://github.com/nxp-imx/imx-atf.git
 
 (2) 次のコマンドで, パッチとファイル追加を行う.
 
@@ -223,6 +223,7 @@ SDカードへのソフトの書き込み方法を説明する．
 (1) 以下のコマンドでimx-mkimageを入手する．
 
 $ git clone -b rel_imx_4.14.98_2.0.0_ga https://source.codeaurora.org/external/imx/imx-mkimage
+$ git clone https://github.com/Freescale/imx-mkimage.git
 
 (2) ブートイメージ(flash.bin)作成に必要なバイナリを，Linux BSPディレクトリからコピーする.
 
@@ -310,6 +311,16 @@ J_BOOT_WAIT	0.5
 (9) デバッガにて「実行」を行うと，ロードしたFMP3が実行される．
 
 ○変更履歴
+
+2023/04/18
+・フック呼出し処理の変更
+  ・リンカスクリプト中で，hardware_init_hook，software_init_hook，
+    software_term_hookを0に定義するPROVIDE記述を削除．
+  ・software_term_hookの呼出し処理を，weak属性付きの空関数を使う形に変
+    更．    
+・クラス定義ファイルを新設
+  ・target_class.trbを新設し，$clsDataの定義をtarget_kernel.trbから移動．
+・3.3対応
 
 2020/07/20
 ・アライメントチェックを無効に．

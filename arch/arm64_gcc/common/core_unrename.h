@@ -8,8 +8,6 @@
  *  arm64.c
  */
 #undef icache_invalidate_all
-#undef dcache_invalidate_all
-#undef dcache_clean_and_invalidate_all
 #undef icache_flush
 #undef dcache_flush
 #undef cache_flush
@@ -52,6 +50,8 @@
 #undef l32_irq_handler
 #undef l32_fiq_handler
 #undef l32_serr_handler
+#undef dcache_invalidate_all
+#undef dcache_clean_and_invalidate_all
 
 /*
  *  core_kernel_impl.c
@@ -64,6 +64,13 @@
 #undef default_exc_handler
 #undef default_int_handler
 #undef arm_fpu_initialize
+
+/*
+ *  core_kernel_impl.h
+ */
+#undef lock_cpu
+#undef unlock_cpu
+#undef sense_lock
 
 /*
  *  kernel_cfg.c
@@ -104,109 +111,5 @@
  */
 #undef psci_smc_cpuon
 
-
-#ifdef TOPPERS_LABEL_ASM
-
-/*
- *  arm64.c
- */
-#undef _icache_invalidate_all
-#undef _dcache_invalidate_all
-#undef _dcache_clean_and_invalidate_all
-#undef _icache_flush
-#undef _dcache_flush
-#undef _cache_flush
-#undef _icache_enable
-#undef _icache_disable
-#undef _dcache_enable
-#undef _dcache_disable
-#undef _cache_enable
-#undef _cache_disable
-#undef _tlb_invalidate_all
-#undef _mmu_mmap_init
-#undef _mmu_mmap_add
-#undef _mmu_tt_init
-#undef mmu_init
-
-/*
- *  core_support.S
- */
-#undef _vector_table
-#undef _dispatch
-#undef _dispatch_and_migrate
-#undef _exit_and_migrate
-#undef _start_dispatch
-#undef _exit_and_dispatch
-#undef _call_exit_kernel
-#undef _start_r
-#undef _cur_sp0_sync_handler
-#undef _cur_sp0_irq_handler
-#undef _cur_sp0_fiq_handler
-#undef _cur_sp0_serr_handler
-#undef _cur_spx_irq_handler
-#undef _cur_spx_sync_handler
-#undef _cur_spx_fiq_handler
-#undef _cur_spx_serr_handler
-#undef _l64_sync_handler
-#undef _l64_irq_handler
-#undef _l64_fiq_handler
-#undef _l64_serr_handler
-#undef _l32_sync_handler
-#undef _l32_irq_handler
-#undef _l32_fiq_handler
-#undef _l32_serr_handler
-
-/*
- *  core_kernel_impl.c
- */
-#undef _core_mprc_initialize
-#undef _core_initialize
-#undef _core_terminate
-#undef _initialize_exception
-#undef _xlog_sys
-#undef _default_exc_handler
-#undef _default_int_handler
-#undef _arm_fpu_initialize
-
-/*
- *  kernel_cfg.c
- */
-#undef _p_inh_table
-#undef _p_intcfg_table
-#undef _p_exc_table
-#undef _idstkpt_table
-
-/*
- *  gic_kernel_impl.c
- */
-#undef _gic_init
-#undef _gicc_stop
-#undef _gicd_disable_int
-#undef _gicd_enable_int
-#undef _gicd_clear_pending
-#undef _gicd_set_pending
-#undef _gicd_probe_pending
-#undef _gicd_config
-#undef _gicd_set_priority
-#undef _gicd_set_target
-#undef _gicd_initialize
-#undef _gicd_terminate
-#undef _initialize_interrupt
-
-/*
- *  gic_support.S
- */
-#undef _irc_begin_int
-#undef _irc_end_int
-#undef _irc_get_intpri
-#undef _irc_begin_exc
-#undef _irc_end_exc
-
-/*
- *  psci_support.S
- */
-#undef _psci_smc_cpuon
-
-#endif /* TOPPERS_LABEL_ASM */
 
 #endif /* TOPPERS_CORE_RENAME_H */

@@ -35,7 +35,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  *
- *  @(#) $Id: gic_kernel_impl.h 226 2020-02-25 06:11:37Z ertl-honda $
+ *  @(#) $Id: gic_kernel_impl.h 302 2022-07-22 00:58:33Z ertl-honda $
  */
 
 /*
@@ -371,6 +371,9 @@ gicc_get_priority(void)
 
 /*
  *  GICのプロセッサの割込み優先度のどのビットを使用するか（GICv2）
+ * 
+ *  この関数は，カーネルの初期化中に呼び出すことを想定しているため，
+ *  GICの操作後にメモリ同期バリアを入れていない．
  */
 Inline void
 gicc_set_bp(int mask_bit)
@@ -383,10 +386,9 @@ gicc_set_bp(int mask_bit)
  */
 Inline void
 gicd_raise_sgi(INTNO intno, ID prcid)
-{
-	DATA_SYNC_BARRIER();
-	sil_wrw_mem((void *)GICD_SGIR, (prcid << GICD_SGIR_CPU_OFFSET) | intno);
-	DATA_SYNC_BARRIER();
+{    
+	data_sync_barrier();
+	sil_swrw_mem((void *)GICD_SGIR, (prcid << GICD_SGIR_CPU_OFFSET) | intno);
 }
 
 #elif (TOPPERS_GIC_VER == 3) || (TOPPERS_GIC_VER == 4)
@@ -398,6 +400,7 @@ Inline void
 gicc_set_priority(int pri)
 {
 	ICC_PMR_EL1_WRITE(pri);
+	inst_sync_barrier();
 }
 
 /*
@@ -414,6 +417,9 @@ gicc_get_priority(void)
 
 /*
  *  GICのプロセッサの割込み優先度のどのビットを使用するか（GICv3/4）
+ *
+ *  この関数は，カーネルの初期化中に呼び出すことを想定しているため，
+ *  GICの操作後に命令同期バリアを入れていない．  
  */
 Inline void
 gicc_set_bp(int mask_bit)
@@ -433,11 +439,11 @@ gicd_raise_sgi(INTNO intno, ID prcid)
 {
 	volatile uint64_t	reg64_val;
 
+	data_sync_barrier();
 	reg64_val = ((uint64_t)intno  << BITPOS_ICC_SGInR_INTID) |
 					((uint64_t)prcid << BITPOS_ICC_SGInR_TLIST);
-	DATA_SYNC_BARRIER();
 	ICC_SGI1R_EL1_WRITE(reg64_val);
-	DATA_SYNC_BARRIER();
+	inst_sync_barrier();
 }
 
 #endif /* TOPPERS_GIC_VER == 2 */

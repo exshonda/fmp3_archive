@@ -3,7 +3,7 @@
  *      Toyohashi Open Platform for Embedded Real-Time Systems/
  *      Flexible MultiProcessor Kernel
  *
- *  Copyright (C) 2007-2020 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2007-2023 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  *
  *  上記著作権者は，以下の(1)～(4)の条件を満たす場合に限り，本ソフトウェ
@@ -35,7 +35,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  *
- *  @(#) $Id: target_kernel_impl.c 246 2020-07-09 06:31:08Z ertl-honda $  
+ *  @(#) $Id: target_kernel_impl.c 353 2023-05-05 04:49:18Z ertl-honda $  
  */
 
 /*
@@ -52,7 +52,7 @@
 /*
  *  システムログの低レベル出力のための初期化
  */
-extern void	sio_initialize(intptr_t exinf);
+extern void	sio_initialize(EXINF exinf);
 extern void	target_fput_initialize(void);
 static void	sio_port_init(void);
 
@@ -62,6 +62,13 @@ static void	sio_port_init(void);
 extern atfsmc_vectors_t atf_vector_table;
 #endif /* TOPPERS_TZ_S */
 #endif /* SYSMON */
+
+/*
+ *  タイマの周波数を保持する変数
+ *  単位はkHz
+ *  target_initialize() で初期化される
+ */
+uint32_t	timer_clock_mhz;
 
 /*
  *  EL3で行う初期化処理
@@ -260,6 +267,16 @@ target_mmu_init(void)
 void
 target_initialize(PCB *p_my_pcb)
 {
+	uint32_t timer_clock_hz;
+
+	/*
+	 *  タイマのクロックの取得
+	 */
+	 if (p_my_pcb->prcid == TOPPERS_MASTER_PRCID) {
+		CNTFRQ_EL0_READ(timer_clock_hz);
+		timer_clock_mhz = timer_clock_hz / 1000000;
+	}
+
 	/*
 	 * チップ依存の初期化
 	 */
@@ -268,11 +285,19 @@ target_initialize(PCB *p_my_pcb)
 	/*
 	 *  バナー表示，低レベル出力用にUARTを初期化
 	 */
-	if (is_mprc(p_my_pcb)) {
+	if (p_my_pcb->prcid == TOPPERS_MASTER_PRCID) {
 		sio_port_init();
 		sio_initialize(0);
 		target_fput_initialize();
 	}
+}
+
+/*
+ *  デフォルトのsoftware_term_hook（weak定義）
+ */
+__attribute__((weak))
+void software_term_hook(void)
+{
 }
 
 /*
@@ -281,17 +306,10 @@ target_initialize(PCB *p_my_pcb)
 void
 target_exit(void)
 {
-	extern void	software_term_hook(void);
-	void (*volatile fp)(void) = software_term_hook;
-
 	/*
-	 *  software_term_hookへのポインタを，一旦volatile指定のあるfpに代
-	 *  入してから使うのは，0との比較が最適化で削除されないようにするた
-	 *  めである．
+	 *  software_term_hookの呼出し
 	 */
-	if (fp != 0) {
-		(*fp)();
-	}
+	software_term_hook();    
 
 	/*
 	 *  チップ依存の終了処理

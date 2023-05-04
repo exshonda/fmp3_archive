@@ -4,7 +4,7 @@
  *
  *  Copyright (C) 2000-2003 by Embedded and Real-Time Systems Laboratory
  *                              Toyohashi Univ. of Technology, JAPAN
- *  Copyright (C) 2006-2020 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2006-2023 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  *
  *  上記著作権者は，以下の(1)～(4)の条件を満たす場合に限り，本ソフトウェ
@@ -36,7 +36,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  *
- *  $Id: gic_support.S 256 2020-09-05 02:41:14Z ertl-honda $
+ *  $Id: gic_support.S 345 2023-04-20 12:58:48Z ertl-honda $
  */
 
 /*
@@ -56,8 +56,7 @@
 /*
  *  割込みハンドラ呼出し前の割込みコントローラ操作
  *
- *  x19に割込み番号を返す．irc_end_intで用いる情報（割込み発生前の割込み
- *  優先度マスク）を，x20に返す．
+ *  x19に割込み番号を返す．
  */
 	ATEXT
 	AALIGN(2)
@@ -76,28 +75,42 @@ ALABEL(irc_begin_int)
 	and		w19, w2, w1
 
 	/*
-	 *  割込み要因の割込み優先度を求め，割込み優先度マスクに設定する．
+	 *  割込み発生前の割込み優先度を保存する．
 	 */
 #if TOPPERS_GIC_VER == 2
-	ldr		x3, =GICC_RPR			/* 受け付けた割込みの割込み優先度を取得 */
-	ldr		w4, [x3]
 	ldr		x3, =GICC_PMR			/* 割込み発生前の割込み優先度を取得 */
 	ldr		w20, [x3]
-	str		w4, [x3]				/* 新しい割込み優先度マスクをセットする */
 #elif (TOPPERS_GIC_VER == 3) || (TOPPERS_GIC_VER == 4)
-	mrs		x4, ICC_RPR_EL1			/* 受け付けた割込みの割込み優先度を取得 */
 	mrs		x20,ICC_PMR_EL1			/* 割込み発生前の割込み優先度を取得 */
+#endif /* TOPPERS_GIC_VER == 2 */
 
+	stp		x2, x20, [sp, #-16]!	/* irc_end_intで用いる情報を保存 */
+
+	/*
+	 *  x19に割込み番号を入れた状態でリターンする
+	 */
+	ret
+
+/*
+ *  割込みハンドラ呼出し後の割込みコントローラ操作
+ */
+	ATEXT
+	AALIGN(2)
+	AGLOBAL(irc_end_int)
+ALABEL(irc_end_int)
+
+	ldp		x2, x20, [sp], #16		/* irc_begin_intで保存した情報を復帰 */
+
+#if (TOPPERS_GIC_VER == 3) || (TOPPERS_GIC_VER == 4)
 	/*
 	 *  Spurious割込み(1022/1023)の場合は優先度の設定やEOIへの書き込みは行わない
 	 */
-	sub		x0, x0, #1022
-	cmp		x0, 1
-	bls		irc_begin_int_1
-
-	msr		ICC_PMR_EL1, x4		/* 新しい割込み優先度マスクをセットする */
-#endif /* TOPPERS_GIC_VER == 2 */
-	dsb		sy						/* 割込み優先度マスクがセットされるのを待つ */
+	ldr		w1, =GICC_IAR_INTERRUPTID_MASK
+	and		w19, w2, w1
+	sub		w0, w19, #1022
+	cmp		w0, 1
+	bls		irc_end_int_1
+#endif /* (TOPPERS_GIC_VER == 3) || (TOPPERS_GIC_VER == 4) */
 
 	/*
 	 *  EOIを発行する．
@@ -109,23 +122,8 @@ ALABEL(irc_begin_int)
 	msr		ICC_EOIR1_EL1, x2		/* EOIレジスタへの書込み */
 #endif /* TOPPERS_GIC_VER == 2 */
 
-ALABEL(irc_begin_int_1)
 	/*
-	 *  x19に割込み番号，x20に割込み発生前の割込み優先度マスク
-	 *  を入れた状態でリターンする
-	 */
-	ret
-
-/*
- *  割込みハンドラ呼出し後の割込みコントローラ操作
- *  x20に割込み発生前の割込み優先度マスクを入れた状態で呼び出される．
- */
-	ATEXT
-	AALIGN(2)
-	AGLOBAL(irc_end_int)
-ALABEL(irc_end_int)
-	/*
-	 *  割込み優先度マスクを元に戻す．
+	 *  割込み優先度マスクを元に戻してリターンする．
 	 */
 #if TOPPERS_GIC_VER == 2
 	ldr		x1, =GICC_PMR		/* 割込み優先度マスクを元に戻す */
@@ -133,6 +131,9 @@ ALABEL(irc_end_int)
 #elif (TOPPERS_GIC_VER == 3) || (TOPPERS_GIC_VER == 4)
 	msr		ICC_PMR_EL1, x20		/* 割込み優先度マスクを元に戻す */
 #endif /* TOPPERS_GIC_VER == 2 */
+	dsb		sy						/* 割込み優先度マスクがセットされるのを待つ */
+
+ALABEL(irc_end_int_1)
 	ret
 
 /*

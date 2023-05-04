@@ -2,7 +2,7 @@
  *  TOPPERS Software
  *      Toyohashi Open Platform for Embedded Real-Time Systems
  * 
- *  Copyright (C) 2006-2018 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2006-2021 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  * 
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -34,7 +34,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: chip_serial.c 246 2020-07-09 06:31:08Z ertl-honda $
+ *  $Id: chip_serial.c 282 2021-06-03 06:35:25Z ertl-honda $
  */
 
 /*
@@ -52,7 +52,7 @@
  *  SIOドライバの初期化
  */
 void
-sio_initialize(intptr_t exinf)
+sio_initialize(EXINF exinf)
 {
 	imx8uart_initialize();
 }
@@ -61,7 +61,7 @@ sio_initialize(intptr_t exinf)
  *  SIOドライバの終了処理
  */
 void
-sio_terminate(intptr_t exinf)
+sio_terminate(EXINF exinf)
 {
 	imx8uart_terminate();
 }
@@ -70,7 +70,7 @@ sio_terminate(intptr_t exinf)
  *  SIOの割込みサービスルーチン
  */
 void
-sio_isr(intptr_t exinf)
+sio_isr(EXINF exinf)
 {
 	imx8uart_isr((ID) exinf);
 }
@@ -79,7 +79,7 @@ sio_isr(intptr_t exinf)
  *  SIOポートのオープン
  */
 SIOPCB *
-sio_opn_por(ID siopid, intptr_t exinf)
+sio_opn_por(ID siopid, EXINF exinf)
 {
 	SIOPCB		*p_siopcb;
 
@@ -152,7 +152,7 @@ sio_dis_cbr(SIOPCB *p_siopcb, uint_t cbrtn)
  *  SIOポートからの送信可能コールバック
  */
 void
-imx8uart_irdy_snd(intptr_t exinf)
+imx8uart_irdy_snd(EXINF exinf)
 {
 	sio_irdy_snd(exinf);
 }
@@ -161,7 +161,7 @@ imx8uart_irdy_snd(intptr_t exinf)
  *  SIOポートからの受信通知コールバック
  */
 void
-imx8uart_irdy_rcv(intptr_t exinf)
+imx8uart_irdy_rcv(EXINF exinf)
 {
 	sio_irdy_rcv(exinf);
 }

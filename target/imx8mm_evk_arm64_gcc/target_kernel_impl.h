@@ -55,6 +55,11 @@
 #include "imx8mm_evk.h"
 
 /*
+ *  スレッドIDレジスタにPCBへのポインタを入れる場合
+ */
+#define USE_THREAD_ID_PCB
+
+/*
  *  微少時間待ちのための定義（本来はSILのターゲット依存部）
  */
 #define SIL_DLY_TIM1	70

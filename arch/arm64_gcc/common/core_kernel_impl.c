@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  *
- *  @(#) $Id: core_kernel_impl.c 282 2021-06-03 06:35:25Z ertl-honda $
+ *  @(#) $Id: core_kernel_impl.c 350 2023-04-21 01:59:41Z ertl-honda $
  */
 
 /*
@@ -73,15 +73,6 @@ LOCK giant_lock;
 void
 core_mprc_initialize(void)
 {
-	uint32_t timer_clock_hz;
-
-	/*
-	 *  タイマのクロックの取得
-	 *  timer_clockに代入する値の単位はMHz
-	 */
-	CNTFRQ_EL0_READ(timer_clock_hz);
-	timer_clock = timer_clock_hz / 1000000;
-
 	/*
 	 *  GIC Distributor初期化
 	 */

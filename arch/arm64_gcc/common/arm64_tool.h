@@ -35,7 +35,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  *
- *  @(#) $Id: arm64_tool.h 214 2020-02-15 19:05:52Z ertl-honda $
+ *  @(#) $Id: arm64_tool.h 300 2022-05-24 05:52:08Z ertl-honda $
  */
 
 /*
@@ -52,7 +52,7 @@
 #define IC_IALLU()					Asm("ic iallu");
 #define IC_IALLUIS()				Asm("ic ialluis");
 #define DC_CISW(x)					Asm("dc cisw, %0"::"r"(x));
-#define DC_CSW(x)					Asm("dc isw, %0"::"r"(x));
+#define DC_CSW(x)					Asm("dc csw, %0"::"r"(x));
 #define DC_ISW(x)					Asm("dc isw, %0"::"r"(x));
 
 #define TLBI_VMALLE1(x)				Asm("tlbi vmalle1");

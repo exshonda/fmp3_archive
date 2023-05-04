@@ -3,7 +3,7 @@
  *      Toyohashi Open Platform for Embedded Real-Time Systems/
  *      Flexible MultiProcessor Kernel
  *
- *  Copyright (C) 2007-2020 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2007-2023 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  *
  *  上記著作権者は，以下の(1)～(4)の条件を満たす場合に限り，本ソフトウェ
@@ -39,17 +39,13 @@
 
 OUTPUT_FORMAT(elf64-littleaarch64) 
 OUTPUT_ARCH(aarch64)
-STARTUP(start.o)
-
-PROVIDE(hardware_init_hook = 0);
-PROVIDE(software_init_hook = 0);
-PROVIDE(software_term_hook = 0);
+ENTRY(start)
 
 SECTIONS {
     .text :
     {
         __text = . ;
-        start.o(.text)
+        *(.text.start)
         *(vector)
         *(.text)
         *(.text.*)

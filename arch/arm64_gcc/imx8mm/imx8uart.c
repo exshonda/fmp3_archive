@@ -35,7 +35,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  @(#) $Id: imx8uart.c 246 2020-07-09 06:31:08Z ertl-honda $
+ *  @(#) $Id: imx8uart.c 282 2021-06-03 06:35:25Z ertl-honda $
  */
 /*
  *		IMX8MM UART用 簡易SIOドライバ（非TECS版専用）
@@ -60,11 +60,11 @@ typedef struct sio_port_initialization_block {
 /*
  *  SIOポート管理ブロックの定義
  */
-struct sio_port_control_block {
+typedef struct sio_port_control_block {
 	const SIOPINIB *p_siopinib;		/* SIOポート初期化ブロック */
-	intptr_t	exinf;				/* 拡張情報 */
+	EXINF	exinf;				/* 拡張情報 */
 	bool_t		opened;				/* オープン済み */
-};
+} SIOPCB;
 
 /*
  *  SIOポート初期化ブロック
@@ -119,8 +119,10 @@ imx8uart_terminate(void)
 			 *  送信FIFOが空になるまで待つ
 			 */
 			while ((sil_rew_mem(UART_UTS(p_siopcb->p_siopinib->base))
-					& UART_UTS_TXEMPTY) == 0U);
-			sil_dly_nse(100);
+					& UART_UTS_TXEMPTY) == 0U) {
+				sil_dly_nse(100);
+			}
+
 			/*
 			 *  オープンされているSIOポートのクローズ
 			 */
@@ -133,7 +135,7 @@ imx8uart_terminate(void)
  *  SIOポートのオープン
  */
 SIOPCB *
-imx8uart_opn_por(ID siopid, intptr_t exinf)
+imx8uart_opn_por(ID siopid, EXINF exinf)
 {
 	SIOPCB		*p_siopcb;
 	uintptr_t	base;

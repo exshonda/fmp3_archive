@@ -35,7 +35,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  *
- *  @(#) $Id: core_support.S 282 2021-06-03 06:35:25Z ertl-honda $
+ *  @(#) $Id: core_support.S 345 2023-04-20 12:58:48Z ertl-honda $
  */
 
 /*
@@ -189,7 +189,7 @@ ALABEL(exit_and_dispatch)
 	 */
 #ifdef LOG_DSP_ENTER
 	my_pcb	x2, x1
-	ldr		r0, [r2,#PCB_p_runtsk]	/* p_runtsk → r0 */
+	ldr		x0, [x2,#PCB_p_runtsk]	/* p_runtsk → x0 */
 #endif /* LOG_DSP_ENTER */
 	/* ディスパッチャ本体（dispatcher）へ */
 
@@ -437,8 +437,7 @@ ALABEL(irq_handler_1)
 	/*
 	 *  割込みコントローラを操作し，割込み番号を取得する．
 	 *
-	 *  irc_begin_intは，x19に割込みハンドラ番号，x20に割込み発生前の
-	 *  割込み優先度マスクを入れてリターンする
+	 *  irc_begin_intは，x19に割込みハンドラ番号を入れてリターンする
 	 */
 	bl		irc_begin_int
 #ifdef USE_BYPASS_IPI_DISPATCH_HANDER
@@ -994,8 +993,8 @@ ALABEL(exc_handler_1)
 	 *  に保存する．
 	 */
 	bl		irc_get_intpri
-	my_pcb	x0, x1
-	ldr		w3, [x0, #PCB_excpt_nest_count]
+	my_pcb	x4, x1
+	ldr		w3, [x4, #PCB_excpt_nest_count]
 	stp		x0, x3, [sp, #-16]!
 					/* 例外発生前の割込み優先度マスクをスタックに保存 */
 					/* excpt_nest_count をスタックに保存．*/
@@ -1022,6 +1021,7 @@ ALABEL(exc_handler_1)
 	 */
 	ldr		x0, [x20, #EXC_FRAME_pstate]	/* 例外フレームからpstateを取得 */
 	tst		w0, #(DAIF_CPULOCK AOR DAIF_INTLOCK)
+	my_pcb	x0, x1						/* これ以降x0=p_my_pcbを前提としているため */
 	b.ne	nk_exc_handler_1			/* カーネル管理外のCPU例外の処理へ */
 
 	/*
@@ -1084,7 +1084,7 @@ ALABEL(exc_handler_2)
 	 *  ログ出力の呼出し
 	 */
 #ifdef LOG_EXC_ENTER
-	mov		r0, r19					/* CPU例外番号をパラメータに渡す */
+	mov		x0, x19					/* CPU例外番号をパラメータに渡す */
 	bl		log_exc_enter
 #endif /* LOG_EXC_ENTER */
 
@@ -1103,7 +1103,7 @@ ALABEL(exc_handler_2)
 	 *  ログ出力の呼出し
 	 */
 #ifdef LOG_EXC_LEAVE
-	mov		r0, r19					/* CPU例外番号をパラメータに渡す */
+	mov		x0, x19					/* CPU例外番号をパラメータに渡す */
 	bl		log_exc_leave
 #endif /* LOG_EXC_LEAVE */
 
@@ -1199,7 +1199,7 @@ ALABEL(exc_handler_5)
 	add		sp, sp, x1
 	add		sp, sp, #(8*2)		/* 例外発生前の割込み優先度マスクとexcpt_nest_countを捨てる */
 #ifdef USE_ARM64_FPU
-	ldp		q30, q31, [sp, #0x210]
+	ldp		q30, q31, [sp, #0x200]
 	ldp		q28, q29, [sp, #0x1e0]
 	ldp		q26, q27, [sp, #0x1c0]
 	ldp		q24, q25, [sp, #0x1a0]
@@ -1318,12 +1318,228 @@ ALABEL(nk_exc_handler_2)
 	AALIGN(3)
 	AGLOBAL(sil_dly_nse)
 ALABEL(sil_dly_nse)
+	isb
 	sub		x0, x0, #SIL_DLY_TIM1
 	cmp		x0, xzr
 	b.gt  _sil_dly_nse1
 	ret
 ALABEL(_sil_dly_nse1)
+	isb
 	sub		x0, x0, #SIL_DLY_TIM2
 	cmp		x0, xzr
 	b.gt  _sil_dly_nse1
 	ret
+
+/*
+ *  Dキャッシュの全ラインの無効化
+ */
+/* X0, X1 : Work area
+ * X2 :     level
+ * X3 :     way_max
+ * X4 :     set_max
+ * X5 :     log2 line size
+ * X6 :     way
+ * X7 :     set
+ * X8 :     log2 way_max
+ * X9-X29 : Not used */
+    AALIGN(4)
+    AGLOBAL(dcache_invalidate_all)
+ALABEL(dcache_invalidate_all)
+    stp   x0, x1, [sp, #-16]!
+    stp   x2, x3, [sp, #-16]!
+    stp   x4, x5, [sp, #-16]!
+    stp   x6, x7, [sp, #-16]!
+    stp   x8, x9, [sp, #-16]!
+
+    mov   x2, xzr
+
+ALABEL(dc_inv_check_ctype)
+    mrs   x0, clidr_el1
+    mov   x1, #CLIDR_CTYPE_SHIFT
+    mul   x1, x1, x2
+    lsr   x1, x0, x1
+    and   x1, x1, #CLIDR_CTYPE_MASK
+
+    cmp   x1, #CLIDR_CTYPE_DATA
+    beq   dc_inv_level
+    cmp   x1, #CLIDR_CTYPE_SEPARATE
+    beq   dc_inv_level
+    cmp   x1, #CLIDR_CTYPE_UNIFIED
+    bne   dc_inv_next_level
+
+ALABEL(dc_inv_level)
+    lsl   x0, x2, #CSSELR_LEVEL_SHIFT
+    msr   csselr_el1, x0
+    isb
+    mrs   x0, ccsidr_el1
+    mov   x3, #CCSIDR_ASSOCIATIVITY_MASK
+    and   x3, x0, x3
+    lsr   x3, x3, #CCSIDR_ASSOCIATIVITY_SHIFT
+    cmp   x3, xzr
+    beq   dc_inv_next_level
+    add   x3, x3, #1
+    mov   x4, #CCSIDR_NUMSETS_MASK
+    and   x4, x0, x4
+    lsr   x4, x4, #CCSIDR_NUMSETS_SHIFT
+    cmp   x4, xzr
+    beq   dc_inv_next_level
+    add   x4, x4, #1
+    and   x5, x0, #CCSIDR_LINESIZE_MASK
+    lsr   x5, x5, #CCSIDR_LINESIZE_SHIFT
+    add   x5, x5, #4
+
+    mov   x8, xzr
+    mov   x0, x3
+ALABEL(dc_inv_calc_log2waymax)
+    tst   x0, #1
+    bne   dc_inv_calc_log2waymax_end
+    add   x8, x8, #1
+    lsr   x0, x0, #1
+    b     dc_inv_calc_log2waymax
+
+ALABEL(dc_inv_calc_log2waymax_end)
+    mov   x6, xzr
+ALABEL(dc_inv_level_way)
+    mov   x7, xzr
+ALABEL(dc_inv_level_set)
+    mov   x0, #32
+    sub   x0, x0, x8
+    lsl   x1, x6, x0
+    lsl   x0, x7, x5
+    orr   x1, x1, x0
+    lsl   x0, x2, #DC_LEVEL_SHIFT
+    orr   x1, x1, x0
+    dc isw, x1
+    add   x7, x7, #1
+    cmp   x7, x4
+    blo   dc_inv_level_set
+    add   x6, x6, #1
+    cmp   x6, x3
+    blo   dc_inv_level_way
+
+ALABEL(dc_inv_next_level)
+    mrs   x0, clidr_el1
+    ldr   x1, =CLIDR_LOC_MASK
+    and   x1, x0, x1
+    lsr   x1, x1, CLIDR_LOC_SHIFT
+    add   x2, x2, #1
+    cmp   x2, x1
+    blo   dc_inv_check_ctype
+
+    msr   csselr_el1, xzr
+    dsb sy
+    isb
+
+    ldp   x8, x9, [sp], #16
+    ldp   x6, x7, [sp], #16
+    ldp   x4, x5, [sp], #16
+    ldp   x2, x3, [sp], #16
+    ldp   x0, x1, [sp], #16
+    ret
+
+/*
+ *  Dキャッシュの全ラインのクリーンと無効化
+ */
+/* X0, X1 : Work area
+ * X2 :     level
+ * X3 :     way_max
+ * X4 :     set_max
+ * X5 :     log2 linesize
+ * X6 :     way
+ * X7 :     set
+ * X8 :     log2 way_max
+ * X9-X29 : Not used */
+    AALIGN(4)
+    AGLOBAL(dcache_clean_and_invalidate_all)
+ALABEL(dcache_clean_and_invalidate_all)
+    stp   x0, x1, [sp, #-16]!
+    stp   x2, x3, [sp, #-16]!
+    stp   x4, x5, [sp, #-16]!
+    stp   x6, x7, [sp, #-16]!
+    stp   x8, x9, [sp, #-16]!
+
+    mov   x2, xzr
+
+ALABEL(dc_cln_inv_check_ctype)
+    mrs   x0, clidr_el1
+    mov   x1, #CLIDR_CTYPE_SHIFT
+    mul   x1, x1, x2
+    lsr   x1, x0, x1
+    and   x1, x1, #CLIDR_CTYPE_MASK
+
+    cmp   x1, #CLIDR_CTYPE_DATA
+    beq   dc_cln_inv_level
+    cmp   x1, #CLIDR_CTYPE_SEPARATE
+    beq   dc_cln_inv_level
+    cmp   x1, #CLIDR_CTYPE_UNIFIED
+    bne   dc_cln_inv_next_level
+
+ALABEL(dc_cln_inv_level)
+    lsl   x0, x2, #CSSELR_LEVEL_SHIFT
+    msr   csselr_el1, x0
+    isb
+    mrs   x0, ccsidr_el1
+    mov   x3, #CCSIDR_ASSOCIATIVITY_MASK
+    and   x3, x0, x3
+    lsr   x3, x3, #CCSIDR_ASSOCIATIVITY_SHIFT
+    cmp   x3, xzr
+    beq   dc_cln_inv_next_level
+    add   x3, x3, #1
+    mov   x4, #CCSIDR_NUMSETS_MASK
+    and   x4, x0, x4
+    lsr   x4, x4, #CCSIDR_NUMSETS_SHIFT
+    cmp   x4, xzr
+    beq   dc_cln_inv_next_level
+    add   x4, x4, #1
+    and   x5, x0, #CCSIDR_LINESIZE_MASK
+    lsr   x5, x5, #CCSIDR_LINESIZE_SHIFT
+    add   x5, x5, #4
+
+    mov   x8, xzr
+    mov   x0, x3
+ALABEL(dc_cln_inv_calc_log2waymax)
+    tst   x0, #1
+    bne   dc_cln_inv_calc_log2waymax_end
+    add   x8, x8, #1
+    lsr   x0, x0, #1
+    b     dc_cln_inv_calc_log2waymax
+
+ALABEL(dc_cln_inv_calc_log2waymax_end)
+    mov   x6, xzr
+ALABEL(dc_cln_inv_level_way)
+    mov   x7, xzr
+ALABEL(dc_cln_inv_level_set)
+    mov   x0, #32
+    sub   x0, x0, x8
+    lsl   x1, x6, x0
+    lsl   x0, x7, x5
+    orr   x1, x1, x0
+    lsl   x0, x2, #DC_LEVEL_SHIFT
+    orr   x1, x1, x0
+    dc cisw, x1
+    add   x7, x7, #1
+    cmp   x7, x4
+    blo   dc_cln_inv_level_set
+    add   x6, x6, #1
+    cmp   x6, x3
+    blo   dc_cln_inv_level_way
+
+ALABEL(dc_cln_inv_next_level)
+    mrs   x0, clidr_el1
+    ldr   x1, =CLIDR_LOC_MASK
+    and   x1, x0, x1
+    lsr   x1, x1, CLIDR_LOC_SHIFT
+    add   x2, x2, #1
+    cmp   x2, x1
+    blo   dc_cln_inv_check_ctype
+
+    msr   csselr_el1, xzr
+    dsb sy
+    isb
+
+    ldp   x8, x9, [sp], #16
+    ldp   x6, x7, [sp], #16
+    ldp   x4, x5, [sp], #16
+    ldp   x2, x3, [sp], #16
+    ldp   x0, x1, [sp], #16
+    ret

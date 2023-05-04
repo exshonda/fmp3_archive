@@ -1,7 +1,7 @@
 #
 #		Makefileのコア依存部（ARM64用）
 #
-#  $Id: Makefile.core 253 2020-07-20 12:04:55Z ertl-honda $
+#  $Id: Makefile.core 304 2022-07-24 14:08:26Z ertl-honda $
 #
 
 #
@@ -26,6 +26,7 @@ endif
 #
 INCLUDES := $(INCLUDES) -I$(COREDIR) -I$(TOOLDIR)
 LIBS := $(LIBS) -lgcc
+COPTS := $(COPTS) -mstrict-align
 
 #
 #  カーネルに関する定義

@@ -1,4 +1,4 @@
-# target_config.c
+# target_kernel_impl.c
 target_el3_initialize
 target_el2_initialize
 target_mprc_initialize

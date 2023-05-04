@@ -5,7 +5,7 @@
  *  スのターゲット依存の設定は，できる限りコンポーネント記述ファイルで
  *  記述し，このファイルに記述するものは最小限とする．
  * 
- *  $Id: target_syssvc.h 246 2020-07-09 06:31:08Z ertl-honda $
+ *  $Id: target_syssvc.h 352 2023-05-05 04:42:48Z ertl-honda $
  */
 
 #ifndef TOPPERS_TARGET_SYSSVC_H
@@ -80,6 +80,10 @@ extern void target_fput_log(char c);
  *  低レベル出力で使用するSIOポート
  */
 #define SIOPID_FPUT		1
+/*
+ *  ログタスクのスタックサイズ
+ */
+#define LOGTASK_STACK_SIZE	4096
 
 #endif /* TOPPERS_OMIT_TECS */
 

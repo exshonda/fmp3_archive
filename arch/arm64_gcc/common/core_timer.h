@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  *
- *  @(#) $Id: core_timer.h 282 2021-06-03 06:35:25Z ertl-honda $
+ *  @(#) $Id: core_timer.h 350 2023-04-21 01:59:41Z ertl-honda $
  */
 
 /*
@@ -84,13 +84,6 @@
  *  タイマ値の内部表現の型
  */
 typedef uint64_t CLOCK;
-
-/*
- *  タイマのクロックを保持する変数
- *  単位はMHz
- *  target_initialize() で初期化される
- */
-extern uint32_t timer_clock;
 
 /*
  *  タイマの設定値
@@ -242,7 +235,7 @@ target_hrt_get_current(void)
 	 *  タイマのカウント値を読み出し，
 	 *  timer_clockで除した値を返す．
 	 */
-	return((HRTCNT)(target_timer_get_count() / timer_clock));
+	return(HRT_CNT_TO_HRTCNT(target_timer_get_count()));
 
 }
 
@@ -264,7 +257,7 @@ target_hrt_set_event(ID prcid, HRTCNT hrtcnt)
 	 *  に設定し，コンパレータと割込みをイネーブルする．
 	 */
 	target_timer_set_cval(target_timer_get_count()
-						  + (((uint64_t) hrtcnt) * timer_clock));
+						  + HRT_HRTCNT_TO_CNT((uint64_t)hrtcnt));
 }
 
 /*

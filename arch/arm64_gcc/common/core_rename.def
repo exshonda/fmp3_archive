@@ -1,7 +1,5 @@
 # arm64.c
 icache_invalidate_all
-dcache_invalidate_all
-dcache_clean_and_invalidate_all
 icache_flush
 dcache_flush
 cache_flush
@@ -42,6 +40,8 @@ l32_sync_handler
 l32_irq_handler
 l32_fiq_handler
 l32_serr_handler
+dcache_invalidate_all
+dcache_clean_and_invalidate_all
 
 # core_kernel_impl.c
 core_mprc_initialize
@@ -52,6 +52,11 @@ xlog_sys
 default_exc_handler
 default_int_handler
 arm_fpu_initialize
+
+# core_kernel_impl.h
+lock_cpu
+unlock_cpu
+sense_lock
 
 # kernel_cfg.c
 p_inh_table

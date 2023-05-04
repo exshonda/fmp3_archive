@@ -3,7 +3,7 @@
  *      Toyohashi Open Platform for Embedded Real-Time Systems/
  *      Flexible MultiProcessor Kernel
  *
- *  Copyright (C) 2020 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2020-2021 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  *
  *  上記著作権者は，以下の(1)～(4)の条件を満たす場合に限り，本ソフトウェ
@@ -35,7 +35,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  *
- *  @(#) $Id: imx8uart.h 246 2020-07-09 06:31:08Z ertl-honda $
+ *  @(#) $Id: imx8uart.h 282 2021-06-03 06:35:25Z ertl-honda $
  */
 
 /*
@@ -216,7 +216,7 @@ extern void		imx8uart_isr(ID siopid);
 /*
  *  SIOポートのオープン
  */
-extern SIOPCB	*imx8uart_opn_por(ID siopid, intptr_t exinf);
+extern SIOPCB	*imx8uart_opn_por(ID siopid, EXINF exinf);
 
 /*
  *  SIOポートのクローズ
@@ -246,12 +246,12 @@ extern void		imx8uart_dis_cbr(SIOPCB *siopcb, uint_t cbrtn);
 /*
  *  SIOポートからの送信可能コールバック
  */
-extern void		imx8uart_irdy_snd(intptr_t exinf);
+extern void		imx8uart_irdy_snd(EXINF exinf);
 
 /*
  *  SIOポートからの受信通知コールバック
  */
-extern void		imx8uart_irdy_rcv(intptr_t exinf);
+extern void		imx8uart_irdy_rcv(EXINF exinf);
 
 #endif /* TOPPERS_MACRO_ONLY */
 #endif /* TOPPERS_OMIT_TECS */

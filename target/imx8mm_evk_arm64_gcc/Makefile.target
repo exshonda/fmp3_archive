@@ -55,25 +55,6 @@ KERNEL_ASMOBJS := $(KERNEL_ASMOBJS) psci_support.o
 LDSCRIPT = $(TARGETDIR)/imx8mm_evk.ld
 
 #
-#  リンカフラグに関する定義
-#
-#  LDFLAGSに-nostdlibを追加する．
-#
-LDFLAGS := -nostdlib $(LDFLAGS)
-
-#
-#  スタートアップモジュールに関する定義
-#
-#  zynqmp_a53.ldに「STARTUP(start.o)」を記述したため，スタートアップモジュー
-#  ルの名前をHIDDEN_OBJSに定義する．
-#
-HIDDEN_OBJS = $(OBJDIR)/start.o
-
-$(HIDDEN_OBJS): $(OBJDIR)/%.o: %.S
-	${MKOBJDIR_P}
-	$(CC) -o $@ -c $(CFLAGS) $(KERNEL_CFLAGS) $<
-
-#
 #  TECSを外すかどうかの定義
 #
 OMIT_TECS = true

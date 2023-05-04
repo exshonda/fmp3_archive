@@ -5,7 +5,7 @@
  *
  *  Copyright (C) 2000-2003 by Embedded and Real-Time Systems Laboratory
  *                              Toyohashi Univ. of Technology, JAPAN
- *  Copyright (C) 2006-2019 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2006-2021 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  *
  *  上記著作権者は，以下の(1)～(4)の条件を満たす場合に限り，本ソフトウェ
@@ -37,11 +37,13 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  *
- *  @(#) $Id: gic_kernel_impl.c 258 2020-09-15 07:48:14Z ertl-honda $
+ *  @(#) $Id: gic_kernel_impl.c 302 2022-07-22 00:58:33Z ertl-honda $
  */
 
 /*
  *		カーネルの割込みコントローラ依存部（GIC用）
+ * 
+ * 		初期化処理・終了処理のみで呼び出される関数には，最後にメモリ・命令同期は入れていない．
  */
 
 #include "kernel_impl.h"
@@ -207,7 +209,7 @@ gicd_disable_int(uint8_t id)
 	uintptr_t offset_addr = (id / 32) * 4;
 	uint16_t offset_bit   = id % 32;
 
-	sil_wrw_mem((void *)(GICD_ICENABLERn + offset_addr), (1 << offset_bit));
+	sil_swrw_mem((void *)(GICD_ICENABLERn + offset_addr), (1 << offset_bit));
 }
 
 /*
@@ -219,7 +221,7 @@ gicd_enable_int(uint8_t id)
 	uintptr_t offset_addr = (id / 32) * 4;
 	uint16_t offset_bit  = id % 32;
 
-	sil_wrw_mem((void *)(GICD_ISENABLERn + offset_addr), (1 << offset_bit));
+	sil_swrw_mem((void *)(GICD_ISENABLERn + offset_addr), (1 << offset_bit));
 }
 
 /*
@@ -231,7 +233,7 @@ gicd_clear_pending(uint8_t id)
 	uintptr_t offset_addr = (id / 32) * 4;
 	uint16_t offset_bit  = id % 32;
 
-	sil_wrw_mem((void *)(GICD_ICPENDRn + offset_addr), (1 << offset_bit));
+	sil_swrw_mem((void *)(GICD_ICPENDRn + offset_addr), (1 << offset_bit));
 }
 
 /*
@@ -243,7 +245,7 @@ gicd_set_pending(uint8_t id)
 	uintptr_t offset_addr = (id / 32) * 4;
 	uint16_t offset_bit  = id % 32;
 
-	sil_wrw_mem((void *)(GICD_ISPENDRn + offset_addr), (1 << offset_bit));
+	sil_swrw_mem((void *)(GICD_ISPENDRn + offset_addr), (1 << offset_bit));
 }
 
 /*
@@ -320,10 +322,12 @@ gicd_set_priority(INTNO intno, uint_t pri)
 	SIL_PRE_LOC;
 
 	SIL_LOC_SPN();
+
 	pr_reg_val  = sil_rew_mem((void *)(GICD_IPRIORITYRn + offset_addr));
 	pr_reg_val &= ~(0xffU << shift);
 	pr_reg_val |= (pri << shift);
 	sil_wrw_mem((void *)(GICD_IPRIORITYRn + offset_addr), pr_reg_val);
+
 	SIL_UNL_SPN();
 }
 
@@ -366,10 +370,12 @@ gicd_set_target(uint8_t id, ID iprcid, uint8_t cpus)
 	SIL_PRE_LOC;
 
 	SIL_LOC_SPN();
+    
 	itr_reg_val  = sil_rew_mem((void *)(GICD_ITARGETSRn + offset_addr));
 	itr_reg_val &= ~(0xf << shift);
 	itr_reg_val |= (cpus << shift);
 	sil_wrw_mem((void *)(GICD_ITARGETSRn + offset_addr), itr_reg_val);
+
 	SIL_UNL_SPN();
 }
 #elif (TOPPERS_GIC_VER == 3) || (TOPPERS_GIC_VER == 4)
@@ -486,13 +492,13 @@ gicr_init(void)
 	gicr_base[prc_id] = GICR_BASE + (GICR_SIZE * prc_id);
 
 	/* Redistoributor起動 */
-	reg32_val = *((volatile uint32_t *)GICR_WAKER(prc_id));
+	reg32_val = sil_rew_mem((void *)GICR_WAKER(prc_id));
 	reg32_val &= ~GICR_ProcSleep;
-	*((volatile uint32_t *)GICR_WAKER(prc_id)) = reg32_val;
+	sil_wrw_mem((void *)GICR_WAKER(prc_id), reg32_val);
 
 	/* 起動を待つ */
 	for( cnt = 0 ; cnt < 1000 ; cnt++ ) {
-		reg32_val = *((volatile uint32_t *)GICR_WAKER(prc_id));
+		reg32_val = sil_rew_mem((void *)GICR_WAKER(prc_id));
 		if ((reg32_val & GICR_ChildrenAsleep) == 0) {
 			return true;
 		}
@@ -572,10 +578,10 @@ gicd_disable_int(uint8_t id)
 	uint_t	prc_id = get_my_prcidx();
 
 	if (id < 32) {
-		sil_wrw_mem((void *)GICR_ICENABLER0(prc_id), (1 << shift));
+		sil_swrw_mem((void *)GICR_ICENABLER0(prc_id), (1 << shift));
 	}
 	else {
-		sil_wrw_mem((void *)(GICD_ICENABLERn + offset_addr), (1 << shift));
+		sil_swrw_mem((void *)(GICD_ICENABLERn + offset_addr), (1 << shift));
 	}
 }
 
@@ -590,10 +596,10 @@ gicd_enable_int(uint8_t id)
 	uint_t	prc_id = get_my_prcidx();
 
 	if (id < 32) {
-		sil_wrw_mem((void *)GICR_ISENABLER0(prc_id), (1 << shift));
+		sil_swrw_mem((void *)GICR_ISENABLER0(prc_id), (1 << shift));
 	}
 	else {
-		sil_wrw_mem((void *)(GICD_ISENABLERn + offset_addr), (1 << shift));
+		sil_swrw_mem((void *)(GICD_ISENABLERn + offset_addr), (1 << shift));
 	}
 }
 
@@ -607,13 +613,13 @@ gicd_clear_pending(uint8_t id)
 	uint_t	prc_id = get_my_prcidx();
 
 	if (id < 32) {
-		sil_wrw_mem((void *)GICR_ICPENDR0(prc_id), (1 << shift));
+		sil_swrw_mem((void *)GICR_ICPENDR0(prc_id), (1 << shift));
 	}
 	else {
 #ifdef TOPPERS_TZ_S
-		sil_wrw_mem((void *)GICD_CLRSPI_SR, id);
+		sil_swrw_mem((void *)GICD_CLRSPI_SR, id);
 #else  /* !TOPPERS_TZ_S */
-		sil_wrw_mem((void *)GICD_CLRSPI_NSR, id);
+		sil_swrw_mem((void *)GICD_CLRSPI_NSR, id);
 #endif /* TOPPERS_TZ_S */
 	}
 }
@@ -628,13 +634,13 @@ gicd_set_pending(uint8_t id)
 	uint_t		prc_id = get_my_prcidx();
 
 	if (id < 32) {        
-		sil_wrw_mem((void *)GICR_ISPENDR0(prc_id), (1 << shift));
+		sil_swrw_mem((void *)GICR_ISPENDR0(prc_id), (1 << shift));
 	}
     else {
 #ifdef TOPPERS_TZ_S
-		sil_wrw_mem((void *)GICD_SETSPI_SR, id);
+		sil_swrw_mem((void *)GICD_SETSPI_SR, id);
 #else  /* !TOPPERS_TZ_S */
-		sil_wrw_mem((void *)GICD_SETSPI_NSR, id);
+		sil_swrw_mem((void *)GICD_SETSPI_NSR, id);
 #endif /* TOPPERS_TZ_S */
 	}
 }
@@ -739,6 +745,7 @@ gicd_set_priority(INTNO intno, uint_t pri)
 	SIL_PRE_LOC;
 
 	SIL_LOC_SPN();
+
 	if (intno < GIC_INTNO_SPI0) {
 		pr_reg_val  = sil_rew_mem((void *)(GICR_IPRIORITYRn(prc_id) + offset_addr));
 		pr_reg_val &= ~(0xffU << shift);
@@ -751,6 +758,7 @@ gicd_set_priority(INTNO intno, uint_t pri)
 		pr_reg_val |= (pri << shift);
 		sil_wrw_mem((void *)(GICD_IPRIORITYRn + offset_addr), pr_reg_val);
 	}
+
 	SIL_UNL_SPN();
 }
 
@@ -799,9 +807,11 @@ gicd_set_target(uint8_t id, ID iprcid, uint8_t cpus)
 	SIL_PRE_LOC;
 
 	SIL_LOC_SPN();
+
 	itr_reg_val  = sil_rew_mem((void *)(GICD_IROUTERn + offset_addr));
 	itr_reg_val |= iprcid - 1;
 	sil_wrw_mem((void *)(GICD_IROUTERn + offset_addr), itr_reg_val);
+
 	SIL_UNL_SPN();
 }
 
@@ -813,11 +823,16 @@ gicd_config_group(INTNO intno, uint_t group)
 {
 	uint_t		shift = intno % 32;
 	uint32_t	reg;
+	SIL_PRE_LOC;
 
+	SIL_LOC_SPN();
+    
 	reg = sil_rew_mem((void *)(GICD_IGROUPRn + (uintptr_t)((intno / 32) * 4)));
 	reg &= ~(0x01U << shift);
 	reg |= (group << shift);
 	sil_wrw_mem((void *)(GICD_IGROUPRn + (uintptr_t)((intno / 32) * 4)), reg);
+
+	SIL_UNL_SPN();    
 }
 
 /*
@@ -828,11 +843,16 @@ gicd_config_group_modifier(INTNO intno, uint_t group)
 {
 	uint_t		shift = intno % 32;
 	uint32_t	reg;
+	SIL_PRE_LOC;
+
+	SIL_LOC_SPN();
 
 	reg = sil_rew_mem((void *)(GICD_IGRPMODRn + (uintptr_t)((intno / 32) * 4)));
 	reg &= ~(0x01U << shift);
 	reg |= (group << shift);
 	sil_wrw_mem((void *)(GICD_IGRPMODRn + (uintptr_t)((intno / 32) * 4)), reg);
+
+	SIL_UNL_SPN();
 }
 
 #endif /* (TOPPERS_GIC_VER == 3) || (TOPPERS_GIC_VER == 4) */

@@ -4,7 +4,7 @@
  *
  *  Copyright (C) 2000-2003 by Embedded and Real-Time Systems Laboratory
  *                              Toyohashi Univ. of Technology, JAPAN
- *  Copyright (C) 2005-2020 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2005-2023 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  *
  *  上記著作権者は，以下の(1)～(4)の条件を満たす場合に限り，本ソフトウェ
@@ -36,7 +36,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  *
- *  @(#) $Id: start.S 246 2020-07-09 06:31:08Z ertl-honda $
+ *  @(#) $Id: start.S 351 2023-05-05 04:42:20Z ertl-honda $
  */
 
 /*
@@ -54,7 +54,7 @@
  */
 #define MAGIC_START 0x87654321
 
-	ATEXT
+	ASECTION(.text.start)
 	AALIGN(4)
 	AGLOBAL(start)
 ALABEL(start)
@@ -172,15 +172,12 @@ ALABEL(start_el1)
 	mov   x29, xzr			/* フレームポインタ(r29) */
 
 	/*
-	 *  hardware_init_hookの呼び出し （0でない場合）
+	 *  hardware_init_hookの呼び出し
 	 *
 	 *  ターゲットハードウェアに依存して必要な初期化処理がある場合
 	 *  は，hardware_init_hook という関数を用意する
 	 */
-	ldr   x0, =hardware_init_hook
-	cmp   x0, #0x00
-	b.eq  start_1
-	blr   x0
+	bl  hardware_init_hook
 
 ALABEL(start_1)
 
@@ -209,9 +206,8 @@ ALABEL(start_2)
 	str   xzr, [x1], #8
 	cmp   x1, x2
 	b.lo  start_2
-#endif /* TOPPERS_OMIT_BSS_INIT */
-
 ALABEL(start_3)
+#endif /* TOPPERS_OMIT_BSS_INIT */
 
 #ifndef TOPPERS_OMIT_DATA_INIT
 	/*
@@ -229,20 +225,17 @@ ALABEL(start_4)
 	str   x0, [x1], #8
 	cmp   x1, x3
 	b.lo  start_4
+ALABEL(start_5)
 #endif /* TOPPERS_OMIT_DATA_INIT */
 
 	/*
-	 *  software_init_hook を呼出し（0 でない場合）
+	 *  software_init_hook を呼出し
 	 *
 	 *  ソフトウェア環境（特にライブラリ）に依存して必要な初期化処
 	 *  理がある場合は，software_init_hook という関数を用意すれば
 	 *  よい．
 	 */
-ALABEL(start_5)
-	ldr   x0, =software_init_hook
-	cmp   x0, xzr
-	b.eq  start_6
-	blr   x0
+	bl  software_init_hook
 
 	/*
 	 *  target_mprc_initialize の呼び出し
@@ -288,3 +281,21 @@ ALABEL(slave_wait_1)
 	b.ne  slave_wait_1
 	str   wzr, [x1, x0]
 	bl    sta_ker
+
+	/*
+	 *  デフォルトのhardware_init_hook（weak定義）
+	 */
+	ATEXT
+	AALIGN(2)
+	AWEAK(hardware_init_hook)
+ALABEL(hardware_init_hook)
+	ret
+
+	/*
+	 *  デフォルトのsoftware_init_hook（weak定義）
+	 */
+	ATEXT
+	AALIGN(2)
+	AWEAK(software_init_hook)
+ALABEL(software_init_hook)
+	ret
