@@ -35,7 +35,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  *
- *  @(#) $Id: chip_kernel_impl.c 282 2021-06-03 06:35:25Z ertl-honda $
+ *  @(#) $Id: chip_kernel_impl.c 345 2023-04-20 12:58:48Z ertl-honda $
  */
 
 /*
@@ -76,7 +76,7 @@ chip_el3_initialize(void)
 	sil_wrw_mem((void*)XIOU_SCNTRS_CNT_CNTRL_REG,
 				sil_rew_mem((void*)XIOU_SCNTRS_CNT_CNTRL_REG) | XIOU_SCNTRS_CNT_CNTRL_REG_EN);
 
-	/* Initialize Gneric Timer Freq */
+	/* Initialize Generic Timer Freq */
 	CNTFRQ_EL0_WRITE(XIOU_SCNTRS_FREQ_HZ);
 }
 
@@ -111,8 +111,6 @@ chip_mprc_initialize(void)
 {
 #ifdef SYSMON
 	uint32_t i;
-#else
-	uint64_t tmp_addr = (uint64_t)start;
 #endif
 
 	dcache_disable();

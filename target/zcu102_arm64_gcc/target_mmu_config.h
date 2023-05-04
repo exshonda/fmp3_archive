@@ -44,11 +44,15 @@
 /*
  *  MMU設定 (TOPPERS_32BIT_ABOVE_ADDR指定時)
  */
+
 /* アドレス空間のbit数
- *   i.MX8Mでは 40, 36, 32の設定が可能 (36の動作は未確認) */
+ *   ZynqMPでは 40, 36, 32の設定が可能 (36の動作は未確認) 
+ */
 #define ADDR_SPACE_WIDTH		40
+
 /* メモリ空間の最小設定粒度のbit数
- *   i.MX8Mでは 12, 14, 16の設定が可能 (12のみ動作を確認) */
+ *   ZynqMPでは 12, 14, 16の設定が可能 (12のみ動作を確認) 
+ */
 #define TT_GRANULE_WIDTH		12
 
 #endif /* TOPPERS_TARGET_MMU_CONFIG_H */

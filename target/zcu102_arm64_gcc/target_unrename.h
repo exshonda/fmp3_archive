@@ -5,7 +5,7 @@
 #undef TOPPERS_TARGET_RENAME_H
 
 /*
- *  target_config.c
+ *  target_kernel_impl.c
  */
 #undef target_el3_initialize
 #undef target_el2_initialize

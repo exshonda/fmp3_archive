@@ -62,8 +62,8 @@
 /*
  *  微少時間待ちのための定義（本来はSILのターゲット依存部）
  */
-#define SIL_DLY_TIM1	70
-#define SIL_DLY_TIM2	44
+#define SIL_DLY_TIM1	13
+#define SIL_DLY_TIM2	10
 
 /*
  *  ipi_hanlderのバイパス処理を使用するか

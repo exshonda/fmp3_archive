@@ -9,7 +9,7 @@
 $INTNO_VALID = {}
 $INHNO_VALID = {}
 private_intno_list = [ *(0..31) ]
-global_intno_list = [ *(32..159) ]
+global_intno_list = [ *(32..187) ]
 1.upto($TNUM_PRCID) do |prcid|
   $INTNO_VALID[prcid] = []
   $INHNO_VALID[prcid] = []

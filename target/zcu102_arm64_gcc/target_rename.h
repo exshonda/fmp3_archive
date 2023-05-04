@@ -4,7 +4,7 @@
 #define TOPPERS_TARGET_RENAME_H
 
 /*
- *  target_config.c
+ *  target_kernel_impl.c
  */
 #define target_el3_initialize		_kernel_target_el3_initialize
 #define target_el2_initialize		_kernel_target_el2_initialize

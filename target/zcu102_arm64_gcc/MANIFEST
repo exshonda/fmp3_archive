@@ -5,6 +5,7 @@ Makefile.target
 MANIFEST
 target_cfg1_out.h
 target_check.trb
+target_class.trb
 target_ipi.cfg
 target_ipi.h
 target_kernel.cfg

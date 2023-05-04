@@ -58,15 +58,15 @@ CDEFS := $(CDEFS) -DTOPPERS_WITH_ATF
 CDEFS := $(CDEFS) -DTOPPERS_TZ_NS
 CDEFS := $(CDEFS) -DSYSMON
 ifndef TOPPERS_MEM_BASE
-TOPPERS_MEM_BASE = 0x00000000
-TOPPERS_MEM_SIZE = 0x40000000
+TOPPERS_MEM_BASE = 0x00200000
+TOPPERS_MEM_SIZE = 0x3FE00000
 endif
 else
 #
 #  単独動作に関する定義
 #
 CDEFS := $(CDEFS) -DTOPPERS_WITH_ATF
-CDEFS := $(CDEFS) -DTOPPERS_TZ_NS
+CDEFS := $(CDEFS) -DTOPPERS_TZ_S
 CDEFS := $(CDEFS) -USYSMON
 ifndef TOPPERS_MEM_BASE
 TOPPERS_MEM_BASE = 0x00000000
@@ -82,7 +82,6 @@ TEXT_START_ADDRESS=$(TOPPERS_MEM_BASE)
 INCLUDES := $(INCLUDES) -I$(TARGETDIR)
 COPTS := $(COPTS) -mlittle-endian
 LDFLAGS := $(LDFLAGS) -mlittle-endian -Wl,--build-id=none
-CDEFS := $(CDEFS) -DTOPPERS_TZ_S
 CFG1_OUT_LDFLAGS := -nostdlib $(CFG1_OUT_LDFLAGS)
 
 #
@@ -114,25 +113,6 @@ KERNEL_ASMOBJS := $(KERNEL_ASMOBJS) psci_support.o
 #  リンカスクリプトの定義
 #
 LDSCRIPT = $(TARGETDIR)/zcu102.ld
-
-#
-#  リンカフラグに関する定義
-#
-#  LDFLAGSに-nostdlibを追加する．
-#
-LDFLAGS := -nostdlib $(LDFLAGS)
-
-#
-#  スタートアップモジュールに関する定義
-#
-#  zynqmp_a53.ldに「STARTUP(start.o)」を記述したため，スタートアップモジュー
-#  ルの名前をHIDDEN_OBJSに定義する．
-#
-HIDDEN_OBJS = $(OBJDIR)/start.o
-
-$(HIDDEN_OBJS): $(OBJDIR)/%.o: %.S
-	${MKOBJDIR_P}
-	$(CC) -o $@ -c $(CFLAGS) $(KERNEL_CFLAGS) $<
 
 #
 #  TECSを外すかどうかの定義

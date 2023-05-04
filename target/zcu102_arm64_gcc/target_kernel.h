@@ -3,7 +3,7 @@
  *      Toyohashi Open Platform for Embedded Real-Time Systems/
  *      Flexible MultiProcessor Kernel
  *
- *  Copyright (C) 2006-2020 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2006-2023 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  *
  *  上記著作権者は，以下の(1)～(4)の条件を満たす場合に限り，本ソフトウェ
@@ -60,9 +60,15 @@
  *  プロセッサIDの定義
  */
 #define PRC1		1
+#if TNUM_PRCID >= 2
 #define PRC2		2
+#endif
+#if TNUM_PRCID >= 3
 #define PRC3		3
+#endif
+#if TNUM_PRCID >= 4
 #define PRC4		4
+#endif
 
 /*
  *  マスタプロセッサ
@@ -82,14 +88,33 @@
 /*
  *  クラスIDの定義
  */
-#define CLS_ALL_PRC1	1		/* 割付け可能：すべて，初期割付け：PRC1 */
-#define CLS_ALL_PRC2	2		/* 割付け可能：すべて，初期割付け：PRC2 */
-#define CLS_ALL_PRC3	3		/* 割付け可能：すべて，初期割付け：PRC3 */
-#define CLS_ALL_PRC4	4		/* 割付け可能：すべて，初期割付け：PRC4 */
-#define CLS_PRC1		5		/* 割付け可能：PRC1，初期割付け：PRC1 */
-#define CLS_PRC2		6		/* 割付け可能：PRC2，初期割付け：PRC2 */
-#define CLS_PRC3		7		/* 割付け可能：PRC3，初期割付け：PRC3 */
-#define CLS_PRC4		8		/* 割付け可能：PRC4，初期割付け：PRC4 */
+#if TNUM_PRCID == 1
+#define CLS_PRC1		1		/* 割付け可能：PRC1，初期割付け：PRC1 */
+#define CLS_ALL_PRC1	2		/* 割付け可能：すべて，初期割付け：PRC1 */
+#elif TNUM_PRCID == 2
+#define CLS_PRC1		1		/* 割付け可能：PRC1，初期割付け：PRC1 */
+#define CLS_PRC2		2		/* 割付け可能：PRC2，初期割付け：PRC2 */
+#define CLS_ALL_PRC1	3		/* 割付け可能：すべて，初期割付け：PRC1 */
+#define CLS_ALL_PRC2	4		/* 割付け可能：すべて，初期割付け：PRC2 */
+#elif TNUM_PRCID == 3
+#define CLS_PRC1		1		/* 割付け可能：PRC1，初期割付け：PRC1 */
+#define CLS_PRC2		2		/* 割付け可能：PRC2，初期割付け：PRC2 */
+#define CLS_PRC3		3		/* 割付け可能：PRC3，初期割付け：PRC3 */
+#define CLS_ALL_PRC1	4		/* 割付け可能：すべて，初期割付け：PRC1 */
+#define CLS_ALL_PRC2	5		/* 割付け可能：すべて，初期割付け：PRC2 */
+#define CLS_ALL_PRC3	6		/* 割付け可能：すべて，初期割付け：PRC3 */
+#elif TNUM_PRCID == 4
+#define CLS_PRC1		1		/* 割付け可能：PRC1，初期割付け：PRC1 */
+#define CLS_PRC2		2		/* 割付け可能：PRC2，初期割付け：PRC2 */
+#define CLS_PRC3		3		/* 割付け可能：PRC3，初期割付け：PRC3 */
+#define CLS_PRC4		4		/* 割付け可能：PRC4，初期割付け：PRC4 */
+#define CLS_ALL_PRC1	5		/* 割付け可能：すべて，初期割付け：PRC1 */
+#define CLS_ALL_PRC2	6		/* 割付け可能：すべて，初期割付け：PRC2 */
+#define CLS_ALL_PRC3	7		/* 割付け可能：すべて，初期割付け：PRC3 */
+#define CLS_ALL_PRC4	8		/* 割付け可能：すべて，初期割付け：PRC4 */
+#else
+#error TNUM_PRCID is out of range.
+#endif
 
 /*
  *  高分解能タイマのタイマ周期

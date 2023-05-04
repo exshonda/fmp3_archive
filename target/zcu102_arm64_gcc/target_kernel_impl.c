@@ -3,7 +3,7 @@
  *      Toyohashi Open Platform for Embedded Real-Time Systems/
  *      Flexible MultiProcessor Kernel
  *
- *  Copyright (C) 2007-2021 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2007-2023 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  *
  *  上記著作権者は，以下の(1)～(4)の条件を満たす場合に限り，本ソフトウェ
@@ -35,7 +35,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  *
- *  @(#) $Id: target_kernel_impl.c 282 2021-06-03 06:35:25Z ertl-honda $  
+ *  @(#) $Id: target_kernel_impl.c 353 2023-05-05 04:49:18Z ertl-honda $  
  */
 
 /*
@@ -54,6 +54,13 @@
  */
 extern void	sio_initialize(EXINF exinf);
 extern void	target_fput_initialize(void);
+
+/*
+ *  タイマの周波数を保持する変数
+ *  単位はkHz
+ *  target_initialize() で初期化される
+ */
+uint32_t	timer_clock_mhz;
 
 /*
  *  EL3で行う初期化処理
@@ -108,20 +115,22 @@ target_mmu_init(void)
 	 *  全領域は物理アドレス = 仮想アドレス
 	 */
 #ifdef TOPPERS_TZ_S
+	mm.ns   = MEM_NS_SECURE;
+#else  /* TOPPERS_TZ_S */
+	mm.ns   = MEM_NS_NONSECURE;
+#endif /* TOPPERS_TZ_S */
+
 	mm.pa   = TOPPERS_MEM_BASE;
 	mm.va   = mm.pa;
 	mm.size = TOPPERS_MEM_SIZE;
 	mm.attr	= MEM_ATTR_NML_C; /* Normal, Outer and Inner Write-Back No-transient */
-	mm.ns	= MEM_NS_SECURE;
 	mmu_mmap_add(&mm);
-	
+
 	mm.pa   = 0x80000000;
 	mm.va   = mm.pa;
 	mm.size = 0x80000000;
 	mm.attr	= MEM_ATTR_DEV;
-	mm.ns	= MEM_NS_SECURE;
 	mmu_mmap_add(&mm);
-#endif /* defined(TOPPERS_TZ_S) */
 
 	/*
 	 *  ユーザープログラムによるMMUの初期化
@@ -135,6 +144,16 @@ target_mmu_init(void)
 void
 target_initialize(PCB *p_my_pcb)
 {
+	uint32_t timer_clock_hz;
+
+	/*
+	 *  タイマのクロックの取得
+	 */
+	if (p_my_pcb->prcid == TOPPERS_MASTER_PRCID) {    
+		CNTFRQ_EL0_READ(timer_clock_hz);
+		timer_clock_mhz = timer_clock_hz / 1000000;
+	}
+
 	/*
 	 * チップ依存の初期化
 	 */
@@ -150,22 +169,23 @@ target_initialize(PCB *p_my_pcb)
 }
 
 /*
+ *  デフォルトのsoftware_term_hook（weak定義）
+ */
+__attribute__((weak))
+void software_term_hook(void)
+{
+}
+
+/*
  *  ターゲット依存の終了処理
  */
 void
 target_exit(void)
 {
-	extern void	software_term_hook(void);
-	void (*volatile fp)(void) = software_term_hook;
-
 	/*
-	 *  software_term_hookへのポインタを，一旦volatile指定のあるfpに代
-	 *  入してから使うのは，0との比較が最適化で削除されないようにするた
-	 *  めである．
+	 *  software_term_hookの呼出し
 	 */
-	if (fp != 0) {
-		(*fp)();
-	}
+	software_term_hook();
 
 	/*
 	 *  チップ依存の終了処理

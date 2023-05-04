@@ -81,6 +81,8 @@
 #define TEST_TIME_CP	10000U
 #endif /* TOPPERS_USE_QEMU */
 
+#define TEST_DELAY_TIME_NSE 300U
+
 /*
  *  コアで共通な定義（チップ依存部は飛ばす）
  */

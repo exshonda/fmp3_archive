@@ -36,7 +36,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  *
- *  $Id: xuartps.c 282 2021-06-03 06:35:25Z ertl-honda $
+ *  $Id: xuartps.c 314 2022-12-21 01:47:45Z ertl-honda $
  */
 
 /*
@@ -64,7 +64,7 @@ typedef struct sio_port_initialization_block {
  */
 typedef struct sio_port_control_block {
 	const SIOPINIB *p_siopinib;		/* SIOポート初期化ブロック */
-	intptr_t	exinf;				/* 拡張情報 */
+	EXINF	exinf;				/* 拡張情報 */
 	bool_t		opened;				/* オープン済み */
 } SIOPCB;
 
@@ -121,7 +121,7 @@ xuartps_terminate(void)
 			 *  送信FIFOが空になるまで待つ
 			 */
 			while ((sil_rew_mem(XUARTPS_SR(p_siopcb->p_siopinib->base))
-					& XUARTPS_SR_TXEMPTY) == 0U) {
+											& XUARTPS_SR_TXEMPTY) == 0U) {
 				sil_dly_nse(100);
 			}
 
@@ -285,13 +285,28 @@ xuartps_dis_cbr(SIOPCB *p_siopcb, uint_t cbrtn)
 static void
 xuartps_isr_siop(SIOPCB *p_siopcb)
 {
+	uint32_t	xuartps_isr;
+
+	/*
+	 *  この時点の割込み要求の状態を保存
+	 *  この関数の最後に実施すると，関数内で処理していない要求をクリアする
+	 *  可能性があるため．
+	 */
+	xuartps_isr = sil_rew_mem(XUARTPS_ISR(p_siopcb->p_siopinib->base));
+                              
 	if (xuartps_getready(p_siopcb->p_siopinib->base)) {
 		/*
 		 *  受信通知コールバックルーチンを呼び出す．
 		 */
 		xuartps_irdy_rcv(p_siopcb->exinf);
 	}
-	if (xuartps_putready(p_siopcb->p_siopinib->base)) {
+
+	/*
+	 *  送信可能かつSIOドライバで送信したいデータがあるかぎり
+	 *  送信可能コールバックルーチンを呼び出す．
+	 */ 
+	while(xuartps_putready(p_siopcb->p_siopinib->base) &&
+		(sil_rew_mem(XUARTPS_IMR(p_siopcb->p_siopinib->base)) & XUARTPS_IXR_TXEMPTY)) {
 		/*
 		 *  送信可能コールバックルーチンを呼び出す．
 		 */
@@ -301,8 +316,7 @@ xuartps_isr_siop(SIOPCB *p_siopcb)
 	/*
 	 *  ペンディングしている割込みをクリア
 	 */
-	sil_wrw_mem(XUARTPS_ISR(p_siopcb->p_siopinib->base), 
-					sil_rew_mem(XUARTPS_ISR(p_siopcb->p_siopinib->base)));
+	sil_wrw_mem(XUARTPS_ISR(p_siopcb->p_siopinib->base), xuartps_isr);
 }
 
 /*

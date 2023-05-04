@@ -1,7 +1,7 @@
 =====================================================================
                      ZYNQMP_A53(AArch64)ターゲット依存部
-                            2018-2021 (C) Shinya Honda honda@ertl.jp                     
-                                  Last Modified:2021 Jun 03 11:22:54
+                            2018-2023 (C) Shinya Honda honda@ertl.jp                     
+                                  Last Modified:2023 Apr 20 21:15:23
 =====================================================================
 
 ○概要
@@ -22,16 +22,15 @@ AArch64モードをサポートしている．サポートしているプロセ�
 
 動作確認したXilinx SDKのバージョンは次の通りである．  
 
-  - Xilinx SDK (>2018.2)
+  - Xilinx SDK (>2019.1)
   
 ●コンパイラ
 
 動作確認を行ったARMから公開されているGCCである．
 
-   aarch64-none-eabi-gcc.exe
+   aarch64-none-eabi-gcc.exe   
+   gcc version 11.2.1 20220111 (GNU Toolchain for the Arm Architecture 11.2-2022.02 (arm-11.14))
    
-   gcc version 9.2.1 20191025 (GNU Toolchain for the A-profile Architecture 9.2-2020.02 (arm-9.10))
-
 ●デバッグ環境
 
 デバッグ環境としては，京都マイクロコンピュータ製のPartner-Jet2 による
@@ -94,6 +93,31 @@ configure.rb -T zcu102_arm64_gcc -w -S "syslog.o banner.o serial.o chip_serial.o
 
 ○変更履歴
 
+2023/04/18
+・フック呼出し処理の変更
+  ・リンカスクリプト中で，hardware_init_hook，software_init_hook，
+    software_term_hookを0に定義するPROVIDE記述を削除．
+  ・software_term_hookの呼出し処理を，weak属性付きの空関数を使う形に変
+    更．
+・クラス定義ファイルを新設
+  ・target_class.trbを新設し，$clsDataの定義をtarget_kernel.trbから移動．    
+・3.3対応
+・単独動作に関する定義の変更
+  ・Makefile.target
+    ・TOPPERS_TZ_S を定義．
+
+2022/07/19
+・Makefile.target
+  GCC v11.2 ではオブジェクトファイルのディフォルトのデバッグ形式が
+  Dwarf-5であるため，対応しないデバッガのためDwarf-4形式で出力するよう
+  にコンパイルオプションを追加．
+・target_kernel_impl.h
+  SIL_DLY_TIM1/SIL_DLY_TIM2の値を調整．  
+・target_syssvc.h
+  ディフォルトのログタスクのスタックサイズでは小さいため4KBとした．
+・target_kernel_impl.c
+  NS動作のためのメモリ初期化を追加．
+  
 2021/06/03
 ・3.2対応
 

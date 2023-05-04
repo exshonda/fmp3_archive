@@ -35,7 +35,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  *
- *  @(#) $Id: chip_kernel.h 225 2020-02-25 05:47:06Z ertl-honda $
+ *  @(#) $Id: chip_kernel.h 302 2022-07-22 00:58:33Z ertl-honda $
  */
 
 /*
@@ -62,6 +62,7 @@
 #define TOPPERS_TARGET_SUPPORT_PRB_INT		/* prb_int */
 //#define TOPPERS_TARGET_SUPPORT_OVRHDR
 
+#ifdef TOPPERS_TZ_S
 /*
  *  CPUロック状態で使用するフラグ
  */
@@ -71,6 +72,17 @@
  *  割込みロック状態で使用するフラグ
  */
 #define DAIF_INTLOCK		DAIF_I_BIT
+#else /* TOPPERS_TZ_NS */
+/*
+ *  CPUロック状態で使用するフラグ
+ */
+#define DAIF_CPULOCK		DAIF_I_BIT
+
+/*
+ *  割込みロック状態で使用するフラグ
+ */
+#define DAIF_INTLOCK		DAIF_F_BIT
+#endif /* TOPPERS_TZ_S */
 
 /*
  *  ZynqMPのハードウェア資源の定義
