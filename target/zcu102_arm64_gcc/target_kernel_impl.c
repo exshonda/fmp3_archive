@@ -35,7 +35,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  *
- *  @(#) $Id: target_kernel_impl.c 353 2023-05-05 04:49:18Z ertl-honda $  
+ *  @(#) $Id: target_kernel_impl.c 358 2023-07-18 02:26:00Z ertl-honda $  
  */
 
 /*
@@ -119,17 +119,19 @@ target_mmu_init(void)
 #else  /* TOPPERS_TZ_S */
 	mm.ns   = MEM_NS_NONSECURE;
 #endif /* TOPPERS_TZ_S */
-
+    
 	mm.pa   = TOPPERS_MEM_BASE;
 	mm.va   = mm.pa;
 	mm.size = TOPPERS_MEM_SIZE;
 	mm.attr	= MEM_ATTR_NML_C; /* Normal, Outer and Inner Write-Back No-transient */
+	mm.ap   = MEM_AP_RW_EL1;    
 	mmu_mmap_add(&mm);
 
 	mm.pa   = 0x80000000;
 	mm.va   = mm.pa;
 	mm.size = 0x80000000;
 	mm.attr	= MEM_ATTR_DEV;
+	mm.ap   = MEM_AP_RW_EL1;    
 	mmu_mmap_add(&mm);
 
 	/*

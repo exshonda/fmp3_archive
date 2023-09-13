@@ -1,7 +1,7 @@
 =====================================================================
                      ZYNQMP_A53(AArch64)ターゲット依存部
                             2018-2023 (C) Shinya Honda honda@ertl.jp                     
-                                  Last Modified:2023 Apr 20 21:15:23
+                                  Last Modified:2023 Sep 02 13:33:40
 =====================================================================
 
 ○概要
@@ -64,7 +64,7 @@ ZYNQMP_A53用のFMP3カーネルを構築する手順は，「TOPPERS/FMP3カー
 シリアルドライバを使用する際には以下のオプションでシリアルドライバと各
 種システムサービスをビルド対象とする．
 
-configure.rb -T zcu102_arm64_gcc -w -S "syslog.o banner.o serial.o chip_serial.o logtask.o xuartps.o"
+configure.rb -T zcu102_arm64_gcc -w -S "syslog.o banner.o serial.o serial_cfg.o chip_serial.o logtask.o xuartps.o"
                          
 
 ○カーネルの使用リソース
@@ -92,6 +92,10 @@ configure.rb -T zcu102_arm64_gcc -w -S "syslog.o banner.o serial.o chip_serial.o
 
 
 ○変更履歴
+
+2023/07/18
+・target_kernel_impl.c  
+  MMU設定時にmmap_t構造体メンバ apを設定していない問題を修正．
 
 2023/04/18
 ・フック呼出し処理の変更

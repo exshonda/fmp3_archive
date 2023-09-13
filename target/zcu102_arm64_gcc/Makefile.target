@@ -85,6 +85,11 @@ LDFLAGS := $(LDFLAGS) -mlittle-endian -Wl,--build-id=none
 CFG1_OUT_LDFLAGS := -nostdlib $(CFG1_OUT_LDFLAGS)
 
 #
+#  ダンプするセクションの指定
+#
+DUMPOPTS := $(DUMPOPTS) -j .text -j .rodata
+
+#
 #  SIOPとするXUARTの番号
 #
 ifeq ($(SYSMON),ATF_S)
