@@ -19,4 +19,3 @@ imx8uart.c
 imx8uart.h
 Makefile.chip
 MANIFEST
-start.S

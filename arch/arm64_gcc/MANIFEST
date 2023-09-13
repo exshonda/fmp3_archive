@@ -39,3 +39,4 @@ common/gic_support.S
 common/Makefile.core
 common/psci.h
 common/psci_support.S
+common/start.S

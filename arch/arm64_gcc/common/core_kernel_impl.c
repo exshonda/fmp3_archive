@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  *
- *  @(#) $Id: core_kernel_impl.c 350 2023-04-21 01:59:41Z ertl-honda $
+ *  @(#) $Id: core_kernel_impl.c 364 2023-07-21 06:50:02Z ertl-honda $
  */
 
 /*
@@ -83,26 +83,6 @@ core_mprc_initialize(void)
 	 */
 	TOPPERS_sil_spn_var = 0U;
 }
-
-/*
- *  FPUの初期化
- */
-#ifdef USE_ARM64_FPU
-
-void
-arm_fpu_initialize(void)
-{
-	uint32_t	reg;
-
-	/*
-	 *  FPU命令をトラップしないよう設定
-	 */
-	CPACR_EL1_READ(reg);
-	reg |= CPACR_FPEN;
-	CPACR_EL1_WRITE(reg);
-}
-
-#endif /* USE_ARM64_FPU */
 
 /*
  *  パフォーマンスモニタによる性能評価
@@ -230,13 +210,6 @@ core_initialize(PCB *p_my_pcb)
 	 *  GIC初期化
 	 */
 	gic_init();
-
-	/*
-	 *  FPUの初期化
-	 */
-#ifdef USE_ARM64_FPU
-	arm_fpu_initialize();
-#endif /* USE_ARM64_FPU */
 
 	/*
 	 *  パフォーマンスモニタの初期化

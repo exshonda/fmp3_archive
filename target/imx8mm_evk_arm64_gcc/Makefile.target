@@ -35,6 +35,11 @@ CDEFS := $(CDEFS)
 CFG1_OUT_LDFLAGS := -nostdlib $(CFG1_OUT_LDFLAGS)
 
 #
+#  ダンプするセクションの指定
+#
+DUMPOPTS := $(DUMPOPTS) -j .text -j .rodata
+
+#
 # シリアルポートに関する設定
 #
 #CDEFS := $(CDEFS) -DUSE_UART1

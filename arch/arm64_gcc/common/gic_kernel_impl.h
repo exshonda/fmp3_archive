@@ -3,7 +3,7 @@
  *      Toyohashi Open Platform for Embedded Real-Time Systems/
  *      Flexible MultiProcessor Kernel
  *
- *  Copyright (C) 2006-2020 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2006-2023 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  *
  *  上記著作権者は，以下の(1)～(4)の条件を満たす場合に限り，本ソフトウェ
@@ -35,7 +35,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  *
- *  @(#) $Id: gic_kernel_impl.h 302 2022-07-22 00:58:33Z ertl-honda $
+ *  @(#) $Id: gic_kernel_impl.h 361 2023-07-21 06:23:26Z ertl-honda $
  */
 
 /*
@@ -383,6 +383,9 @@ gicc_set_bp(int mask_bit)
 
 /*
  *  ソフトウェア割込みを発行（GICv2）
+ * 
+ *  ディストリビュータのレジスタへの1回の書き込みのみであるため，プロ
+ *  セッサ間排他制御は必要ない．
  */
 Inline void
 gicd_raise_sgi(INTNO intno, ID prcid)
@@ -433,6 +436,9 @@ gicc_set_bp(int mask_bit)
 
 /*
  *  ソフトウェア割込みを発行（GICv3/4）
+ * 
+ *  ディストリビュータのレジスタへの1回の書き込みのみであるため，プロ
+ *  セッサ間排他制御は必要ない．  
  */
 Inline void
 gicd_raise_sgi(INTNO intno, ID prcid)

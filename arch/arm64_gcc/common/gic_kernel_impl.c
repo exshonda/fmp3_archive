@@ -5,7 +5,7 @@
  *
  *  Copyright (C) 2000-2003 by Embedded and Real-Time Systems Laboratory
  *                              Toyohashi Univ. of Technology, JAPAN
- *  Copyright (C) 2006-2021 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2006-2023 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  *
  *  上記著作権者は，以下の(1)～(4)の条件を満たす場合に限り，本ソフトウェ
@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  *
- *  @(#) $Id: gic_kernel_impl.c 302 2022-07-22 00:58:33Z ertl-honda $
+ *  @(#) $Id: gic_kernel_impl.c 361 2023-07-21 06:23:26Z ertl-honda $
  */
 
 /*
@@ -187,6 +187,9 @@ gicc_stop(void)
 
 /*
  *  Distributor 初期化（GICv2）
+ * 
+ *  この関数は，他のプロセッサが実行を開始する前に，マスタプロセッサの
+ *  みから呼び出されるため，プロセッサ間排他制御は必要ない．
  */
 void
 gicd_initialize(void)
@@ -202,6 +205,9 @@ gicd_initialize(void)
 
 /*
  *  割込み禁止（GICv2）
+ * 
+ *  ディストリビュータのレジスタへの1回の書き込みのみであるため，プロ
+ *  セッサ間排他制御は必要ない．
  */
 void
 gicd_disable_int(uint8_t id)
@@ -214,6 +220,9 @@ gicd_disable_int(uint8_t id)
 
 /*
  *  割込み許可（GICv2）
+ * 
+ *  ディストリビュータのレジスタへの1回の書き込みのみであるため，プロ
+ *  セッサ間排他制御は必要ない．  
  */
 void
 gicd_enable_int(uint8_t id)
@@ -226,6 +235,9 @@ gicd_enable_int(uint8_t id)
 
 /*
  *  割込みペンディングクリア（GICv2）
+ * 
+ *  ディストリビュータのレジスタへの1回の書き込みのみであるため，プロ
+ *  セッサ間排他制御は必要ない．  
  */
 void
 gicd_clear_pending(uint8_t id)
@@ -238,6 +250,9 @@ gicd_clear_pending(uint8_t id)
 
 /*
  *  割込みペンディングセット（GICv2）
+ * 
+ *  ディストリビュータのレジスタへの1回の書き込みのみであるため，プロ
+ *  セッサ間排他制御は必要ない．  
  */
 void
 gicd_set_pending(uint8_t id)
@@ -265,6 +280,9 @@ gicd_probe_pending(uint8_t id)
 
 /*
  *  割込みコンフィギュレーション設定（GICv2）
+ * 
+ *  この関数は，プロセッサ間排他制御を行った状態で呼び出さなければなら
+ *  ない．
  */
 void
 gicd_config(uint8_t id,  bool_t is_edge, bool_t is_1_n)
@@ -312,6 +330,9 @@ gicd_config(uint8_t id,  bool_t is_edge, bool_t is_1_n)
 /*
  *  割込み優先度のセット（GICv2）
  *  内部表現で渡す．
+ * 
+ *  この関数は，プロセッサ間排他制御を行った状態で呼び出さなければなら
+ *  ない．  
  */
 void
 gicd_set_priority(INTNO intno, uint_t pri)
@@ -360,6 +381,9 @@ gic_sgi_ppi_init(void)
 /*
  *  GIC割込みターゲットの設定（GICv2）
  *  cpusはターゲットとするCPUのビットパターンで指定
+ * 
+ *  この関数は，プロセッサ間排他制御を行った状態で呼び出さなければなら
+ *  ない．  
  */
 void
 gicd_set_target(uint8_t id, ID iprcid, uint8_t cpus)
@@ -509,11 +533,17 @@ gicr_init(void)
 }
 
 /*
- *  Distoributor 関連
+ *  ディストリビュータの操作
+ * 
+ *  ディストリビュータはプロセッサ間で共有しているため，それを操作する
+ *  場合には，必要に応じて，プロセッサ間排他制御を行う必要がある．
  */
 
 /*
- *  Distributor 初期化（GICv3,4）
+ *  ディストリビュータ初期化（GICv3,4）
+ * 
+ *  この関数は，他のプロセッサが実行を開始する前に，マスタプロセッサの
+ *  みから呼び出されるため，プロセッサ間排他制御は必要ない．  
  */
 void
 gicd_initialize(void) {
@@ -569,6 +599,9 @@ gicd_initialize(void) {
 
 /*
  *  割込み禁止（GICv3,4）
+ * 
+ *  ディストリビュータのレジスタへの1回の書き込みのみであるため，プロ
+ *  セッサ間排他制御は必要ない．
  */
 void
 gicd_disable_int(uint8_t id)
@@ -587,6 +620,9 @@ gicd_disable_int(uint8_t id)
 
 /*
  *  割込み許可（GICv3,4）
+ * 
+ *  ディストリビュータのレジスタへの1回の書き込みのみであるため，プロ
+ *  セッサ間排他制御は必要ない．  
  */
 void
 gicd_enable_int(uint8_t id)
@@ -605,6 +641,9 @@ gicd_enable_int(uint8_t id)
 
 /*
  *  割込みペンディングクリア（GICv3,4）
+ * 
+ *  ディストリビュータのレジスタへの1回の書き込みのみであるため，プロ
+ *  セッサ間排他制御は必要ない．  
  */
 void
 gicd_clear_pending(uint8_t id)
@@ -626,6 +665,9 @@ gicd_clear_pending(uint8_t id)
 
 /*
  *  割込みペンディングセット（GICv3,4）
+ * 
+ *  ディストリビュータのレジスタへの1回の書き込みのみであるため，プロ
+ *  セッサ間排他制御は必要ない．  
  */
 void
 gicd_set_pending(uint8_t id)
@@ -668,6 +710,9 @@ gicd_probe_pending(uint8_t id)
 
 /*
  *  割込みコンフィギュレーション設定（GICv3,4）
+ *
+ *  この関数は，プロセッサ間排他制御を行った状態で呼び出さなければなら
+ *  ない．
  */
 void
 gicd_config(uint8_t id,  bool_t is_edge, bool_t is_1_n)
@@ -734,6 +779,9 @@ gicd_config(uint8_t id,  bool_t is_edge, bool_t is_1_n)
 /*
  *  割込み優先度のセット（GICv3,4）
  *  内部表現で渡す．
+ *
+ *  この関数は，プロセッサ間排他制御を行った状態で呼び出さなければなら
+ *  ない．
  */
 void
 gicd_set_priority(INTNO intno, uint_t pri)
@@ -798,6 +846,9 @@ gic_sgi_ppi_init(void)
 /*
  *  GIC割込みターゲットの設定（GICv3,4）
  *  cpusはターゲットとするCPUのビットパターンで指定
+ *
+ *  この関数は，プロセッサ間排他制御を行った状態で呼び出さなければなら
+ *  ない．  
  */
 void
 gicd_set_target(uint8_t id, ID iprcid, uint8_t cpus)
@@ -817,6 +868,9 @@ gicd_set_target(uint8_t id, ID iprcid, uint8_t cpus)
 
 /*
  *  割込みグループの設定（セキュリティ拡張）
+ *
+ *  この関数は，プロセッサ間排他制御を行った状態で呼び出さなければなら
+ *  ない．  
  */
 Inline void
 gicd_config_group(INTNO intno, uint_t group)
@@ -837,6 +891,9 @@ gicd_config_group(INTNO intno, uint_t group)
 
 /*
  *  割込みグループモディファイアの設定（セキュリティ拡張）
+ *
+ *  この関数は，プロセッサ間排他制御を行った状態で呼び出さなければなら
+ *  ない．  
  */
 Inline void
 gicd_config_group_modifier(INTNO intno, uint_t group)
@@ -868,8 +925,15 @@ gicd_config_group_modifier(INTNO intno, uint_t group)
 Inline void
 config_int(PCB *p_my_pcb, INTNO intno, ATR intatr, PRI intpri, ID iprcid, uint_t affinity)
 {
+	SIL_PRE_LOC;
+
 	assert(VALID_INTNO(p_my_pcb->prcid, intno));
 	assert(TMIN_INTPRI <= intpri && intpri <= TMAX_INTPRI);
+
+	/*
+	 *  SILスピンロックを取得
+	 */
+	SIL_LOC_SPN();
 
 	/*
 	 *  割込みを禁止
@@ -905,6 +969,11 @@ config_int(PCB *p_my_pcb, INTNO intno, ATR intatr, PRI intpri, ID iprcid, uint_t
 	if ((intatr & TA_ENAINT) != 0U) {
 		enable_int(intno);
 	}
+
+	/*
+	 *  SILスピンロックを解放
+	 */
+	SIL_UNL_SPN(); 
 }
 
 /*

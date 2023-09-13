@@ -3,7 +3,7 @@
  *      Toyohashi Open Platform for Embedded Real-Time Systems/
  *      Flexible MultiProcessor Kernel
  *
- *  Copyright (C) 2006-2015 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2006-2023 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  *
  *  上記著作権者は，以下の(1)～(4)の条件を満たす場合に限り，本ソフトウェ
@@ -35,7 +35,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  *
- *  @(#) $Id: arm64.c 300 2022-05-24 05:52:08Z ertl-honda $
+ *  @(#) $Id: arm64.c 370 2023-09-01 08:27:56Z ertl-honda $
  */
 
 #include "kernel_impl.h"
@@ -52,6 +52,100 @@ icache_invalidate_all(void)
 	IC_IALLU();
 	IC_IALLUIS();
 	data_sync_barrier();
+}
+
+/*
+ *  Dキャッシュの全ラインの無効化
+ */
+void
+dcache_invalidate_all()
+{
+	uint64_t clidr;
+	uint64_t ccsidr;
+	uint64_t ctype;
+	uint64_t level_max, level;
+	uint64_t way_max, way;
+	uint64_t set_max, set;
+	uint64_t log2linesize;
+	uint64_t bits;
+
+	CLIDR_EL1_READ(clidr);
+	level_max = (clidr & CLIDR_LOC_MASK) >> CLIDR_LOC_SHIFT;
+	for (level = 0; level < level_max; level++) {
+		ctype = (clidr >> (CLIDR_CTYPE_SHIFT * level)) & CLIDR_CTYPE_MASK;
+		if ((ctype == CLIDR_CTYPE_DATA) || (ctype == CLIDR_CTYPE_SEPARATE)
+				|| (ctype == CLIDR_CTYPE_UNIFIED)) {
+			CSSELR_EL1_WRITE(level << CSSELR_LEVEL_SHIFT);
+			inst_sync_barrier();
+			CCSIDR_EL1_READ(ccsidr);
+			way_max = ((ccsidr & CCSIDR_ASSOCIATIVITY_MASK)
+					>> CCSIDR_ASSOCIATIVITY_SHIFT) + 1;
+			set_max = ((ccsidr & CCSIDR_NUMSETS_MASK)
+					>> CCSIDR_NUMSETS_SHIFT) + 1;
+			log2linesize = ((ccsidr & CCSIDR_LINESIZE_MASK)
+					>> CCSIDR_LINESIZE_SHIFT) + 4;
+			data_sync_barrier();
+			for (way = 0; way < way_max; way++) {
+				for (set = 0; set < set_max; set++) {
+					bits = 0;
+					bits |= way << __builtin_clz((uint32_t)way_max);
+					bits |= set << log2linesize;
+					bits |= level << DC_LEVEL_SHIFT;
+					dcache_invalidate_line(bits);
+				}
+			}
+		}
+	}
+	CSSELR_EL1_WRITE(0);
+	data_sync_barrier();
+	inst_sync_barrier();
+}
+
+/*
+ *  Dキャッシュの全ラインのクリーンと無効化
+ */
+void
+dcache_clean_and_invalidate_all()
+{
+	uint64_t clidr;
+	uint64_t ccsidr;
+	uint64_t ctype;
+	uint64_t level_max, level;
+	uint64_t way_max, way;
+	uint64_t set_max, set;
+	uint64_t log2linesize;
+	uint64_t bits;
+
+	CLIDR_EL1_READ(clidr);
+	level_max = (clidr & CLIDR_LOC_MASK) >> CLIDR_LOC_SHIFT;
+	for (level = 0; level < level_max; level++) {
+		ctype = (clidr >> (CLIDR_CTYPE_SHIFT * level)) & CLIDR_CTYPE_MASK;
+		if ((ctype == CLIDR_CTYPE_DATA) || (ctype == CLIDR_CTYPE_SEPARATE)
+				|| (ctype == CLIDR_CTYPE_UNIFIED)) {
+			CSSELR_EL1_WRITE(level << CSSELR_LEVEL_SHIFT);
+			inst_sync_barrier();
+			CCSIDR_EL1_READ(ccsidr);
+			way_max = ((ccsidr & CCSIDR_ASSOCIATIVITY_MASK)
+					>> CCSIDR_ASSOCIATIVITY_SHIFT) + 1;
+			set_max = ((ccsidr & CCSIDR_NUMSETS_MASK)
+					>> CCSIDR_NUMSETS_SHIFT) + 1;
+			log2linesize = ((ccsidr & CCSIDR_LINESIZE_MASK)
+					>> CCSIDR_LINESIZE_SHIFT) + 4;
+			data_sync_barrier();
+			for (way = 0; way < way_max; way++) {
+				for (set = 0; set < set_max; set++) {
+					bits = 0;
+					bits |= way << __builtin_clz((uint32_t)way_max);
+					bits |= set << log2linesize;
+					bits |= level << DC_LEVEL_SHIFT;
+					dcache_clean_and_invalidate_line(bits);
+				}
+			}
+		}
+	}
+	CSSELR_EL1_WRITE(0);
+	data_sync_barrier();
+	inst_sync_barrier();
 }
 
 /*
@@ -104,8 +198,6 @@ icache_enable(void)
 		return;
 	}
 
-	icache_invalidate_all();
-
 	bits |= SCTLR_I_BIT;
 	SCTLR_EL1_WRITE(bits);
 	inst_sync_barrier();
@@ -123,8 +215,6 @@ icache_disable(void)
 	bits &= ~SCTLR_I_BIT;
 	SCTLR_EL1_WRITE(bits);
 	inst_sync_barrier();
-
-	icache_invalidate_all();
 }
 
 /*
@@ -142,8 +232,6 @@ dcache_enable(void)
 		return;
 	}
 
-	dcache_invalidate_all();
-
 	bits |= SCTLR_C_BIT;
 	SCTLR_EL1_WRITE(bits);
 	inst_sync_barrier();
@@ -151,10 +239,6 @@ dcache_enable(void)
 
 /*
  *  Dキャッシュの停止
- *  CA9では，Dキャッシュが無効な状態でClean and Invalidate()を実行すると，
- *  暴走するため，Dキャッシュの状態を判断して，無効な場合は，Invalidate
- *  のみを行う． 
- *  ARM 64bitでもこの論理を残しておく．
  */
 void
 dcache_disable(void)
@@ -166,9 +250,6 @@ dcache_disable(void)
 		bits &= ~SCTLR_C_BIT;
 		SCTLR_EL1_WRITE(bits);
 		inst_sync_barrier();
-		dcache_clean_and_invalidate_all();
-	} else {
-		dcache_invalidate_all();
 	}
 }
 

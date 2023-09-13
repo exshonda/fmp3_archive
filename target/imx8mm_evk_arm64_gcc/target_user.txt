@@ -1,7 +1,7 @@
 =====================================================================
                      i.MX8M_A53(AArch64)ターゲット依存部
                               2018-2020 (C) Shinya Honda honda@ertl.jp
-                                  Last Modified:2023 Apr 20 21:45:47
+                                  Last Modified:2023 Sep 02 13:33:57
 =====================================================================
 
 ○概要
@@ -142,7 +142,7 @@ $ git config --global user.email "Your Email"
 
 $ mkdir imx-yocto-bsp
 $ cd imx-yocto-bsp
-$ repo init -u https://source.codeaurora.org/external/imx/imx-manifest -b imx-linux-sumo -m imx-4.14.98-2.0.0_ga.xml
+$ repo init -u https://github.com/nxp-imx/imx-manifest -b imx-linux-sumo -m imx-4.14.98-2.0.0_ga.xml
 $ repo sync
 
 1.1.3. Yoctoのビルド
@@ -182,7 +182,7 @@ $ sudo dd if=core-image-minimal-imx8mmevk.sdcard of=/dev/sdx bs=1M && sync
 $ cd fmp_3.0
 $ mkdir OBJ
 $ cd OBJ
-$ ruby ../configure.rb -T imx8mm_evk_arm64_gcc -w -S 'syslog.o banner.o serial.o logtask.o imx8uart.o chip_serial.o'
+$ ruby ../configure.rb -T imx8mm_evk_arm64_gcc -w -S 'syslog.o banner.o serial.o serial_cfg.o logtask.o imx8uart.o chip_serial.o'
 $ make clean
 $ make fmp.bin
 
@@ -222,7 +222,7 @@ SDカードへのソフトの書き込み方法を説明する．
 
 (1) 以下のコマンドでimx-mkimageを入手する．
 
-$ git clone -b rel_imx_4.14.98_2.0.0_ga https://source.codeaurora.org/external/imx/imx-mkimage
+$ git clone -b rel_imx_4.14.98_2.0.0_ga https://github.com/nxp-imx/imx-mkimage
 $ git clone https://github.com/Freescale/imx-mkimage.git
 
 (2) ブートイメージ(flash.bin)作成に必要なバイナリを，Linux BSPディレクトリからコピーする.
