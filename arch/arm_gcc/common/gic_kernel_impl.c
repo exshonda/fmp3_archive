@@ -34,7 +34,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: gic_kernel_impl.c 335 2023-04-18 10:50:40Z ertl-honda $
+ *  $Id: gic_kernel_impl.c 376 2023-09-02 04:34:49Z ertl-honda $
  */
 
 /*
@@ -102,6 +102,9 @@ gicc_terminate(void)
 
 /*
  *  ディストリビュータの初期化
+ * 
+ *  この関数は，他のプロセッサが実行を開始する前に，マスタプロセッサの
+ *  みから呼び出されるため，プロセッサ間排他制御は必要ない．
  */
 void
 gicd_initialize(void)
@@ -169,6 +172,9 @@ gicd_initialize(void)
 
 /*
  *  ディストリビュータの終了処理
+ * 
+ *  この関数は，他のプロセッサが実行を終了した後に，マスタプロセッサの
+ *  みから呼び出されるため，プロセッサ間排他制御は必要ない．
  */
 void
 gicd_terminate(void)
@@ -187,9 +193,16 @@ gicd_terminate(void)
 Inline void
 config_int(PCB *p_my_pcb, INTNO intno, ATR intatr, PRI intpri, uint_t affinity)
 {
+	SIL_PRE_LOC;
+
 	assert(VALID_INTNO(p_my_pcb->prcid, intno));
 	assert(TMIN_INTPRI <= intpri && intpri <= TMAX_INTPRI);
-
+    
+	/*
+	 *  SILスピンロックを取得
+	 */
+	SIL_LOC_SPN();
+    
 	/*
 	 *  割込みを禁止
 	 *
@@ -234,6 +247,11 @@ config_int(PCB *p_my_pcb, INTNO intno, ATR intatr, PRI intpri, uint_t affinity)
 	if ((intatr & TA_ENAINT) != 0U) {
 		enable_int(intno);
 	}
+
+	/*
+	 *  SILスピンロックを解放
+	 */
+	SIL_UNL_SPN();
 }
 
 /*

@@ -2,7 +2,7 @@
  *  TOPPERS Software
  *      Toyohashi Open Platform for Embedded Real-Time Systems
  * 
- *  Copyright (C) 2006-2022 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2006-2023 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  * 
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -34,7 +34,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: gic_kernel_impl.h 335 2023-04-18 10:50:40Z ertl-honda $
+ *  $Id: gic_kernel_impl.h 361 2023-07-21 06:23:26Z ertl-honda $
  */
 
 /*
@@ -284,10 +284,16 @@ extern void gicc_terminate(void);
 
 /*
  *  ディストリビュータの操作
+ * 
+ *  ディストリビュータはプロセッサ間で共有しているため，それを操作する
+ *  場合には，必要に応じて，プロセッサ間排他制御を行う必要がある．
  */
 
 /*
  *  割込み禁止（割込みイネーブルのクリア）
+ * 
+ *  ディストリビュータのレジスタへの1回の書き込みのみであるため，プロ
+ *  セッサ間排他制御は必要ない．
  */
 Inline void
 gicd_disable_int(INTNO intno)
@@ -297,6 +303,9 @@ gicd_disable_int(INTNO intno)
 
 /*
  *  割込み許可（割込みイネーブルのセット）
+ * 
+ *  ディストリビュータのレジスタへの1回の書き込みのみであるため，プロ
+ *  セッサ間排他制御は必要ない．  
  */
 Inline void
 gicd_enable_int(INTNO intno)
@@ -306,6 +315,9 @@ gicd_enable_int(INTNO intno)
 
 /*
  *  割込みペンディングのクリア
+ * 
+ *  ディストリビュータのレジスタへの1回の書き込みのみであるため，プロ
+ *  セッサ間排他制御は必要ない．  
  */
 Inline void
 gicd_clear_pending(INTNO intno)
@@ -315,6 +327,9 @@ gicd_clear_pending(INTNO intno)
 
 /*
  *  割込みペンディングのセット
+ * 
+ *  ディストリビュータのレジスタへの1回の書き込みのみであるため，プロ
+ *  セッサ間排他制御は必要ない．  
  */
 Inline void
 gicd_set_pending(INTNO intno)
@@ -324,6 +339,9 @@ gicd_set_pending(INTNO intno)
 
 /*
  *  割込みペンディングのチェック
+ * 
+ *  ディストリビュータのレジスタへの1回の書き込みのみであるため，プロ
+ *  セッサ間排他制御は必要ない．  
  */
 Inline bool_t
 gicd_probe_pending(INTNO intno)
@@ -334,6 +352,9 @@ gicd_probe_pending(INTNO intno)
 
 /*
  *  ソフトウェア生成割込み（SGI）の生成
+ * 
+ *  ディストリビュータのレジスタへの1回の書き込みのみであるため，プロ
+ *  セッサ間排他制御は必要ない．  
  */
 Inline void
 gicd_raise_sgi(INTNO intno, ID prcid)
@@ -345,7 +366,10 @@ gicd_raise_sgi(INTNO intno, ID prcid)
 
 /*
  *  割込みのコンフィグレーション
- * 
+ *
+ *  この関数は，プロセッサ間排他制御を行った状態で呼び出さなければなら
+ *  ない．
+ *   
  *  この関数は，カーネルの初期化中に呼び出すことを想定しているため，
  *  GICの操作後にメモリ同期バリアを入れていない．
  */
@@ -365,7 +389,10 @@ gicd_config(INTNO intno, uint_t config)
 
 /*
  *  割込みグループの設定（セキュリティ拡張）
- * 
+ *
+ *  この関数は，プロセッサ間排他制御を行った状態で呼び出さなければなら
+ *  ない．
+ *  
  *  この関数は，カーネルの初期化中に呼び出すことを想定しているため，
  *  GICの操作後にメモリ同期バリアを入れていない．  
  */
@@ -383,7 +410,10 @@ gicd_config_group(INTNO intno, uint_t group)
 
 /*
  *  割込み要求ラインに対する割込み優先度の設定（priは内部表現）
- * 
+ *
+ *  この関数は，プロセッサ間排他制御を行った状態で呼び出さなければなら
+ *  ない．
+ *  
  *  この関数は，カーネルの初期化中に呼び出すことを想定しているため，
  *  GICの操作後にメモリ同期バリアを入れていない．  
  */
@@ -401,6 +431,9 @@ gicd_set_priority(INTNO intno, uint_t pri)
 
 /*
  *  割込みターゲットプロセッサの設定
+ *
+ *  この関数は，プロセッサ間排他制御を行った状態で呼び出さなければなら
+ *  ない．  
  *
  *  affinityは，ターゲットとするプロセッサを表すビットのビット毎論理和
  *  で指定する．

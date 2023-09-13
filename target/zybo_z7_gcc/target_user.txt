@@ -45,7 +45,7 @@
  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  の責任を負わない．
  
- $Id: target_user.txt 335 2023-04-18 10:50:40Z ertl-honda $
+ $Id: target_user.txt 376 2023-09-02 04:34:49Z ertl-honda $
 ----------------------------------------------------------------------
 
 ○目次
@@ -228,7 +228,7 @@ ZYBO_Z7用のFMP3カーネルを構築する手順は，「TOPPERS/FMP3カーネ
 シリアルドライバを使用する際には以下のオプションでシリアルドライバと各
 種システムサービスをビルド対象とする．
 
-configure.rb -T zybo_z7_gcc -w -S "syslog.o banner.o serial.o chip_serial.o logtask.o xuartps.o"
+configure.rb -T zybo_z7_gcc -w -S "syslog.o banner.o serial.o serial_cfg.o chip_serial.o logtask.o xuartps.o"
                          
 Xilinx SDKでビルドする場合は，ワークスペースを作成し，zybo_z7_sdkフォルダ
 にあるプロジェクトをインポートすることで，サンプルプログラムがビルド可

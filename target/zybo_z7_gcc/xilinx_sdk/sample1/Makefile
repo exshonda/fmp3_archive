@@ -37,7 +37,7 @@
 #  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
 #  の責任を負わない．
 # 
-#  $Id: Makefile 335 2023-04-18 10:50:40Z ertl-honda $
+#  $Id: Makefile 377 2023-09-11 11:28:17Z ertl-honda $
 # 
 
 #
@@ -228,7 +228,7 @@ endif
 SYSSVC_DIRS := $(TECSGENDIR) $(SRCDIR)/tecs_kernel \
 				$(SYSSVC_DIRS) $(SRCDIR)/syssvc
 SYSSVC_ASMOBJS := $(SYSSVC_ASMOBJS)
-SYSSVC_COBJS := $(SYSSVC_COBJS) syslog.o banner.o serial.o chip_serial.o logtask.o xuartps.o $(TECS_COBJS) \
+SYSSVC_COBJS := $(SYSSVC_COBJS) syslog.o banner.o serial.o serial_cfg.o chip_serial.o logtask.o xuartps.o $(TECS_COBJS) \
 				$(INIT_TECS_COBJ) $(CXXRTS)
 SYSSVC_CFLAGS := $(SYSSVC_CFLAGS)
 INCLUDES := $(INCLUDES) -I$(TECSGENDIR) -I$(SRCDIR)/tecs_kernel

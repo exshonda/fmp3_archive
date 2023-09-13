@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: core_support.S 341 2023-04-19 13:42:56Z ertl-honda $
+ *  $Id: core_support.S 382 2023-09-14 04:39:49Z ertl-honda $
  */
 
 /*
@@ -199,6 +199,7 @@ ALABEL(exit_and_dispatch)
 #ifdef LOG_DSP_ENTER
 	my_pcb	r2, r1
 	ldr		r0, [r2,#PCB_p_runtsk]	/* p_runtsk → r0 */
+	ldr		sp, [r2,#PCB_istkpt]	/* 非タスクコンテキスト用のスタックに */
 #endif /* LOG_DSP_ENTER */
 	/* ディスパッチャ本体（dispatcher）へ */
 
@@ -287,12 +288,15 @@ ALABEL(dispatch_and_migrate)
 	pop		{r0-r1}
 #endif /* TOPPERS_SUPPORT_OVRHDR */
 	push	{r4-r11}				/* 非スクラッチレジスタの保存 */
-#ifdef USE_ARM_FPU
+#ifdef USE_ARM_FPU_ALWAYS
+	vpush	{d8-d15}				/* 非スクラッチFPUレジスタの保存 */
+#endif /* USE_ARM_FPU_ALWAYS */
+#ifdef  USE_ARM_FPU_SELECTIVE
 	ldr		r3, [r1,#TCB_p_tinib]	/* p_selftsk->p_tinib → r3 */
 	ldr		r4, [r3,#TINIB_tskatr]	/* p_selftsk->p_tinib->tskatr → r4 */
 	tst		r4, #TA_FPU
 	vpushne	{d8-d15}				/* 非スクラッチFPUレジスタの保存 */
-#endif /* USE_ARM_FPU */
+#endif /* USE_ARM_FPU_SELECTIVE */
 	str		sp, [r1,#TCB_sp]		/* タスクスタックを保存 */
 	adr		r3, dispatch_r
 	str		r3, [r1,#TCB_pc]		/* 実行再開番地を保存 */
@@ -848,9 +852,9 @@ ALABEL(exc_handler_1)
 	vpush	{d16-d31}
 #endif /* USE_ARM_FPU_D32 */
 	vpush	{d0-d7}					/* スクラッチFPUレジスタの保存 */
-	vmrs	r0, fpscr
+	vmrs	r2, fpscr
 #endif /* USE_ARM_FPU_ALWAYS */
-	push	{r0,r1}					/* スタックポインタの調整値とFPSCRを保存 */
+	push	{r2,r1}					/* スタックポインタの調整値とFPSCRを保存 */
 
 	/*
 	 *  カーネル管理外のCPU例外か判定する
