@@ -4,7 +4,7 @@
  * 
  *  Copyright (C) 2000-2003 by Embedded and Real-Time Systems Laboratory
  *                              Toyohashi Univ. of Technology, JAPAN
- *  Copyright (C) 2004-2018 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2004-2023 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  * 
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -36,7 +36,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: sil.h 117 2018-12-21 08:59:55Z ertl-honda $
+ *  $Id: sil.h 376 2023-09-02 04:34:49Z ertl-honda $
  */
 
 /*
@@ -74,6 +74,13 @@ extern "C" {
  *
  *  SIL_PRE_LOC，SIL_LOC_INT()，SIL_UNL_INT()は，ターゲット依存部で用
  *  意する．デフォルトの定義は用意していない．
+ */
+
+/*
+ *  SILスピンロックの制御
+ *
+ *  SIL_LOC_SPN()，SIL_UNL_SPN()は，ターゲット依存部で用意する．デフォ
+ *  ルトの定義は用意していない．
  */
 
 /*

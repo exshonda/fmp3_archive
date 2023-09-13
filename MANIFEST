@@ -1,5 +1,5 @@
 PACKAGE fmp3
-VERSION 3.3.0
+VERSION 3.3.1
 
 configure.rb
 MANIFEST
@@ -21,6 +21,7 @@ include/sil.h
 include/t_stddef.h
 include/t_stdlib.h
 include/t_syslog.h
+include/kernel_fncode.h
 
 kernel/alarm.c
 kernel/alarm.h
@@ -99,6 +100,7 @@ syssvc/logtask.h
 syssvc/serial.c
 syssvc/serial.cfg
 syssvc/serial.h
+syssvc/serial_cfg.c
 syssvc/syslog.c
 syssvc/syslog.cfg
 syssvc/syslog.h

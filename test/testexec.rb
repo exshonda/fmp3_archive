@@ -36,7 +36,7 @@
 #  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
 #  の責任を負わない．
 # 
-#  $Id: testexec.rb 263 2021-01-08 06:08:59Z ertl-honda $
+#  $Id: testexec.rb 376 2023-09-02 04:34:49Z ertl-honda $
 # 
 
 # 【実行方法】
@@ -133,6 +133,7 @@ TEST_SPEC = {
   # サブ優先度機能拡張パッケージの機能テストプログラム
   "subprio1" => { SRC: "test_subprio1" },
   "subprio2" => { SRC: "test_subprio2" },
+  "subprio3" => { SRC: "test_subprio3" },
 
   # 性能評価プログラム
   "perf0" => { TARGET: 1, CDL: "perf_pf", NK_DEFS: "-DHIST_INVALIDATE_CACHE" },

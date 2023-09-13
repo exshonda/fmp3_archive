@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: serial.h 263 2021-01-08 06:08:59Z ertl-honda $
+ *  $Id: serial.h 376 2023-09-02 04:34:49Z ertl-honda $
  */
 
 /*
@@ -52,6 +52,39 @@ extern "C" {
 #endif
 
 #include <kernel.h>
+
+#ifdef TOPPERS_OMIT_TECS
+#include "target_syssvc.h"
+
+/*
+ *  シリアルインタフェースドライバの拡張サービスコールのスタックサイズ
+ */ 
+#ifndef SSZ_SERIAL_OPN_POR
+#define SSZ_SERIAL_OPN_POR	1024
+#endif /* SSZ_SERIAL_OPN_POR */
+
+#ifndef SSZ_SERIAL_CLS_POR
+#define SSZ_SERIAL_CLS_POR	1024
+#endif /* SSZ_SERIAL_CLS_POR */
+
+#ifndef SSZ_SERIAL_REA_DAT
+#define SSZ_SERIAL_REA_DAT	1024
+#endif /* SSZ_SERIAL_REA_DAT */
+
+#ifndef SSZ_SERIAL_WRI_DAT
+#define SSZ_SERIAL_WRI_DAT	1024
+#endif /* SSZ_SERIAL_WRI_DAT */
+
+#ifndef SSZ_SERIAL_CTL_POR
+#define SSZ_SERIAL_CTL_POR	1024
+#endif /* SSZ_SERIAL_CTL_POR */
+
+#ifndef SSZ_SERIAL_REF_POR
+#define SSZ_SERIAL_REF_POR	1024
+#endif /* SSZ_SERIAL_REF_POR */
+
+#endif /* TOPPERS_OMIT_TECS */
+
 /*
  *  シリアルインタフェースドライバの用いるパケット
  */
@@ -83,6 +116,12 @@ extern ER		serial_ref_por(ID portid, T_SERIAL_RPOR *pk_rpor) throw();
 #define	IOCTL_FCRCV	0x0400U		/* 受信に対してフロー制御を行う */
 
 #ifdef TOPPERS_OMIT_TECS
+
+/*
+ *  シリアルインタフェースドライバのターゲット依存部
+ */
+#include "target_serial.h"
+
 /*
  *  シリアルインタフェースドライバの初期化ルーチン
  */
@@ -92,6 +131,24 @@ extern void		serial_initialize(EXINF exinf) throw();
  *  シリアルインタフェースドライバからの未送信文字の取出し
  */
 extern bool_t	serial_get_chr(ID portid, char *p_c) throw();
+
+/*
+ *  以下は，シリアルインタフェースドライバ内部向けの定義
+ */
+
+/*
+ *  シリアルポート初期化ブロック
+ */
+typedef struct serial_port_initialization_block {
+	ID		rcv_semid;		/* 受信バッファ管理用セマフォのID */
+	ID		snd_semid;		/* 送信バッファ管理用セマフォのID */
+	uint_t	rcv_bufsz;		/* 受信バッファサイズ */
+	char	*rcv_buffer;	/* 受信バッファ */
+	uint_t	snd_bufsz;		/* 送信バッファサイズ */
+	char	*snd_buffer;	/* 送信バッファ */
+} SPINIB;
+
+extern const SPINIB spinib_table[];
 
 #endif /* TOPPERS_OMIT_TECS */
 

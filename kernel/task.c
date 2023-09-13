@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: task.c 335 2023-04-18 10:50:40Z ertl-honda $
+ *  $Id: task.c 376 2023-09-02 04:34:49Z ertl-honda $
  */
 
 /*
@@ -189,25 +189,56 @@ search_schedtsk(PCB *p_pcb)
 
 #endif /* TOPPERS_tsksched */
 
+/*
+ *  タスクのサブ優先度順の現在値の取得
+ *
+ *  タスクが優先度上昇状態の間は，サブ優先度の現在値を最高値（＝0）と
+ *  扱う［NGKI5219］．
+ */
+Inline uint_t
+current_subpri(TCB *p_tcb)
+{
+	return(p_tcb->boosted ? 0U : p_tcb->subpri);
+}
 
 /*
  *  タスクのサブ優先度順のキューへの挿入
  *
  *  p_tcbで指定されるタスクを，サブ優先度順で，p_queueで指定されるキュー
- *  に挿入する．キューの中に同じサブ優先度のタスクがある場合には，
- *  mtxmodeがtrueの時はそれらの先頭に，falseの時はそれらの最後に挿入す
- *  る．
+ *  に挿入する．キューの中に同じサブ優先度のタスクがある場合には，それ
+ *  らの末尾に挿入する．
  */
 Inline void
-queue_insert_subprio(QUEUE *p_queue, TCB *p_tcb, bool_t mtxmode)
+queue_insert_subprio_tail(QUEUE *p_queue, TCB *p_tcb)
 {
 	QUEUE	*p_entry;
-	uint_t	subpri = p_tcb->subpri;
+	uint_t	subpri = current_subpri(p_tcb);
 
 	for (p_entry = p_queue->p_next; p_entry != p_queue;
 										p_entry = p_entry->p_next) {
-		if (mtxmode ? subpri <= ((TCB *) p_entry)->subpri
-					: subpri < ((TCB *) p_entry)->subpri) {
+		if (subpri < current_subpri((TCB *) p_entry)) {
+			break;
+		}
+	}
+	queue_insert_prev(p_entry, &(p_tcb->task_queue));
+}
+
+/*
+ *  タスクのサブ優先度順のキューへの挿入（同サブ優先度の先頭）
+ *
+ *  p_tcbで指定されるタスクを，サブ優先度順で，p_queueで指定されるキュー
+ *  に挿入する．キューの中に同じサブ優先度のタスクがある場合には，それ
+ *  らの先頭に挿入する．
+ */
+Inline void
+queue_insert_subprio_head(QUEUE *p_queue, TCB *p_tcb)
+{
+	QUEUE	*p_entry;
+	uint_t	subpri = current_subpri(p_tcb);
+
+	for (p_entry = p_queue->p_next; p_entry != p_queue;
+										p_entry = p_entry->p_next) {
+		if (subpri <= current_subpri((TCB *) p_entry)) {
 			break;
 		}
 	}
@@ -232,7 +263,7 @@ make_runnable(PCB *p_my_pcb, TCB *p_tcb)
 	PCB *p_pcb = p_tcb->p_pcb;
 
 	if ((subprio_primap & PRIMAP_BIT(pri)) != 0U) {
-		queue_insert_subprio(&(p_pcb->ready_queue[pri]), p_tcb, false);
+		queue_insert_subprio_tail(&(p_pcb->ready_queue[pri]), p_tcb);
 	}
 	else {
 		queue_insert_prev(&(p_pcb->ready_queue[pri]), &(p_tcb->task_queue));
@@ -353,7 +384,12 @@ change_priority(PCB *p_my_pcb, TCB *p_tcb, uint_t newpri, bool_t mtxmode)
 			primap_clear(oldpri, p_pcb);
 		}
 		if ((subprio_primap & PRIMAP_BIT(newpri)) != 0U) {
-			queue_insert_subprio(&(p_pcb->ready_queue[newpri]), p_tcb, mtxmode);
+			if (mtxmode) {
+				queue_insert_subprio_head(&(p_pcb->ready_queue[newpri]), p_tcb);
+			}
+			else {
+				queue_insert_subprio_tail(&(p_pcb->ready_queue[newpri]), p_tcb);
+			}
 		}
 		else if (mtxmode) {
 			queue_insert_next(&(p_pcb->ready_queue[newpri]), 
@@ -410,7 +446,7 @@ change_subprio(PCB *p_my_pcb, TCB *p_tcb, uint_t subpri, PCB *p_pcb)
 	if (TSTAT_RUNNABLE(p_tcb->tstat)) {
 		if ((subprio_primap & PRIMAP_BIT(pri)) != 0U) {
 			queue_delete(&(p_tcb->task_queue));		/*［NGKI3673］*/
-			queue_insert_subprio(&(p_pcb->ready_queue[pri]), p_tcb, false);
+			queue_insert_subprio_tail(&(p_pcb->ready_queue[pri]), p_tcb);
 		}
 		if (pri == p_pcb->p_schedtsk->priority) {
 			update_schedtsk_dsp(p_my_pcb, p_pcb, (TCB *)(p_pcb->ready_queue[pri].p_next));

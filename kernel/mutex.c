@@ -35,7 +35,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: mutex.c 335 2023-04-18 10:50:40Z ertl-honda $
+ *  $Id: mutex.c 376 2023-09-02 04:34:49Z ertl-honda $
  */
 
 /*
@@ -245,10 +245,21 @@ remove_mutex(TCB *p_tcb, MTXCB *p_mtxcb)
 Inline void
 mutex_raise_priority(PCB *p_my_pcb, TCB *p_tcb, uint_t newpri)
 {
-	p_tcb->boosted = true;
-	if (newpri < p_tcb->priority) {
-		change_priority(p_my_pcb, p_tcb, newpri, true);
-	}
+	if (newpri <= p_tcb->priority) {
+		if (newpri < p_tcb->priority
+				|| ((subprio_primap & PRIMAP_BIT(p_tcb->priority)) != 0U
+												&& !(p_tcb->boosted))) {
+			/*
+			 *  p_tcb->boostedは，change_priorityの中で参照するため，
+			 *  それを呼ぶ前に更新する必要がある．
+			 */
+			p_tcb->boosted = true;
+			change_priority(p_my_pcb, p_tcb, newpri, true);
+		}
+		else {
+			p_tcb->boosted = true;
+		}
+	}        
 }
 
 /*
@@ -264,7 +275,9 @@ mutex_drop_priority(PCB *p_my_pcb, TCB *p_tcb, uint_t oldpri)
 
 	if (oldpri == p_tcb->priority) {
 		newpri = mutex_calc_priority(p_tcb);
-		if (newpri != p_tcb->priority) {
+		if (newpri != p_tcb->priority
+				|| ((subprio_primap & PRIMAP_BIT(p_tcb->priority)) != 0U
+												&& !(p_tcb->boosted))) {
 			change_priority(p_my_pcb, p_tcb, newpri, true);
 		}
 	}

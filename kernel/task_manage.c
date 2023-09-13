@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: task_manage.c 335 2023-04-18 10:50:40Z ertl-honda $
+ *  $Id: task_manage.c 376 2023-09-02 04:34:49Z ertl-honda $
  */
 
 /*
@@ -595,12 +595,18 @@ chg_spr(ID tskid, uint_t subpri)
 	acquire_glock();
 	p_my_pcb = get_my_pcb();
 	p_pcb = p_tcb->p_pcb;
-	change_subprio(p_my_pcb, p_tcb, subpri, p_pcb);
-	if (p_selftsk != p_my_pcb->p_schedtsk) {
-		release_glock();
-		dispatch();
-		ercd = E_OK;
-		goto unlock_and_exit;
+	p_tcb->subpri = subpri;						/*［NGKI3672］*/
+	if (TSTAT_RUNNABLE(p_tcb->tstat)) {
+		if ((subprio_primap & PRIMAP_BIT(p_tcb->priority)) != 0U
+											&& !(p_tcb->boosted)) {
+			change_subprio(p_my_pcb, p_tcb, subpri, p_pcb);	/*［NGKI3673］*/
+			if (p_selftsk != p_my_pcb->p_schedtsk) {
+				release_glock();
+				dispatch();
+				ercd = E_OK;
+				goto unlock_and_exit;
+			}
+		}  
 	}
 	ercd = E_OK;
 	release_glock();

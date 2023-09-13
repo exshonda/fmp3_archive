@@ -114,10 +114,10 @@ test_spinlock1.c
 test_spinlock1.cfg
 test_subprio1.c
 test_subprio1.cfg
-test_subprio1.h
 test_subprio2.c
 test_subprio2.cfg
-test_subprio2.h
+test_subprio3.c
+test_subprio3.cfg
 test_suspend1.c
 test_suspend1.cfg
 test_suspend1.h

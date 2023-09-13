@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: serial.c 263 2021-01-08 06:08:59Z ertl-honda $
+ *  $Id: serial.c 376 2023-09-02 04:34:49Z ertl-honda $
  */
 
 /*
@@ -47,72 +47,7 @@
 #include <kernel.h>
 #include <t_syslog.h>
 #include "target_syssvc.h"
-#include "target_serial.h"
 #include "serial.h"
-#include "kernel_cfg.h"
-
-/*
- *  バッファサイズのデフォルト値とバッファの定義
- */
-#ifndef SERIAL_RCV_BUFSZ1
-#define	SERIAL_RCV_BUFSZ1	256			/* ポート1の受信バッファサイズ */
-#endif /* SERIAL_RCV_BUFSZ1 */
-
-#ifndef SERIAL_SND_BUFSZ1
-#define	SERIAL_SND_BUFSZ1	256			/* ポート1の送信バッファサイズ */
-#endif /* SERIAL_SND_BUFSZ1 */
-
-static char	rcv_buffer1[SERIAL_RCV_BUFSZ1];
-static char	snd_buffer1[SERIAL_SND_BUFSZ1];
-
-#if TNUM_PORT >= 2						/* ポート2に関する定義 */
-
-#ifndef SERIAL_RCV_BUFSZ2
-#define	SERIAL_RCV_BUFSZ2	256			/* ポート2の受信バッファサイズ */
-#endif /* SERIAL_RCV_BUFSZ2 */
-
-#ifndef SERIAL_SND_BUFSZ2
-#define	SERIAL_SND_BUFSZ2	256			/* ポート2の送信バッファサイズ */
-#endif /* SERIAL_SND_BUFSZ2 */
-
-static char	rcv_buffer2[SERIAL_RCV_BUFSZ2];
-static char	snd_buffer2[SERIAL_SND_BUFSZ2];
-
-#endif /* TNUM_PORT >= 2 */
-
-#if TNUM_PORT >= 3						/* ポート3に関する定義 */
-
-#ifndef SERIAL_RCV_BUFSZ3
-#define	SERIAL_RCV_BUFSZ3	256			/* ポート3の受信バッファサイズ */
-#endif /* SERIAL_RCV_BUFSZ3 */
-
-#ifndef SERIAL_SND_BUFSZ3
-#define	SERIAL_SND_BUFSZ3	256			/* ポート3の送信バッファサイズ */
-#endif /* SERIAL_SND_BUFSZ3 */
-
-static char	rcv_buffer3[SERIAL_RCV_BUFSZ3];
-static char	snd_buffer3[SERIAL_SND_BUFSZ3];
-
-#endif /* TNUM_PORT >= 3 */
-
-#if TNUM_PORT >= 4						/* ポート4に関する定義 */
-
-#ifndef SERIAL_RCV_BUFSZ4
-#define	SERIAL_RCV_BUFSZ4	256			/* ポート4の受信バッファサイズ */
-#endif /* SERIAL_RCV_BUFSZ4 */
-
-#ifndef SERIAL_SND_BUFSZ4
-#define	SERIAL_SND_BUFSZ4	256			/* ポート4の送信バッファサイズ */
-#endif /* SERIAL_SND_BUFSZ4 */
-
-static char	rcv_buffer4[SERIAL_RCV_BUFSZ4];
-static char	snd_buffer4[SERIAL_SND_BUFSZ4];
-
-#endif /* TNUM_PORT >= 4 */
-
-#if TNUM_PORT >= 5
-#error Serial interface driver supports up to 4 ports.
-#endif /* TNUM_PORT >= 5 */
 
 /*
  *  フロー制御に関連する定数とマクロ
@@ -122,39 +57,6 @@ static char	snd_buffer4[SERIAL_SND_BUFSZ4];
 
 #define BUFCNT_STOP(bufsz)		((bufsz) * 3 / 4)	/* STOPを送る基準文字数 */
 #define BUFCNT_START(bufsz)		((bufsz) / 2)		/* STARTを送る基準文字数 */
-
-/*
- *  シリアルポート初期化ブロック
- */
-typedef struct serial_port_initialization_block {
-	ID		rcv_semid;		/* 受信バッファ管理用セマフォのID */
-	ID		snd_semid;		/* 送信バッファ管理用セマフォのID */
-	uint_t	rcv_bufsz;		/* 受信バッファサイズ */
-	char	*rcv_buffer;	/* 受信バッファ */
-	uint_t	snd_bufsz;		/* 送信バッファサイズ */
-	char	*snd_buffer;	/* 送信バッファ */
-} SPINIB;
-
-static const SPINIB spinib_table[TNUM_PORT] = {
-	{ SERIAL_RCV_SEM1, SERIAL_SND_SEM1,
-	  SERIAL_RCV_BUFSZ1, rcv_buffer1,
-	  SERIAL_SND_BUFSZ1, snd_buffer1 },
-#if TNUM_PORT >= 2
-	{ SERIAL_RCV_SEM2, SERIAL_SND_SEM2,
-	  SERIAL_RCV_BUFSZ2, rcv_buffer2,
-	  SERIAL_SND_BUFSZ2, snd_buffer2 },
-#endif /* TNUM_PORT >= 2 */
-#if TNUM_PORT >= 3
-	{ SERIAL_RCV_SEM3, SERIAL_SND_SEM3,
-	  SERIAL_RCV_BUFSZ3, rcv_buffer3,
-	  SERIAL_SND_BUFSZ3, snd_buffer3 },
-#endif /* TNUM_PORT >= 3 */
-#if TNUM_PORT >= 4
-	{ SERIAL_RCV_SEM4, SERIAL_SND_SEM4,
-	  SERIAL_RCV_BUFSZ4, rcv_buffer4,
-	  SERIAL_SND_BUFSZ4, snd_buffer4 },
-#endif /* TNUM_PORT >= 4 */
-};
 
 /*
  *  シリアルポート管理ブロック
