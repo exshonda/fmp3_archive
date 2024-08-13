@@ -1,0 +1,90 @@
+#
+#    Makefileのターゲット依存部（Polarfire SoC Kit用）
+#
+#  $Id: Makefile.target 335 2023-04-18 10:50:40Z ertl-honda $
+# 
+
+#
+#  ボード名
+#
+ifndef BOARD
+	BOARD = MPFS_DISCOVERY_KIT
+#	BOARD = MPFS_ICICLE_KIT
+endif
+
+#
+#  システム名，チップ名，コア名，開発環境名の定義
+#
+SYS = polarfire_soc_kit
+CHIP = polarfire_soc
+CORE = riscv
+TOOL = gcc
+
+#
+#  コンパイルオプション
+#
+INCLUDES := $(INCLUDES) -I$(TARGETDIR)
+COPTS := $(COPTS)
+LDFLAGS := $(LDFLAGS)
+CDEFS := $(CDEFS) -DTOPPERS_OMIT_BSS_INIT -DTOPPERS_OMIT_DATA_INIT
+OBJ_LDFLAGS := $(OBJ_LDFLAGS) -Wl,--gc-sections
+
+#
+#  SDKのファイルの登録
+#
+SYSSVC_COBJS := $(SYSSVC_COBJS) system_startup.o
+SYSSVC_COBJS := $(SYSSVC_COBJS) mss_io.o mss_nwc_init.o mss_pll.o mss_sgmii.o
+SYSSVC_COBJS := $(SYSSVC_COBJS) mss_beu.o mss_irq_handler_stubs.o mss_l2_cache.o \
+                                mss_mpu.o mss_peripherals.o mss_plic.o mss_pmp.o \
+                                mss_util.o
+SYSSVC_ASMOBJS := $(SYSSVC_ASMOBJS) mss_entry.o mss_utils.o
+
+
+SYSSVC_DIRS  := $(SYSSVC_DIRS) $(TARGETDIR)/sdk
+SYSSVC_DIRS  := $(SYSSVC_DIRS) $(TARGETDIR)/sdk/platform/mpfs_hal/startup_gcc/ 
+SYSSVC_DIRS  := $(SYSSVC_DIRS) $(TARGETDIR)/sdk/platform/mpfs_hal/common/nwc/ 
+SYSSVC_DIRS  := $(SYSSVC_DIRS) $(TARGETDIR)/sdk/platform/mpfs_hal/common/
+
+SYSSVC_COBJS := $(SYSSVC_COBJS) sdk_entry.o
+
+#INCLUDES := $(INCLUDES) -I$(TARGETDIR)/sdk/platform \
+#            -I$(TARGETDIR)/sdk/platform/platform_config_reference \
+#            -I$(TARGETDIR)/sdk/boards/icicle-kit-es/
+
+#INCLUDES := $(INCLUDES) -I$(TARGETDIR)/sdk/platform \
+#            -I$(TARGETDIR)/sdk/platform/platform_config_reference \
+#            -I$(TARGETDIR)/sdk/boards/mpfs-discovery-kit/
+
+INCLUDES := $(INCLUDES) -I$(TARGETDIR)/sdk/platform 
+
+
+#INCLUDES := $(INCLUDES) -I$(TARGETDIR)/sdk/platform/platform_config_reference \
+
+#
+#  ターゲットボード毎の定義
+#
+CDEFS := $(CDEFS) -D$(BOARD)
+
+ifeq ($(BOARD),MPFS_DISCOVERY_KIT)
+INCLUDES := $(INCLUDES) -I$(TARGETDIR)/sdk/boards/mpfs-discovery-kit
+INCLUDES := $(INCLUDES) -I$(TARGETDIR)/sdk/boards/mpfs-discovery-kit/platform_config/lim-debug
+LDSCRIPT = $(TARGETDIR)/sdk/boards/mpfs-discovery-kit/platform_config/lim-debug/linker/mpfs-lim.ld
+endif
+
+ifeq ($(BOARD),MPFS_ICICLE_KIT)
+INCLUDES := $(INCLUDES) -I$(TARGETDIR)/sdk/boards/icicle-kit-es
+INCLUDES := $(INCLUDES) -I$(TARGETDIR)/sdk/boards/icicle-kit-es/platform_config/lim-debug
+LDSCRIPT = $(TARGETDIR)/sdk/boards/icicle-kit-es/platform_config/lim-debug/linker/mpfs-lim.ld
+endif
+
+#
+#  カーネルに関する定義
+#
+KERNEL_DIRS := $(KERNEL_DIRS) $(TARGETDIR)
+KERNEL_COBJS := $(KERNEL_COBJS) target_kernel_impl.o
+KERNEL_ASMOBJS := $(KERNEL_ASMCOBJS) 
+
+#
+#  チップ依存部
+#
+include $(SRCDIR)/arch/$(CORE)_$(TOOL)/$(CHIP)/Makefile.chip
