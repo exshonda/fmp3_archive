@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: serial.c 376 2023-09-02 04:34:49Z ertl-honda $
+ *  $Id: serial.c 402 2024-04-25 07:26:15Z ertl-honda $
  */
 
 /*
@@ -48,6 +48,7 @@
 #include <t_syslog.h>
 #include "target_syssvc.h"
 #include "serial.h"
+#include "kernel_cfg.h"
 
 /*
  *  フロー制御に関連する定数とマクロ
@@ -182,7 +183,7 @@ serial_opn_por(ID portid)
 	}
 	p_spcb = get_spcb(portid);
 
-	SVC(dis_dsp(), gen_ercd_sys(p_spcb));
+	SVC(loc_spn(p_spcb->p_spinib->spnid), gen_ercd_sys(p_spcb));
 	if (p_spcb->openflag) {			/* オープン済みかのチェック */
 		ercd = E_OBJ;
 	}
@@ -204,14 +205,6 @@ serial_opn_por(ID portid)
 		p_spcb->snd_stopped = false;
 
 		/*
-		 *  これ以降，割込みを禁止する．
-		 */
-		if (loc_cpu() < 0) {
-			ercd = E_SYS;
-			goto error_exit_enadsp;
-		}
-
-		/*
 		 *  ハードウェア依存のオープン処理
 		 */
 		p_spcb->p_siopcb = sio_opn_por(portid, (EXINF) p_spcb);
@@ -223,16 +216,10 @@ serial_opn_por(ID portid)
 		p_spcb->openflag = true;
 		p_spcb->errorflag = false;
 
-		if (unl_cpu() < 0) {
-			p_spcb->errorflag = true;
-			ercd = E_SYS;
-			goto error_exit_enadsp;
-		}
 		ercd = E_OK;
 	}
 
-  error_exit_enadsp:
-	SVC(ena_dsp(), gen_ercd_sys(p_spcb));
+	SVC(unl_spn(p_spcb->p_spinib->spnid), gen_ercd_sys(p_spcb));
 
   error_exit:
 	return(ercd);
@@ -256,7 +243,6 @@ serial_cls_por(ID portid)
 	}
 	p_spcb = get_spcb(portid);
 
-	SVC(dis_dsp(), gen_ercd_sys(p_spcb));
 	if (!(p_spcb->openflag)) {		/* オープン済みかのチェック */
 		ercd = E_OBJ;
 	}
@@ -264,14 +250,10 @@ serial_cls_por(ID portid)
 		/*
 		 *  ハードウェア依存のクローズ処理
 		 */
-		if (loc_cpu() < 0) {
-			eflag = true;
-		}
+		SVC(loc_spn(p_spcb->p_spinib->spnid), gen_ercd_sys(p_spcb));
 		sio_cls_por(p_spcb->p_siopcb);
 		p_spcb->openflag = false;
-		if (unl_cpu() < 0) {
-			eflag = true;
-		}
+		SVC(unl_spn(p_spcb->p_spinib->spnid), gen_ercd_sys(p_spcb));
 
 		/*
 		 *  セマフォの初期化
@@ -293,7 +275,6 @@ serial_cls_por(ID portid)
 			ercd = E_OK;
 		}
 	}
-	SVC(ena_dsp(), gen_ercd_sys(p_spcb));
 
   error_exit:
 	return(ercd);
@@ -344,7 +325,7 @@ serial_wri_chr(SPCB *p_spcb, char c)
 		}
 	}
 
-	SVC(loc_cpu(), gen_ercd_sys(p_spcb));
+	SVC(loc_spn(p_spcb->p_spinib->spnid), gen_ercd_sys(p_spcb));
 	if (p_spcb->snd_count == 0U && !(p_spcb->snd_stopped)
 								&& serial_snd_chr(p_spcb, c)) {
 		/*
@@ -362,7 +343,7 @@ serial_wri_chr(SPCB *p_spcb, char c)
 		buffer_full = (p_spcb->snd_count == p_spcb->p_spinib->snd_bufsz);
 	}
 
-	SVC(unl_cpu(), gen_ercd_sys(p_spcb));
+	SVC(unl_spn(p_spcb->p_spinib->spnid), gen_ercd_sys(p_spcb));
 	ercd = (ER_BOOL) buffer_full;
 
   error_exit:
@@ -423,7 +404,7 @@ serial_rea_chr(SPCB *p_spcb, char *p_c)
 	bool_t	buffer_empty;
 	ER		ercd;
 
-	SVC(loc_cpu(), gen_ercd_sys(p_spcb));
+	SVC(loc_spn(p_spcb->p_spinib->spnid), gen_ercd_sys(p_spcb));
 
 	/*
 	 *  受信バッファから文字を取り出す．
@@ -444,7 +425,7 @@ serial_rea_chr(SPCB *p_spcb, char *p_c)
 		p_spcb->rcv_stopped = false;
 	}
 
-	SVC(unl_cpu(), gen_ercd_sys(p_spcb));
+	SVC(unl_spn(p_spcb->p_spinib->spnid), gen_ercd_sys(p_spcb));
 	ercd = (ER_BOOL) buffer_empty;
 
   error_exit:
@@ -573,8 +554,11 @@ void
 sio_irdy_snd(EXINF exinf)
 {
 	SPCB	*p_spcb;
+	ID		semid = 0;
 
 	p_spcb = (SPCB *) exinf;
+
+	loc_spn(p_spcb->p_spinib->spnid);
 	if (p_spcb->rcv_fc_chr != '\0') {
 		/*
 		 *  START/STOPを送信する．
@@ -590,9 +574,7 @@ sio_irdy_snd(EXINF exinf)
 					p_spcb->p_spinib->snd_buffer[p_spcb->snd_read_ptr]);
 		INC_PTR(p_spcb->snd_read_ptr, p_spcb->p_spinib->snd_bufsz);
 		if (p_spcb->snd_count == p_spcb->p_spinib->snd_bufsz) {
-			if (sig_sem(p_spcb->p_spinib->snd_semid) < 0) {
-				p_spcb->errorflag = true;
-			}
+			semid = p_spcb->p_spinib->snd_semid;
 		}
 		p_spcb->snd_count--;
 	}
@@ -601,6 +583,13 @@ sio_irdy_snd(EXINF exinf)
 		 *  送信すべき文字がない場合は，送信可能コールバックを禁止する．
 		 */
 		sio_dis_cbr(p_spcb->p_siopcb, SIO_RDY_SND);
+	}
+	unl_spn(p_spcb->p_spinib->spnid);
+
+	if ((semid != 0)) {
+		if (sig_sem(semid) < 0) {
+			p_spcb->errorflag = true;
+		}
 	}
 }
 
@@ -612,8 +601,12 @@ sio_irdy_rcv(EXINF exinf)
 {
 	SPCB	*p_spcb;
 	char	c;
+	ID		snd_semid = 0;
+	ID		rcv_semid = 0;
 
 	p_spcb = (SPCB *) exinf;
+
+	loc_spn(p_spcb->p_spinib->spnid);
 	c = (char) sio_rcv_chr(p_spcb->p_siopcb);
 	if ((p_spcb->ioctl & IOCTL_FCSND) != 0U && c == FC_STOP) {
 		/*
@@ -632,9 +625,7 @@ sio_irdy_rcv(EXINF exinf)
 			if (serial_snd_chr(p_spcb, c)) {
 				INC_PTR(p_spcb->snd_read_ptr, p_spcb->p_spinib->snd_bufsz);
 				if (p_spcb->snd_count == p_spcb->p_spinib->snd_bufsz) {
-					if (sig_sem(p_spcb->p_spinib->snd_semid) < 0) {
-						p_spcb->errorflag = true;
-					}
+					snd_semid = p_spcb->p_spinib->snd_semid;
 				}
 				p_spcb->snd_count--;
 			}
@@ -660,9 +651,7 @@ sio_irdy_rcv(EXINF exinf)
 		p_spcb->p_spinib->rcv_buffer[p_spcb->rcv_write_ptr] = c;
 		INC_PTR(p_spcb->rcv_write_ptr, p_spcb->p_spinib->rcv_bufsz);
 		if (p_spcb->rcv_count == 0U) {
-			if (sig_sem(p_spcb->p_spinib->rcv_semid) < 0) {
-				p_spcb->errorflag = true;
-			}
+			rcv_semid = p_spcb->p_spinib->rcv_semid;
 		}
 		p_spcb->rcv_count++;
 
@@ -676,6 +665,19 @@ sio_irdy_rcv(EXINF exinf)
 				p_spcb->rcv_fc_chr = FC_STOP;
 			}
 			p_spcb->rcv_stopped = true;
+		}
+	}
+	unl_spn(p_spcb->p_spinib->spnid);
+
+	if (snd_semid != 0) {
+		if (sig_sem(snd_semid) < 0) {
+			p_spcb->errorflag = true;
+		}
+	}
+
+	if (rcv_semid != 0) {
+		if (sig_sem(rcv_semid) < 0) {
+			p_spcb->errorflag = true;
 		}
 	}
 }

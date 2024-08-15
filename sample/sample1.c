@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: sample1.c 335 2023-04-18 10:50:40Z ertl-honda $
+ *  $Id: sample1.c 401 2024-04-23 08:08:01Z ertl-honda $
  */
 
 /* 
@@ -274,6 +274,7 @@ const uint_t almhd_id[TNUM_PRCID] = {
 #endif /* TNUM_PRCID >= 4 */
 };
 
+#ifdef TOPPERS_SUPPORT_RAS_INT
 /*
  *  割込み番号のテーブル
  */
@@ -289,6 +290,7 @@ const INTNO inthd_no[TNUM_PRCID] = {
     INTNO4,
 #endif /* TNUM_PRCID >= 4 */
 };
+#endif /* TOPPERS_SUPPORT_RAS_INT */
 
 /*
  *  SERVERタスク
@@ -660,13 +662,17 @@ main_task(EXINF exinf)
 	const char	*tskname = task_name[(int_t)exinf-1][0];
 	ID			cycid = cychd_id[(int_t)exinf-1];
 	ID			almid = almhd_id[(int_t)exinf-1];
+#ifdef TOPPERS_SUPPORT_RAS_INT
 	INTNO		intno = inthd_no[(int_t)exinf-1];
+#endif /* TOPPERS_SUPPORT_RAS_INT */
 	bool_t		update_select = true;
 	uint_t		tsk_select    = 1;
 	uint_t		tme_select    = exinf;
 	uint_t		class_select  = exinf;
 	uint_t		prc_select    = exinf;
+#ifdef TOPPERS_SUPPORT_RAS_INT
 	uint_t		int_select    = exinf;
+#endif /* TOPPERS_SUPPORT_RAS_INT */    
 	uint32_t	server_req;
 #ifndef TASK_LOOP
 	SYSTIM		stime1, stime2;
@@ -769,7 +775,9 @@ main_task(EXINF exinf)
 			tskname = task_name[clsid - 1][tsk_select-1];
 			cycid = cychd_id[tme_select-1];
 			almid = almhd_id[tme_select-1];
+#ifdef TOPPERS_SUPPORT_RAS_INT            
 			intno = inthd_no[int_select-1];
+#endif /* TOPPERS_SUPPORT_RAS_INT */
 			tsk_mig_prc = prcid;
 			update_select = false;
 			syslog(LOG_INFO, "select %s", tskname);
@@ -809,14 +817,18 @@ main_task(EXINF exinf)
 		case '4':
 			tme_select = 1;
 			class_select = 1;
+#ifdef TOPPERS_SUPPORT_RAS_INT
 			int_select = 1;
+#endif /* TOPPERS_SUPPORT_RAS_INT */            
 			update_select = true;
 			break;
 #if TNUM_PRCID >= 2
 		case '5':
 			tme_select = 2;
 			class_select = 2;
+#ifdef TOPPERS_SUPPORT_RAS_INT
 			int_select = 2;
+#endif /* TOPPERS_SUPPORT_RAS_INT */            
 			update_select = true;
 			break;
 #endif /* TNUM_PRCID >= 2 */
@@ -824,7 +836,9 @@ main_task(EXINF exinf)
 		case '6':
 			tme_select = 3;
 			class_select = 3;
+#ifdef TOPPERS_SUPPORT_RAS_INT            
 			int_select = 3;
+#endif /* TOPPERS_SUPPORT_RAS_INT */            
 			update_select = true;
 			break;
 #endif /* TNUM_PRCID >= 3 */
@@ -832,7 +846,9 @@ main_task(EXINF exinf)
 		case '7':
 			tme_select = 4;
 			class_select = 4;
+#ifdef TOPPERS_SUPPORT_RAS_INT            
 			int_select = 4;
+#endif /* TOPPERS_SUPPORT_RAS_INT */            
 			update_select = true;
 			break;
 #endif /* TNUM_PRCID >= 4 */
@@ -975,11 +991,12 @@ main_task(EXINF exinf)
 			syslog(LOG_INFO, "#msta_alm(%d, 5000000, %d)", almid, prcid);
 			SVC_PERROR(msta_alm(almid, 5000000, prcid));
 			break;
-		  case 'j':
+#ifdef TOPPERS_SUPPORT_RAS_INT
+		  case 'j':            
 			syslog(LOG_INFO, "#ras_int(0x%x)", intno);
 			SVC_PERROR(ras_int(intno));
 			break;
-
+#endif /* TOPPERS_SUPPORT_RAS_INT */
 		case 'V':
 			hrtcnt1 = fch_hrt();
 			consume_time(1000LU);

@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: serial.h 376 2023-09-02 04:34:49Z ertl-honda $
+ *  $Id: serial.h 402 2024-04-25 07:26:15Z ertl-honda $
  */
 
 /*
@@ -146,6 +146,7 @@ typedef struct serial_port_initialization_block {
 	char	*rcv_buffer;	/* 受信バッファ */
 	uint_t	snd_bufsz;		/* 送信バッファサイズ */
 	char	*snd_buffer;	/* 送信バッファ */
+	ID		spnid;			/* ドライバ排他制御用のスピンロック */
 } SPINIB;
 
 extern const SPINIB spinib_table[];

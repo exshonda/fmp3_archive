@@ -119,20 +119,24 @@ static char	snd_buffer4[SERIAL_SND_BUFSZ4];
 const SPINIB spinib_table[TNUM_PORT] = {
 	{ SERIAL_RCV_SEM1, SERIAL_SND_SEM1,
 	  SERIAL_RCV_BUFSZ1, rcv_buffer1,
-	  SERIAL_SND_BUFSZ1, snd_buffer1 },
+	  SERIAL_SND_BUFSZ1, snd_buffer1,
+	  SERIAL_SPN1 },
 #if TNUM_PORT >= 2
 	{ SERIAL_RCV_SEM2, SERIAL_SND_SEM2,
 	  SERIAL_RCV_BUFSZ2, rcv_buffer2,
-	  SERIAL_SND_BUFSZ2, snd_buffer2 },
+	  SERIAL_SND_BUFSZ2, snd_buffer2,
+	  SERIAL_SPN2 },
 #endif /* TNUM_PORT >= 2 */
 #if TNUM_PORT >= 3
 	{ SERIAL_RCV_SEM3, SERIAL_SND_SEM3,
 	  SERIAL_RCV_BUFSZ3, rcv_buffer3,
-	  SERIAL_SND_BUFSZ3, snd_buffer3 },
+	  SERIAL_SND_BUFSZ3, snd_buffer3,
+	  SERIAL_SPN3 },
 #endif /* TNUM_PORT >= 3 */
 #if TNUM_PORT >= 4
 	{ SERIAL_RCV_SEM4, SERIAL_SND_SEM4,
 	  SERIAL_RCV_BUFSZ4, rcv_buffer4,
-	  SERIAL_SND_BUFSZ4, snd_buffer4 },
+	  SERIAL_SND_BUFSZ4, snd_buffer4,
+	  SERIAL_SPN4 }
 #endif /* TNUM_PORT >= 4 */
 };

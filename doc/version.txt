@@ -2,8 +2,8 @@
 		TOPPERS/FMP3カーネル
 		変更履歴
 
-		対応バージョン: Release 3.3.1
-		最終更新: 2023年04月18日
+		対応バージョン: Release 3.3.2
+		最終更新: 2024年08月13日
 
 このドキュメントは，TOPPERS/FMP3カーネルの変更履歴を，新しい方から順に
 記述したものである．また，TOPPERS/FMPカーネル Release 1.4.0との主な違い
@@ -14,7 +14,7 @@
      Toyohashi Open Platform for Embedded Real-Time Systems/
      Flexible MultiProcessor Kernel
 
- Copyright (C) 2019-2023 by Embedded and Real-Time Systems Laboratory
+ Copyright (C) 2019-2024 by Embedded and Real-Time Systems Laboratory
              Graduate School of Information Science, Nagoya Univ., JAPAN
  
  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -46,7 +46,30 @@
  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  の責任を負わない．
  
- $Id: version.txt 378 2023-09-11 11:28:34Z ertl-honda $
+ $Id: version.txt 418 2024-08-13 11:17:33Z ertl-honda $
+----------------------------------------------------------------------
+		TOPPERS/FMP3カーネル
+		Release 3.3.1 から 3.3.2 への主な変更点
+
+○変更点のリスト
+
+●実装改善
+・_kernel_istk_tableがリンクされない場合のエラーチェック回避
+	- _kernel_istk_tableをコードから使用せず，リンクされない場合は，パ
+      ス3でエラーチェックをしないように変更．
+
+●不具合修正
+
+・シリアルドライバのマルチコア対応
+	- 3.3.0 での対応が適用されていなかったため適用．
+	- 対応が不十分であったので，スピンロックオブジェクトによる排他制御
+	  を追加． 
+
+●その他（テストプログラム，サンプルプログラム等）
+
+・ras_intが使用できないターゲットへの対応
+	- コンパイルエラーが発生しないよう変更．
+
 ----------------------------------------------------------------------
 		TOPPERS/FMP3カーネル
 		Release 3.3.0 から 3.3.1 への主な変更点
