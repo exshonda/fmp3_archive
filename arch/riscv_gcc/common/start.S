@@ -107,19 +107,34 @@ ALABEL(toppers_start)
     bne     t0, t1, slave_wait
 
 #ifndef TOPPERS_OMIT_BSS_INIT
+
     /*
-     *  bssセクションのクリア
+     *  sbssセクションのクリア
      *
-     *  BSS_STARTからBSS_ENDまでをゼロクリアする．
+     *  SBSS_STARTからSBSS_ENDまでをゼロクリアする．
      */
-    la    a0, __bss_start
-    la    a1, _end
+    la    a0, __sbss_start
+    la    a1, __sbss_end
     bgeu  a0, a1, start_3
 ALABEL(start_2)
     sw    zero, (a0)
     addi  a0, a0, 4
     bltu  a0, a1, start_2
 ALABEL(start_3)
+
+    /*
+     *  bssセクションのクリア
+     *
+     *  BSS_STARTからBSS_ENDまでをゼロクリアする．
+     */
+    la    a0, __bss_start
+    la    a1, __bss_end
+    bgeu  a0, a1, start_5
+ALABEL(start_4)
+    sw    zero, (a0)
+    addi  a0, a0, 4
+    bltu  a0, a1, start_4
+ALABEL(start_5)
 #endif /* TOPPERS_OMIT_BSS_INIT */
 
 #ifndef TOPPERS_OMIT_DATA_INIT
@@ -132,14 +147,14 @@ ALABEL(start_3)
     la    a0, __idata_start
     la    a1, __data_start
     la    a2, __idata_end
-    bgeu  a0, a2, start_5
-ALABEL(start_4)
+    bgeu  a0, a2, start_7
+ALABEL(start_6)
     lwu   t0, (a0)
     sw    t0, (a1)
     addi  a0, a0, 4
     addi  a1, a1, 4
-    bltu  a0, a2, start_4
-ALABEL(start_5)
+    bltu  a0, a2, start_6
+ALABEL(start_7)
 #endif /* TOPPERS_OMIT_DATA_INIT */
 
     /*
@@ -155,21 +170,21 @@ ALABEL(start_5)
      *
      *  sta_ker 以前にマスタプロセッサのみで行う必要のある初期化を実行
      */
-ALABEL(start_6)
+ALABEL(start_8)
     jal  target_mprc_initialize
 
     /*
      *  カーネルを起動する
      */
-ALABEL(start_7)
+ALABEL(start_9)
     la    t0, start_sync
     li    t1, MAGIC_START
     li    t2, (TNUM_PRCID * 4)
     add   t2, t0, t2
-ALABEL(start_8)
+ALABEL(start_10)
     sw    t1, 0(t0)
     addi  t0, t0, 4
-    bltu  t0, t2, start_8   /* if t0 < t2 goto start_8 */
+    bltu  t0, t2, start_10   /* if t0 < t2 goto start_10 */
 
     /* マスタプロセッサ用のstart_syncを初期化 */
     la       t0, start_sync

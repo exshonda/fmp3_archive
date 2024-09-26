@@ -120,4 +120,12 @@ RISC-Vコア依存部は，すべての処理単位でFPUを使用できるよ�
 
 # バージョン履歴
 
+## 2024/09/09
+- common/start.S
+  - sbssの初期化を追加．
+- common/core_support.S
+  - core_exc_entry_4 において，割込み優先度マスク, 例外ネストカウント保存領域分を戻す処理の追加忘れを修正．
+- common/core_test.h
+  - PREPARE_RETURN_CPUEXC_IINST の定義を追加．
+
 以上

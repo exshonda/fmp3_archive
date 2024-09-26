@@ -1130,6 +1130,8 @@ ALABEL(core_exc_entry_4)
     addi sp, sp, 16  
     add  sp, sp, t0
 
+    addi sp, sp, (2 * 4) /* 割込み優先度マスク, 例外ネストカウント保存領域分を戻す */ 
+
     lx   t0, 11*XREG_SIZE(sp)
     csrw mepc,  t0
     lx   t0, 12*XREG_SIZE(sp)

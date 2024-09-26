@@ -77,4 +77,8 @@ PolarFire SoC チップ依存部では，Mtiemr依存部を用いて，CLINTの 
 
 ## バージョン履歴
 
+- 2024/09/09
+  - chip_kernel_impl.c
+    - target_hrt_initialize() をchip_initialize()で呼び出しているので，同様に，chip_terminate()でtarget_hrt_terminate()を呼び出すよう変更．
+
 以上

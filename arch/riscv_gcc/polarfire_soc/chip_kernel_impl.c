@@ -99,6 +99,11 @@ void
 chip_terminate(void)
 {
     /*
+     *  Machine Timer の終了処理
+     */
+    target_hrt_terminate(0);
+    
+    /*
      *  コア依存の終了処理
      */
     core_terminate();

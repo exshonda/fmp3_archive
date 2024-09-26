@@ -79,4 +79,14 @@
 #else /* __riscv_compressed */
 #define RAISE_CPU_EXCEPTION_IINST  Asm(".word 0x00000000")
 #endif /* __riscv_compressed */
+
+/*
+ *  違反命令によるCPU例外からのリターンアドレスの設定
+ */
+#ifdef __riscv_compressed
+#define PREPARE_RETURN_CPUEXC_IINST  (((T_EXCINF *)p_excinf)->pc += 2)
+#else /* __riscv_compressed */
+#define PREPARE_RETURN_CPUEXC_IINST  (((T_EXCINF *)p_excinf)->pc += 4)
+#endif /* __riscv_compressed */
+
 #endif /* TOPPERS_CORE_TEST_H */

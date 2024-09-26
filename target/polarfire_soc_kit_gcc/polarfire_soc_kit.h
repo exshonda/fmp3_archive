@@ -65,10 +65,10 @@
 #define USE_UART1
 
 /*
- *  微少時間待ちのための定義（本来はSILのターゲット依存部）(ToDo)
+ *  微少時間待ちのための定義（本来はSILのターゲット依存部）
  */
-#define SIL_DLY_TIM1    70
-#define SIL_DLY_TIM2    44
+#define SIL_DLY_TIM1    6
+#define SIL_DLY_TIM2    3
 
 #endif /* MPFS_DISCOVERY_KIT */
 

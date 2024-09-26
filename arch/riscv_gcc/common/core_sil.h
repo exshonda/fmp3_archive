@@ -160,7 +160,7 @@ TOPPERS_test_and_assign(uint32_t *p_var, uint32_t prcid)
         "1:"
         : "=&r"(failed), "+r"(p_var)   /* + : read/write */
         : "r"(prcid)
-        : "cc");
+        : );
 #else /* !USE_RISCV_LLSC */
     Asm("lw           %0, (%1)     \n" 
         "bnez         %0, 1f       \n"
@@ -168,7 +168,7 @@ TOPPERS_test_and_assign(uint32_t *p_var, uint32_t prcid)
         "1:"
         : "=&r"(failed), "+r"(p_var)   /* + : read/write */
         : "r"(prcid)
-        : "cc");
+        : );
 #endif /* USE_RISCV_LLSC */
     return(failed != 0);
 }

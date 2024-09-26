@@ -209,6 +209,8 @@ https://github.com/polarfire-soc/polarfire-soc-bare-metal-examples
 
 ## バージョン履歴
 
-
+- 2024/09/09
+  - polarfire_soc_kit.h
+    - SIL_DLY_TIM1/SIL_DLY_TIM1 を正しい値に設定．
 以上
 

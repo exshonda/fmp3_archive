@@ -215,7 +215,7 @@ riscv_tas_uint32(uint32_t *p_var)
         "1:"
         : "=&r"(failed), "+r"(p_var)   /* + : read/write */
         : "r"(1)
-        : "cc");
+        : );
 #else /* !USE_RISCV_LLSC */
     Asm("lw           %0, (%1)     \n"
         "bnez         %0, 1f       \n"
@@ -223,7 +223,7 @@ riscv_tas_uint32(uint32_t *p_var)
         "1:"
         : "=&r"(failed), "+r"(p_var)   /* + : read/write */
         : "r"(1)
-        : "cc");    
+        : );    
 #endif /* USE_RISCV_LLSC */    
     return(failed != 0);
 }
