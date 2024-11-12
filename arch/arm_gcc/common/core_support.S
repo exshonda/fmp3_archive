@@ -5,7 +5,7 @@
  * 
  *  Copyright (C) 2000-2004 by Embedded and Real-Time Systems Laboratory
  *                              Toyohashi Univ. of Technology, JAPAN
- *  Copyright (C) 2006-2023 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2006-2024 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  * 
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: core_support.S 382 2023-09-14 04:39:49Z ertl-honda $
+ *  $Id: core_support.S 434 2024-10-05 00:46:15Z ertl-honda $
  */
 
 /*
@@ -572,9 +572,9 @@ ALABEL(irq_handler_3)
 	vpush	{d16-d31}
 #endif /* USE_ARM_FPU_D32 */
 	vpush	{d0-d15}				/* 全FPUレジスタの保存 */
-	vmrs	r2, fpscr
+	vmrs	r1, fpscr
 	push	{r1,r2}					/* FPSCRを保存 */
-1:									/* r1はアラインメントのため */
+1:									/* r2はアラインメントのため */
 #endif /* USE_ARM_FPU_SELECTIVE */
 	str		sp, [r0,#TCB_sp]		/* スタックポインタを保存 */
 	adr		r1, ret_int_r			/* 実行再開番地を保存 */
@@ -601,7 +601,7 @@ ALABEL(ret_int_r)
 	vmsr	fpexc, r0				/* FPEXCを設定 */
 	beq		1f						/* TA_FPU属性でない場合は分岐 */
 	pop		{r1,r2}
-	vmsr	fpscr, r2				/* FPSCRを復帰 */
+	vmsr	fpscr, r1				/* FPSCRを復帰 */
 	vpop	{d0-d15}				/* 全FPUレジスタの復帰 */
 #ifdef USE_ARM_FPU_D32
 	vpop	{d16-d31}
@@ -845,16 +845,16 @@ ALABEL(exc_handler_1)
 	/*
 	 *  スタックポインタの調整
 	 */
-	and		r1, sp, #4
-	sub		sp, sp, r1
+	and		r2, sp, #4
+	sub		sp, sp, r2
 #ifdef USE_ARM_FPU_ALWAYS
 #ifdef USE_ARM_FPU_D32
 	vpush	{d16-d31}
 #endif /* USE_ARM_FPU_D32 */
 	vpush	{d0-d7}					/* スクラッチFPUレジスタの保存 */
-	vmrs	r2, fpscr
+	vmrs	r1, fpscr
 #endif /* USE_ARM_FPU_ALWAYS */
-	push	{r2,r1}					/* スタックポインタの調整値とFPSCRを保存 */
+	push	{r1,r2}					/* FPSCRとスタックポインタの調整値を保存 */
 
 	/*
 	 *  カーネル管理外のCPU例外か判定する
@@ -1061,9 +1061,9 @@ ALABEL(exc_handler_3)
 	vpush	{d16-d31}
 #endif /* USE_ARM_FPU_D32 */
 	vpush	{d0-d15}				/* 全FPUレジスタの保存 */
-	vmrs	r2, fpscr
+	vmrs	r1, fpscr
 	push	{r1,r2}					/* FPSCRを保存 */
-1:									/* r1はアラインメントのため */
+1:									/* r2はアラインメントのため */
 #endif /* USE_ARM_FPU_SELECTIVE */
 	str		sp, [r0,#TCB_sp]		/* スタックポインタを保存 */
 	adr		r1, ret_exc_r			/* 実行再開番地を保存 */
@@ -1090,7 +1090,7 @@ ALABEL(ret_exc_r)
 	vmsr	fpexc, r0				/* FPEXCを設定 */
 	beq		1f						/* TA_FPU属性でない場合は分岐 */
 	pop		{r1,r2}
-	vmsr	fpscr, r2				/* FPSCRを復帰 */
+	vmsr	fpscr, r1				/* FPSCRを復帰 */
 	vpop	{d0-d15}				/* 全FPUレジスタの復帰 */
 #ifdef USE_ARM_FPU_D32
 	vpop	{d16-d31}
