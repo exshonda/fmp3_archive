@@ -36,7 +36,7 @@
 #  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
 #  の責任を負わない．
 # 
-#  $Id: makerelease.rb 266 2021-01-08 06:41:39Z ertl-honda $
+#  $Id: makerelease.rb 422 2024-08-14 06:12:13Z ertl-honda $
 # 
 
 require "optparse"

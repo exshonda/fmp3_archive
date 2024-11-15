@@ -37,7 +37,7 @@
 #   アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
 #   の責任を負わない．
 # 
-#   $Id: kernel_check.trb 410 2024-05-21 09:36:55Z ertl-honda $
+#   $Id: kernel_check.trb 431 2024-09-09 06:41:33Z ertl-honda $
 #  
 
 #
@@ -319,19 +319,21 @@ end
 #  初期化ルーチンに関するチェック
 #
 0.upto($TNUM_PRCID) do |prcid|
-  inirtnb = SYMBOL("_kernel_inirtnb_table_#{$prcStr[prcid]}")
-  $iniData[prcid].each do |_, params|
-    inirtn = PEEK(inirtnb + $offsetof_INIRTNB_inirtn, $sizeof_INIRTN)
+  inirtnb = SYMBOL("_kernel_inirtnb_table_#{$prcStr[prcid]}", true)
+  if !(inirtnb.nil?) then
+    $iniData[prcid].each do |_, params|
+      inirtn = PEEK(inirtnb + $offsetof_INIRTNB_inirtn, $sizeof_INIRTN)
 
-  # inirtnがプログラムの先頭番地として正しくない場合（E_PAR）［NGKI3243］
-    if (inirtn & ($CHECK_FUNC_ALIGN - 1)) != 0
-      error_wrong("E_PAR", params, :inirtn, "not aligned")
-    end
-    if $CHECK_FUNC_NONNULL && inirtn == 0
-      error_wrong("E_PAR", params, :inirtn, "null")
-    end
+    # inirtnがプログラムの先頭番地として正しくない場合（E_PAR）［NGKI3243］
+      if (inirtn & ($CHECK_FUNC_ALIGN - 1)) != 0
+        error_wrong("E_PAR", params, :inirtn, "not aligned")
+      end
+      if $CHECK_FUNC_NONNULL && inirtn == 0
+        error_wrong("E_PAR", params, :inirtn, "null")
+      end
 
-    inirtnb += $sizeof_INIRTNB
+      inirtnb += $sizeof_INIRTNB
+    end
   end
 end
 
@@ -339,18 +341,20 @@ end
 #  終了処理ルーチンに関するチェック
 #
 0.upto($TNUM_PRCID) do |prcid|
-  terrtnb = SYMBOL("_kernel_terrtnb_table_#{$prcStr[prcid]}")
-  $terData[prcid].reverse_each do |_, params|
-    terrtn = PEEK(terrtnb + $offsetof_TERRTNB_terrtn, $sizeof_TERRTN)
+  terrtnb = SYMBOL("_kernel_terrtnb_table_#{$prcStr[prcid]}", true)
+  if !(terrtnb.nil?) then
+    $terData[prcid].reverse_each do |_, params|
+      terrtn = PEEK(terrtnb + $offsetof_TERRTNB_terrtn, $sizeof_TERRTN)
 
-  # terrtnがプログラムの先頭番地として正しくない場合（E_PAR）［NGKI3250］
-    if (terrtn & ($CHECK_FUNC_ALIGN - 1)) != 0
-      error_wrong("E_PAR", params, :terrtn, "not aligned")
-    end
-    if $CHECK_FUNC_NONNULL && terrtn == 0
-      error_wrong("E_PAR", params, :terrtn, "null")
-    end
+    # terrtnがプログラムの先頭番地として正しくない場合（E_PAR）［NGKI3250］
+      if (terrtn & ($CHECK_FUNC_ALIGN - 1)) != 0
+        error_wrong("E_PAR", params, :terrtn, "not aligned")
+      end
+      if $CHECK_FUNC_NONNULL && terrtn == 0
+        error_wrong("E_PAR", params, :terrtn, "null")
+      end
 
-    terrtnb += $sizeof_TERRTNB
+      terrtnb += $sizeof_TERRTNB
+    end
   end
 end

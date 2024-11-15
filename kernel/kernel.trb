@@ -37,7 +37,7 @@
 #   アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
 #   の責任を負わない．
 # 
-#   $Id: kernel.trb 335 2023-04-18 10:50:40Z ertl-honda $
+#   $Id: kernel.trb 436 2024-10-05 01:47:00Z ertl-honda $
 # 
 
 #
@@ -425,10 +425,6 @@ if !$OMIT_ISTACK
     # パラメータが省略された時のデフォルト値の設定
     params[:istk] ||= "NULL"
 
-    # カーネルドメインの囲みの中に記述されていない場合（E_RSATR）［NGKI3213］
-    if !params.has_key?(:domain) || params[:domain] != $TDOM_KERNEL
-      error_ercd("E_RSATR", params, "%apiname must be within the kernel domain")
-    end
 
     # クラスの囲みの中に記述されていない場合（E_RSATR）［NGKI3214］
     if !params.has_key?(:class)
