@@ -120,6 +120,12 @@ RISC-Vコア依存部は，すべての処理単位でFPUを使用できるよ�
 
 # バージョン履歴
 
+## 2024/12/23
+- common/core_sil.h
+  - TOPPERS_sil_loc_spn(void) において，ロックの取得を失敗した場合，
+    無条件に割り込みを許可するのではなく，TOPPERS_sil_loc_spn(void)
+    呼び出し時の状態にするよう変更．
+
 ## 2024/09/09
 - common/start.S
   - sbssの初期化を追加．

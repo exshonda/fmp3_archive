@@ -194,7 +194,8 @@ TOPPERS_sil_loc_spn(void)
     else {
         /* スピンロックの取得 */
         while (TOPPERS_test_and_assign(&TOPPERS_sil_spn_var, prcid)) {
-            TOPPERS_set_mstatus_mie();
+            /* TOPPERS_sil_loc_spn()呼び出し時の MIEの状態にする */
+            TOPPERS_set_mie(mie_mask); 
             TOPPERS_clear_mstatus_mie();
         }
         /* ロック取得成功 */
