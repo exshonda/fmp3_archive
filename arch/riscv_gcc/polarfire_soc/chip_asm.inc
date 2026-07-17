@@ -83,6 +83,13 @@
 .endm
 
 /*
+ *  タスク実行開始時(start_r)の追加コンテキスト初期化．PolarFire SoC Kit は既定不要(空)．
+ *  (ESP32-S31 の TLS 初期化と同じフック点．a0=p_runtsk は不変とする契約)
+ */
+.macro init_additional_regs_start_r tcb_reg
+.endm
+
+/*
  *  割込み・例外ハンドラ入口処理での追加コンテキストの保存
  */
 .macro save_additional_regs_int
@@ -104,6 +111,15 @@
  *  割込み・例外ハンドラからのディスパッチ時に保存した追加コンテキストの復帰
  */
 .macro restore_additional_regs_int_disp
+.endm
+
+/*
+ *  CPU例外番号(exccode)を mcause から reg に取り出す
+ *    非CLIC(標準 RISC-V)では mcause 全体が exccode のためマスク不要。reg のみ破壊。
+ *    core_support.S の CPU例外入口で用いる(関数フックでなくマクロでインライン展開)。
+ */
+.macro core_get_exccode_asm reg
+    csrr  \reg, mcause
 .endm
 
 /*

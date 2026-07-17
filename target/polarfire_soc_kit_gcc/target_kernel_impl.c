@@ -205,3 +205,32 @@ target_fput_log(char c)
     }
     polafire_soc_kit_uart_fput(c);
 }
+
+/*
+ *  _sbrk（newlib のヒープ確保）
+ *
+ *  newlib の malloc/printf 系（_sbrk_r 経由）がヒープを要求するため，自己完結
+ *  の静的ヒープを用いた最小限の _sbrk を提供する．SDK の newlib_stubs.c は
+ *  _write 等が FMP3 のシリアル出力と競合するため取り込まず，本実装を用いる．
+ */
+#include <sys/types.h>
+
+#ifndef TARGET_HEAP_SIZE
+#define TARGET_HEAP_SIZE  (64 * 1024)
+#endif /* TARGET_HEAP_SIZE */
+
+static char target_heap[TARGET_HEAP_SIZE];
+
+caddr_t
+_sbrk(int incr)
+{
+    static char *heap_end = target_heap;
+    char        *prev_heap_end = heap_end;
+
+    if ((heap_end + incr) > (target_heap + TARGET_HEAP_SIZE)
+            || (heap_end + incr) < target_heap) {
+        return (caddr_t) -1;            /* ヒープ不足 */
+    }
+    heap_end += incr;
+    return (caddr_t) prev_heap_end;
+}

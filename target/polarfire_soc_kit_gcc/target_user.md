@@ -155,6 +155,58 @@ sample1のプロジェクトを選択してビルド．
 
 - sample1_start-platform-and-debug.lunch 
 
+## シミュレータ実行（QEMU）
+
+SoftConsole を用いずに，QEMU（microchip-icicle-kit マシン）でも動作確認ができる．
+
+開発環境（QEMU での動作確認に用いた構成）：
+
+- ツールチェーン：riscv64-unknown-elf-gcc 13.2.0（Ubuntu）＋ picolibc
+  - SoftConsole（newlib-nano）の代替．Vitis 付属の riscv64 は rv64 の A拡張
+    （アトミック命令）のマルチライブラリが無く，lr/sc を用いるカーネルを
+    リンクできないため用いない．
+- QEMU：qemu-system-riscv64 8.2.2（microchip-icicle-kit）
+
+ビルドは，Makefile 変数（または環境変数）`QEMU=1` を指定して行う．これにより，
+Icicle Kit 向けのリンカスクリプト・picolibc・QEMU 用の構成が選択される
+（`QEMU` を指定しない既定の動作は変更しない）．
+
+	configure.rb -T polarfire_soc_kit_gcc -w -S "syslog.o banner.o serial.o serial_cfg.o logtask.o mmuart.o chip_serial.o"
+	QEMU=1 make
+
+実行は，全ハートのリセットPCをカーネルのエントリ（_start，L2-LIM 0x08000000）に
+設定するため，5ハートすべてに `-device loader` を与える（icicle-kit マシンは既定で
+envm にリセットし HSS の起動を待つため）．`-bios none` を指定し既定の OpenSBI を
+載せないこと．
+
+	qemu-system-riscv64 -M microchip-icicle-kit -smp 5 -m 2G -nographic \
+	  -serial mon:stdio -bios none -kernel fmp \
+	  -device loader,file=fmp,cpu-num=0 -device loader,file=fmp,cpu-num=1 \
+	  -device loader,file=fmp,cpu-num=2 -device loader,file=fmp,cpu-num=3 \
+	  -device loader,file=fmp,cpu-num=4
+
+E51（hart0）は MPFS HAL により待機し，U54（hart1〜4＝PRC1〜4）で FMP3 が動作する．
+
+### テストプログラムの実行結果（QEMU，2026/06/14）
+
+TTSP3 のテストスイートを QEMU で実行した結果は次の通り．
+
+- 既定の4コアSMP構成：PASS=40 / DONE=8 / FAIL=0 / HANG=0
+  - cpuexc1〜9 を含む全機能テスト，mutex1〜8，malarm1，spinlock，subprio が PASS．
+
+- マルチプロセッサ向けテストのうち `test_barrier()` を用いるもの
+  （mtskman1〜3，mmutex1）は，**プロセッサ数を2に設定（`PRC_NUM=2`）して実行**する．
+  `test_barrier()` は全プロセッサ（TNUM_PRCID 個）の到達を待つため，テストに参加
+  しないプロセッサが存在する4コア構成では完了しない（テストの設計が2プロセッサ
+  前提のため）．`PRC_NUM=2` でビルドした場合，これらは全て PASS する．
+
+		configure.rb -T polarfire_soc_kit_gcc -w PRC_NUM=2 ...
+
+- 割込み管理機能テスト int1 は，本ターゲットでは**非対応**である．
+  int1 はソフトウェアで割込み要求を生成する `ras_int` を必要とするが，PLIC では
+  ペンディングビットをソフトウェアからセットできず（QEMU でもペンディング領域への
+  書込みは無視される），`ras_int` をサポートできないため（PLIC依存部のメモ参照）．
+
 
 # SDKの変更点
 
@@ -212,5 +264,15 @@ https://github.com/polarfire-soc/polarfire-soc-bare-metal-examples
 - 2024/09/09
   - polarfire_soc_kit.h
     - SIL_DLY_TIM1/SIL_DLY_TIM1 を正しい値に設定．
+
+- 2026/06/14
+  - QEMU（microchip-icicle-kit）での動作確認手順とテスト結果を追記
+    （「シミュレータ実行（QEMU）」の節）．
+  - QEMU での TTSP3 テストスイートを実施（4コアSMPで PASS=40/DONE=8，
+    MPテストは PRC_NUM=2 で PASS）．int1 は PLIC の制約により非対応である
+    ことを明記．
+  - 関連するチップ依存部の修正（chip_support.S の PLIC threshold 読出しを
+    32ビットアクセスに修正）については「PolarFire SoC 依存部 ユーザーズ
+    マニュアル」のバージョン履歴を参照．
 以上
 

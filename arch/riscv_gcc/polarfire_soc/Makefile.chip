@@ -18,9 +18,13 @@ CHIPDIR = $(SRCDIR)/arch/$(CORE)_$(TOOL)/$(CHIP)
 #  コンパイルオプション
 #
 INCLUDES := $(INCLUDES) -I$(CHIPDIR)
+#  使用するCライブラリのspecs．SoftConsole付属のnewlib-nano環境では
+#  nano.specsが標準だが，picolibcベースのツールチェーン等に合わせて
+#  外部から SPECS=... で上書きできるようにしている．
+SPECS ?= --specs=nano.specs
 COPTS := $(COPTS) -march=rv64gc -mabi=lp64d -mcmodel=medany -msmall-data-limit=8 \
          -mstrict-align -mno-save-restore -fsigned-char \
-         -ffunction-sections -fdata-sections --specs=nano.specs
+         -ffunction-sections -fdata-sections $(SPECS)
 LDFLAGS := $(LDFLAGS) -nostartfiles
 CDEFS := $(CDEFS) 
 
@@ -29,7 +33,14 @@ CDEFS := $(CDEFS)
 #  カーネルに関する定義
 #
 KERNEL_DIRS := $(KERNEL_DIRS) $(CHIPDIR)
-KERNEL_COBJS := $(KERNEL_COBJS) chip_kernel_impl.o plic_kernel_impl.o mtimer.o msi_ipi.o
+KERNEL_COBJS := $(KERNEL_COBJS) chip_kernel_impl.o plic_kernel_impl.o msi_ipi.o
+#  Machineタイマ（mtimer.o）のリンク
+#    OMIT_MTIMERが定義されている場合（例：タイマドライバシミュレータ用
+#    ターゲット simtimer_polarfire_soc_kit_gcc）はリンクしない．未定義時は
+#    従来通りmtimer.oをリンクする（既存ターゲットに影響しない）．
+ifndef OMIT_MTIMER
+KERNEL_COBJS := $(KERNEL_COBJS) mtimer.o
+endif
 KERNEL_ASMOBJS := $(KERNEL_ASMOBJS) chip_support.o
 
 #

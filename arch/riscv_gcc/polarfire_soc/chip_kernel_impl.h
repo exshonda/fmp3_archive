@@ -234,4 +234,12 @@ extern void chip_initialize(PCB *p_my_pcb);
 extern void chip_terminate(void);
 
 #endif /* TOPPERS_MACRO_ONLY */
+
+/*
+ *  追加コンテキスト保存/解放フック（コプロセッサ等を持たないため空）
+ *    save_context: mig_tsk(移行時)，release_context: task_terminate(終了時)に呼ばれる．
+ */
+#define save_context(p_tcb)		((void)(p_tcb))
+#define release_context(p_tcb)		((void)(p_tcb))
+
 #endif /* TOPPERS_CHIP_KERNEL_IMPL_H */

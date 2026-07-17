@@ -304,7 +304,7 @@ ALABEL(irc_get_intpri)
     li      t2, PLIC_TH_OFFSET 
     mul     t0, t2, t0
     add     t0, t0, t1
-    ld      a1, 0(t0)                /* 割込み優先度マスクを設定 */
+    lw      a1, 0(t0)                /* 割込み優先度マスクを取得 */
     neg     a0, a1                   /* 外部表現に変換 */
     jr      ra
 

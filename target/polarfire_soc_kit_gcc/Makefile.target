@@ -5,6 +5,23 @@
 # 
 
 #
+#  QEMU(microchip-icicle-kit)向けビルド設定
+#
+#  環境変数または make 変数 QEMU=1 を指定すると，QEMU の
+#  microchip-icicle-kit 機種で動作させるための設定を自動で行う．
+#  （ボードを Icicle Kit に，CライブラリをホストのGNUツールチェーンが
+#   提供する picolibc に切替え，リンカスクリプトを gcc の -T で渡す）．
+#  指定がなければ従来通り SoftConsole(newlib-nano) 向けのままで，
+#  実機向けビルドに影響しない．
+#
+ifeq ($(QEMU),1)
+	BOARD = MPFS_ICICLE_KIT
+	#  picolibc を使用（nano.specs の代わり）．Makefile.chip の SPECS を上書き．
+	SPECS = --specs=picolibc.specs
+	CDEFS := $(CDEFS) -DTOPPERS_USE_QEMU
+endif
+
+#
 #  ボード名
 #
 ifndef BOARD
@@ -75,6 +92,22 @@ ifeq ($(BOARD),MPFS_ICICLE_KIT)
 INCLUDES := $(INCLUDES) -I$(TARGETDIR)/sdk/boards/icicle-kit-es
 INCLUDES := $(INCLUDES) -I$(TARGETDIR)/sdk/boards/icicle-kit-es/platform_config/lim-debug
 LDSCRIPT = $(TARGETDIR)/sdk/boards/icicle-kit-es/platform_config/lim-debug/linker/mpfs-lim.ld
+endif
+
+#
+#  QEMU向けのリンク調整
+#
+#  picolibc 使用時，リンカスクリプトを gcc の -T で渡すことで picolibc.specs
+#  が picolibc.ld を追加する（%{!T:-Tpicolibc.ld}）のを抑止する．あわせて，
+#  --gc-sections で除去されてしまうカーネル構成テーブル
+#  (_kernel_mpfinib_table) を強制的に保持する．
+#
+ifeq ($(QEMU),1)
+	COPTS := $(COPTS) -T $(LDSCRIPT) -Wl,--undefined=_kernel_mpfinib_table
+	LDSCRIPT =
+	#  cfg1_out のリンクは _start を参照しないため --gc-sections で
+	#  TOPPERS_magic_number が除去される．これを抑止する．
+	CFG1_OUT_LDFLAGS := $(CFG1_OUT_LDFLAGS) -Wl,--no-gc-sections
 endif
 
 #

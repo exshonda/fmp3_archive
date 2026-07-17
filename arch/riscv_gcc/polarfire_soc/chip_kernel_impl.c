@@ -117,3 +117,13 @@ initialize_interrupt(PCB *p_my_pcb)
 {
     plic_initialize_interrupt(p_my_pcb);
 }
+
+/*
+ *  IPI(MSI)受信入口フック（msi_ipi.c から clear_msip の前に呼ばれる）。
+ *  PLIC 構成では追加処理は不要のため空とする。
+ */
+void
+irc_begin_ipi(PCB *p_my_pcb)
+{
+    (void) p_my_pcb;
+}

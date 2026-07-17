@@ -1,4 +1,4 @@
-E_PACKAGE fmp3_polafire_soc_kit_gcc
+E_PACKAGE fmp3_polarfire_soc_kit_gcc
 VERSION %date
 
 INCLUDE ../../MANIFEST

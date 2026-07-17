@@ -81,4 +81,17 @@ PolarFire SoC チップ依存部では，Mtiemr依存部を用いて，CLINTの 
   - chip_kernel_impl.c
     - target_hrt_initialize() をchip_initialize()で呼び出しているので，同様に，chip_terminate()でtarget_hrt_terminate()を呼び出すよう変更．
 
+- 2026/06/14
+  - chip_support.S
+    - irc_get_intpri における PLIC の割込み優先度しきい値（threshold）レジスタの
+      読出しを，`ld`（64ビットロード）から `lw`（32ビットロード）に修正．
+      threshold レジスタは32ビット幅であり，同レジスタを操作する他の箇所
+      （irc_begin_int / irc_end_int / irc_begin_exc / irc_end_exc）はいずれも
+      `lw` / `sw`（32ビットアクセス）を用いている．irc_get_intpri のみ `ld` で
+      8バイトアクセスしていたため，CPU例外ハンドラの呼出し経路でしきい値を
+      取得する際に，8バイトアクセスを許可しないPLIC実装（QEMU の
+      microchip-icicle-kit など）でロードアクセスフォルトを誘発していた．
+      この経路はCPU例外発生時にのみ通るため，通常の割込み処理は影響を
+      受けていなかった（cpuexc系テストのみで顕在化）．
+
 以上
