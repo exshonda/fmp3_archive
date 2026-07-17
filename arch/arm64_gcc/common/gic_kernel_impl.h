@@ -3,7 +3,7 @@
  *      Toyohashi Open Platform for Embedded Real-Time Systems/
  *      Flexible MultiProcessor Kernel
  *
- *  Copyright (C) 2006-2023 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2006-2025 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  *
  *  上記著作権者は，以下の(1)～(4)の条件を満たす場合に限り，本ソフトウェ
@@ -35,7 +35,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  *
- *  @(#) $Id: gic_kernel_impl.h 361 2023-07-21 06:23:26Z ertl-honda $
+ *  @(#) $Id: gic_kernel_impl.h 446 2025-06-27 07:54:07Z ertl-honda $
  */
 
 /*
@@ -214,35 +214,43 @@
 
 /*
  *  Redistributor
+ *
+ *  各PEの Redistributor フレーム先頭は GICR_BASE + GICR_SIZE * PEインデックス の
+ *  固定ストライドで一意に決まる（gicr_init() の初期化式と同一）．以前は計算結果を
+ *  共有可変配列 gicr_base[] に保存していたが，キャッシュONで書く同配列が，キャッシュ
+ *  OFFで書く per-PE ページテーブル(arm64.c の tt_pri)と同一キャッシュラインに同居すると
+ *  false sharing でテーブルを破壊する不具合があった（doc/arm64_design.txt 参照）．
+ *  配列を持たず毎回計算することで，共有書込み先そのものを無くし不具合を根絶する．
  */
-#define GICR_CTLR(x)		(gicr_base[x] + GICR_RD_OFFSET + 0x0000)
-#define GICR_IIDR(x)		(gicr_base[x] + GICR_RD_OFFSET + 0x0004)
-#define GICR_TYPER(x)		(gicr_base[x] + GICR_RD_OFFSET + 0x0008)
-#define GICR_STATUSR(x)		(gicr_base[x] + GICR_RD_OFFSET + 0x0010)
-#define GICR_WAKER(x)		(gicr_base[x] + GICR_RD_OFFSET + 0x0014)
+#define GICR_BASE_ADDR(x)	(GICR_BASE + GICR_SIZE * (uintptr_t)(x))
+#define GICR_CTLR(x)		(GICR_BASE_ADDR(x) + GICR_RD_OFFSET + 0x0000)
+#define GICR_IIDR(x)		(GICR_BASE_ADDR(x) + GICR_RD_OFFSET + 0x0004)
+#define GICR_TYPER(x)		(GICR_BASE_ADDR(x) + GICR_RD_OFFSET + 0x0008)
+#define GICR_STATUSR(x)		(GICR_BASE_ADDR(x) + GICR_RD_OFFSET + 0x0010)
+#define GICR_WAKER(x)		(GICR_BASE_ADDR(x) + GICR_RD_OFFSET + 0x0014)
  #define GICR_ChildrenAsleep	(uint32_t)(1 << 2)
  #define GICR_ProcSleep			(uint32_t)(1 << 1)
 
-#define GICR_SETLPIR(x)		(gicr_base[x] + GICR_RD_OFFSET + 0x0040)
-#define GICR_CLRLPIR(x)		(gicr_base[x] + GICR_RD_OFFSET + 0x0048)
-#define GICR_PROPBASER(x)	(gicr_base[x] + GICR_RD_OFFSET + 0x0070)
-#define GICR_PENDBASER(x)	(gicr_base[x] + GICR_RD_OFFSET + 0x0078)
-#define GICR_INVLPIR(x)		(gicr_base[x] + GICR_RD_OFFSET + 0x00A0)
-#define GICR_INVALLR(x)		(gicr_base[x] + GICR_RD_OFFSET + 0x00B0)
-#define GICR_SYNCR(x)		(gicr_base[x] + GICR_RD_OFFSET + 0x00C0)
+#define GICR_SETLPIR(x)		(GICR_BASE_ADDR(x) + GICR_RD_OFFSET + 0x0040)
+#define GICR_CLRLPIR(x)		(GICR_BASE_ADDR(x) + GICR_RD_OFFSET + 0x0048)
+#define GICR_PROPBASER(x)	(GICR_BASE_ADDR(x) + GICR_RD_OFFSET + 0x0070)
+#define GICR_PENDBASER(x)	(GICR_BASE_ADDR(x) + GICR_RD_OFFSET + 0x0078)
+#define GICR_INVLPIR(x)		(GICR_BASE_ADDR(x) + GICR_RD_OFFSET + 0x00A0)
+#define GICR_INVALLR(x)		(GICR_BASE_ADDR(x) + GICR_RD_OFFSET + 0x00B0)
+#define GICR_SYNCR(x)		(GICR_BASE_ADDR(x) + GICR_RD_OFFSET + 0x00C0)
 
-#define GICR_IGROUPR0(x)	(gicr_base[x] + GICR_SGI_OFFSET + 0x0080)
-#define GICR_ISENABLER0(x)	(gicr_base[x] + GICR_SGI_OFFSET + 0x0100)
-#define GICR_ICENABLER0(x)	(gicr_base[x] + GICR_SGI_OFFSET + 0x0180)
-#define GICR_ISPENDR0(x)	(gicr_base[x] + GICR_SGI_OFFSET + 0x0200)
-#define GICR_ICPENDR0(x)	(gicr_base[x] + GICR_SGI_OFFSET + 0x0280)
-#define GICR_ISACTIVER0(x)	(gicr_base[x] + GICR_SGI_OFFSET + 0x0300)
-#define GICR_ICACTIVER0(x)	(gicr_base[x] + GICR_SGI_OFFSET + 0x0380)
-#define GICR_IPRIORITYRn(x)	(gicr_base[x] + GICR_SGI_OFFSET + 0x0400)
-#define GICR_ICFGR0(x)		(gicr_base[x] + GICR_SGI_OFFSET + 0x0C00)
-#define GICR_ICFGR1(x)		(gicr_base[x] + GICR_SGI_OFFSET + 0x0C04)
-#define GICR_IGRPMODR0(x)	(gicr_base[x] + GICR_SGI_OFFSET + 0x0D00)
-#define GICR_NSACR(x)		(gicr_base[x] + GICR_SGI_OFFSET + 0x0E00)
+#define GICR_IGROUPR0(x)	(GICR_BASE_ADDR(x) + GICR_SGI_OFFSET + 0x0080)
+#define GICR_ISENABLER0(x)	(GICR_BASE_ADDR(x) + GICR_SGI_OFFSET + 0x0100)
+#define GICR_ICENABLER0(x)	(GICR_BASE_ADDR(x) + GICR_SGI_OFFSET + 0x0180)
+#define GICR_ISPENDR0(x)	(GICR_BASE_ADDR(x) + GICR_SGI_OFFSET + 0x0200)
+#define GICR_ICPENDR0(x)	(GICR_BASE_ADDR(x) + GICR_SGI_OFFSET + 0x0280)
+#define GICR_ISACTIVER0(x)	(GICR_BASE_ADDR(x) + GICR_SGI_OFFSET + 0x0300)
+#define GICR_ICACTIVER0(x)	(GICR_BASE_ADDR(x) + GICR_SGI_OFFSET + 0x0380)
+#define GICR_IPRIORITYRn(x)	(GICR_BASE_ADDR(x) + GICR_SGI_OFFSET + 0x0400)
+#define GICR_ICFGR0(x)		(GICR_BASE_ADDR(x) + GICR_SGI_OFFSET + 0x0C00)
+#define GICR_ICFGR1(x)		(GICR_BASE_ADDR(x) + GICR_SGI_OFFSET + 0x0C04)
+#define GICR_IGRPMODR0(x)	(GICR_BASE_ADDR(x) + GICR_SGI_OFFSET + 0x0D00)
+#define GICR_NSACR(x)		(GICR_BASE_ADDR(x) + GICR_SGI_OFFSET + 0x0E00)
 
 #endif /* (TOPPERS_GIC_VER == 3) || (TOPPERS_GIC_VER == 4) */
 
@@ -265,6 +273,7 @@
 #define GICD_ISPENDR(n)		(GICD_BASE + 0x200 + (n) * 4)
 #define GICD_ICPENDRn		(GICD_BASE + 0x0280)		/* 割込みクリアーペンディング */
 #define GICD_ISACTIVERn		(GICD_BASE + 0x0300)		/* 割込みセットアクティブレジスター */
+#define GICD_ICACTIVERn		(GICD_BASE + 0x0380)		/* 割込みクリアーアクティブレジスター */
 #define GICD_IPRIORITYRn	(GICD_BASE + 0x0400)		/* 割込み優先度レジスタ */
 #define GICD_IPRIORITYR(n)	(GICD_BASE + 0x0400 + (n) * 4)
 #define GICD_ITARGETSRn		(GICD_BASE + 0x0800)		/* 割込みターゲットレジスタ/CA9はSPIターゲットレジスタ */
@@ -293,6 +302,7 @@
 #endif /* TOPPERS_TZ_S */
 
 #define GICD_CTLR_ARE_MASK		0x00000030
+#define GICD_CTLR_RWP			(1U << 31)	/* Register Write Pending */
 
 /*
  *  割込み先のプロセッサの指定
@@ -339,15 +349,6 @@
 #ifndef TOPPERS_MACRO_ONLY
 
 /*
- *  GICのプロセッサINDEXからtarget cpuへの変換
- */
-Inline uint8_t
-gic_target(uint32_t prc_index)
-{
-	return (1 << prc_index);
-}
-
-/*
  *  GIC CPU Interface 関連のドライバ
  */
 #if TOPPERS_GIC_VER == 2
@@ -391,7 +392,7 @@ Inline void
 gicd_raise_sgi(INTNO intno, ID prcid)
 {    
 	data_sync_barrier();
-	sil_swrw_mem((void *)GICD_SGIR, (prcid << GICD_SGIR_CPU_OFFSET) | intno);
+	sil_swrw_mem((void *)GICD_SGIR, (conv_prcid_to_gicdtarget(prcid) << GICD_SGIR_CPU_OFFSET) | intno);
 }
 
 #elif (TOPPERS_GIC_VER == 3) || (TOPPERS_GIC_VER == 4)
@@ -444,10 +445,18 @@ Inline void
 gicd_raise_sgi(INTNO intno, ID prcid)
 {
 	volatile uint64_t	reg64_val;
-
+	uint64_t	mpidr;
+	uint64_t	aff1;
+	uint64_t	aff0;
+    
 	data_sync_barrier();
+
+	mpidr = conv_prcid_to_mpidr(prcid);
+	aff1 = (mpidr & MPIDR_AFF1_MASK) >> MPIDR_AFF1_SHIFT;
+	aff0 = (mpidr & MPIDR_AFF0_MASK) >> MPIDR_AFF0_SHIFT;    
 	reg64_val = ((uint64_t)intno  << BITPOS_ICC_SGInR_INTID) |
-					((uint64_t)prcid << BITPOS_ICC_SGInR_TLIST);
+					(aff1 << BITPOS_ICC_SGInR_AFF1) | (1 << aff0);
+
 	ICC_SGI1R_EL1_WRITE(reg64_val);
 	inst_sync_barrier();
 }

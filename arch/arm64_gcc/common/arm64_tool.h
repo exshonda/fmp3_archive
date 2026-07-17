@@ -3,7 +3,7 @@
  *      Toyohashi Open Platform for Embedded Real-Time Systems/
  *      Flexible MultiProcessor Kernel
  *
- *  Copyright (C) 2006-2012 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2006-2025 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  *
  *  上記著作権者は，以下の(1)～(4)の条件を満たす場合に限り，本ソフトウェ
@@ -35,7 +35,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  *
- *  @(#) $Id: arm64_tool.h 300 2022-05-24 05:52:08Z ertl-honda $
+ *  @(#) $Id: arm64_tool.h 465 2026-06-03 08:51:58Z ertl-honda $
  */
 
 /*
@@ -139,9 +139,12 @@
 
 #define ACTLR_EL2_WRITE(x)			Asm("msr actlr_el2, %0"::"r"(x));
 #define ACTLR_EL2_READ(x)			Asm("mrs %0, actlr_el2":"=r"(x));
-#define CPUECTLR_EL1_WRITE(x)		Asm("msr s3_1_c15_c2_1, %0"::"r"(x));
-#define CPUECTLR_EL1_READ(x)		Asm("mrs %0, s3_1_c15_c2_1":"=r"(x));
 #define CPACR_EL1_WRITE(x)			Asm("msr cpacr_el1, %0"::"r"(x));
 #define CPACR_EL1_READ(x)			Asm("mrs %0, cpacr_el1":"=r"(x));
+
+#if defined(TOPPERS_CORTEX_A53) || defined(TOPPERS_CORTEX_A57) || defined(TOPPERS_CORTEX_A35)
+#define CPUECTLR_EL1_WRITE(x)		Asm("msr s3_1_c15_c2_1, %0"::"r"(x));
+#define CPUECTLR_EL1_READ(x)		Asm("mrs %0, s3_1_c15_c2_1":"=r"(x));
+#endif /* defined(TOPPERS_CORTEX_A53) || defined(TOPPERS_CORTEX_A57) || defined(TOPPERS_CORTEX_A35) */
 
 #endif /* TOPPERS_ARM64_TOOL_H */

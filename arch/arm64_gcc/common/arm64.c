@@ -35,7 +35,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  *
- *  @(#) $Id: arm64.c 370 2023-09-01 08:27:56Z ertl-honda $
+ *  @(#) $Id: arm64.c 466 2026-06-03 13:25:10Z ertl-honda $
  */
 
 #include "kernel_impl.h"
@@ -88,7 +88,7 @@ dcache_invalidate_all()
 			for (way = 0; way < way_max; way++) {
 				for (set = 0; set < set_max; set++) {
 					bits = 0;
-					bits |= way << __builtin_clz((uint32_t)way_max);
+					bits |= way << (__builtin_clz((uint32_t)way_max) + 1);
 					bits |= set << log2linesize;
 					bits |= level << DC_LEVEL_SHIFT;
 					dcache_invalidate_line(bits);
@@ -135,7 +135,7 @@ dcache_clean_and_invalidate_all()
 			for (way = 0; way < way_max; way++) {
 				for (set = 0; set < set_max; set++) {
 					bits = 0;
-					bits |= way << __builtin_clz((uint32_t)way_max);
+					bits |= way << (__builtin_clz((uint32_t)way_max) + 1);
 					bits |= set << log2linesize;
 					bits |= level << DC_LEVEL_SHIFT;
 					dcache_clean_and_invalidate_line(bits);
@@ -303,8 +303,14 @@ static uintptr_t tt_pri_prc3[TT_FIRST_ENTRY_NUM] __attribute__ ((aligned(TT_FIRS
 static uintptr_t tt_pri_prc4[TT_FIRST_ENTRY_NUM] __attribute__ ((aligned(TT_FIRST_SIZE)));
 #endif	/* TNUM_PRCID >= 4 */
 #if		TNUM_PRCID >= 5
-#error "Added tt_pri_prc to arm64.c"
+static uintptr_t tt_pri_prc5[TT_FIRST_ENTRY_NUM] __attribute__ ((aligned(TT_FIRST_SIZE)));
 #endif	/* TNUM_PRCID >= 5 */
+#if		TNUM_PRCID >= 6
+static uintptr_t tt_pri_prc6[TT_FIRST_ENTRY_NUM] __attribute__ ((aligned(TT_FIRST_SIZE)));
+#endif	/* TNUM_PRCID >= 6 */
+#if		TNUM_PRCID >= 7
+#error "Added tt_pri_prc to arm64.c"
+#endif	/* TNUM_PRCID >= 7 */
 
 static uintptr_t *tt_pri[TNUM_PRCID] = {
 	tt_pri_prc1
@@ -317,6 +323,12 @@ static uintptr_t *tt_pri[TNUM_PRCID] = {
 #if		TNUM_PRCID >= 4
 	, tt_pri_prc4
 #endif	/* TNUM_PRCID >= 4 */
+#if		TNUM_PRCID >= 5
+	, tt_pri_prc5
+#endif	/* TNUM_PRCID >= 5 */
+#if		TNUM_PRCID >= 6
+	, tt_pri_prc6
+#endif	/* TNUM_PRCID >= 6 */
 };
 #define my_tt_pri (tt_pri[get_my_prcidx()])
 
@@ -532,6 +544,9 @@ void
 mmu_init(void)
 {
 	uint64_t bits;
+#ifdef USE_ARM64_MMU_CONFIG_TABLE
+	uint_t i;
+#endif	/* USE_ARM64_MMU_CONFIG_TABLE */
 #ifdef TOPPERS_32BIT_ABOVE_ADDR
 	const uint_t	addr_space_width_table[] = {32, 36, 40, 42, 44, 48, 52};
 	uint_t	pa_range, addr_space_width;
@@ -594,8 +609,15 @@ mmu_init(void)
 	my_mmap_num = 0;
 	mmu_mmap_init();
 
-	/* ターゲット依存部での変換テーブルの初期化 */
+	/* ターゲット依存部で定義された変換テーブルの初期化 */
+#ifdef USE_ARM64_MMU_CONFIG_TABLE
+	/* 静的なテーブルからメモリマップの設定を取り込む */
+	for (i = 0; i < arm64_tnum_memory_area; i++) {
+		mmu_mmap_add(&arm64_memory_area[i]);
+	}
+#else	/* USE_ARM64_MMU_CONFIG_TABLE */
 	target_mmu_init();
+#endif	/* USE_ARM64_MMU_CONFIG_TABLE */
 
 	/* 変換テーブルの作成 */
 	my_tt_num = 0;

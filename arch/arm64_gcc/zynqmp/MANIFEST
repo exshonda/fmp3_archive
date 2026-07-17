@@ -1,4 +1,5 @@
-PACKAGE fmp_arch_arm64_gcc
+PACKAGE fmp3_arch_arm64_gcc_zynqmp
+VERSION 3.4.0
 
 chip_kernel.h
 chip_kernel.trb

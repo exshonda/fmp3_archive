@@ -5,7 +5,7 @@
  *
  *  Copyright (C) 2000-2003 by Embedded and Real-Time Systems Laboratory
  *                              Toyohashi Univ. of Technology, JAPAN
- *  Copyright (C) 2006-2021 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2006-2025 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  *
  *  上記著作権者は，以下の(1)～(4)の条件を満たす場合に限り，本ソフトウェ
@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  *
- *  @(#) $Id: core_kernel_impl.c 364 2023-07-21 06:50:02Z ertl-honda $
+ *  @(#) $Id: core_kernel_impl.c 458 2026-05-06 06:01:33Z ertl-honda $
  */
 
 /*
@@ -60,7 +60,7 @@ volatile uint_t start_sync[TNUM_PRCID];
  *
  *  スタートアップルーチンで，0に初期化されることを期待している．
  */
-uint32_t TOPPERS_sil_spn_var = 0U;
+LOCK TOPPERS_sil_spn_var = { 0U };
 
 /*
  *  ジャイアントロック
@@ -81,7 +81,7 @@ core_mprc_initialize(void)
 	/*
 	 *  SILのスピンロック用変数の初期化
 	 */
-	TOPPERS_sil_spn_var = 0U;
+	TOPPERS_sil_spn_var[0] = 0U;
 }
 
 /*
@@ -187,14 +187,21 @@ core_initialize(PCB *p_my_pcb)
 	inst_sync_barrier();
 
 	/*
+	 *  キャッシュを無効にする前にフラッシュする
+	 */
+	cache_flush();
+    
+	/*
 	 *  キャッシュを無効に
 	 */
 	cache_disable();
 
+#if defined(TOPPERS_CORTEX_A53) || defined(TOPPERS_CORTEX_A57)
 	/*
 	 *  SMPモードに設定
 	 */
 	enable_smp();
+#endif /* defined(TOPPERS_CORTEX_A53) || defined(TOPPERS_CORTEX_A57) */
 
 	/*
 	 *  MMUを有効に
@@ -296,10 +303,10 @@ xlog_sys(void *p_excinf)
  *  未定義の割込みが入った場合の処理
  */
 void
-default_int_handler(void){
+default_int_handler(uint32_t intno){
 	ID prcid = ID_PRC(get_my_prcidx());
 
-	syslog_1(LOG_EMERG, "Processor %d : Unregistered Interrupt occurs.", prcid);
+	syslog_2(LOG_EMERG, "Processor %d : Unregistered Interrupt occurs at %d.", prcid, intno);
 	ext_ker();
 }
 

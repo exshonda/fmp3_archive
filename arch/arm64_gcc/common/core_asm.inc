@@ -2,7 +2,7 @@
  *  TOPPERS Software
  *      Toyohashi Open Platform for Embedded Real-Time Systems
  * 
- *  Copyright (C) 2011-2020 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2011-2025 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  *
  *  上記著作権者は，以下の(1)～(4)の条件を満たす場合に限り，本ソフトウェ
@@ -34,7 +34,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  *
- *  @(#) $Id: core_asm.inc 225 2020-02-25 05:47:06Z ertl-honda $
+ *  @(#) $Id: core_asm.inc 446 2025-06-27 07:54:07Z ertl-honda $
  */
 
 /*
@@ -69,36 +69,22 @@
 #define BSS_START		__start_bss
 #define BSS_END			__end_bss
 
-#if defined(TOPPERS_CORTEX_A53) || defined(TOPPERS_CORTEX_A57)
-
-.macro my_core_index re_reg sc_reg1
-	mrs		\re_reg, mpidr_el1
-	and		\re_reg, \re_reg, #MPIDR_AFF0_MASK
-.endm
-
 #ifdef USE_THREAD_ID_PCB
 .macro my_pcb re_reg sc_reg1
 	mrs		\re_reg, tpidr_el1
 .endm
 #else /* USE_THREAD_ID_PCB */
 .macro my_pcb re_reg sc_reg1
-	mrs		\re_reg, mpidr_el1
-	and		\sc_reg1, \re_reg, #MPIDR_AFF0_MASK
-	and		\re_reg, \re_reg, #MPIDR_AFF1_MASK
-	eor		\re_reg, \re_reg, #(1 << MPIDR_AFF_SHIFT)  // swap A53/A57 order
-	add		\sc_reg1, \sc_reg1, \re_reg, lsr #6
+	my_prcidx \sc_reg1 \re_reg 
 	ldr		\re_reg, =p_pcb_table
 	ldr		\re_reg, [\re_reg, \sc_reg1, lsl #3]
 .endm
 #endif /* USE_THREAD_ID_PCB */
 
 .macro my_istkpt re_reg sc_reg1
-	mrs		\sc_reg1, mpidr_el1
-	and		\sc_reg1, \sc_reg1, #MPIDR_AFF0_MASK
+	my_prcidx \sc_reg1 \re_reg 
 	ldr		\re_reg, =_kernel_istkpt_table
 	ldr		\re_reg, [\re_reg, \sc_reg1, lsl #3]
 .endm
-
-#endif /* defined(TOPPERS_CORTEX_A53) || defined(TOPPERS_CORTEX_A57) */
 
 #endif /* TOPPERS_CORE_ASM_INC */

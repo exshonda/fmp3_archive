@@ -5,7 +5,7 @@
  *
  *  Copyright (C) 2000-2003 by Embedded and Real-Time Systems Laboratory
  *                              Toyohashi Univ. of Technology, JAPAN
- *  Copyright (C) 2006-2008 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2006-2025 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  *
  *  上記著作権者は，以下の(1)～(4)の条件を満たす場合に限り，本ソフトウェ
@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  *
- *  @(#) $Id: arm64.h 225 2020-02-25 05:47:06Z ertl-honda $
+ *  @(#) $Id: arm64.h 465 2026-06-03 08:51:58Z ertl-honda $
  */
 
 /*
@@ -159,6 +159,9 @@
 #define MPIDR_AFF_ALL_MASK			ULONG_C(0x000000ff00ffffff)
 #define MPIDR_AFF_MASK				ULONG_C(0xff)
 #define MPIDR_AFF_SHIFT				8
+#define MPIDR_AFF0_SHIFT			0
+#define MPIDR_AFF1_SHIFT			8
+#define MPIDR_AFF2_SHIFT			16
 
 #define SCTLR_EE_BIT				(1 << 25)
 #define SCTLR_WXN_BIT				(1 << 19)
@@ -308,7 +311,9 @@
 #define CNTACR_RVCT_BIT			(1 << 1)
 #define CNTACR_RPCT_BIT			(1 << 0)
 
+#if defined(TOPPERS_CORTEX_A53) || defined(TOPPERS_CORTEX_A57) || defined(TOPPERS_CORTEX_A35)
 #define CPUECTLR_EL1_SMPEN		(1 << 6)
+#endif /* defined(TOPPERS_CORTEX_A53) || defined(TOPPERS_CORTEX_A57) || defined(TOPPERS_CORTEX_A35) */
 
 #ifdef TOPPERS_32BIT_ABOVE_ADDR
 /*
@@ -534,6 +539,7 @@ data_sync_barrier(void)
 	DATA_SYNC_BARRIER();
 }
 
+#if defined(TOPPERS_CORTEX_A53) || defined(TOPPERS_CORTEX_A57) || defined(TOPPERS_CORTEX_A35)
 /*
  *  Enable SMP Mode
  */
@@ -548,6 +554,7 @@ enable_smp(void)
 		CPUECTLR_EL1_WRITE(reg64_val);
 	}
 }
+#endif /* defined(TOPPERS_CORTEX_A53) || defined(TOPPERS_CORTEX_A57) || defined(TOPPERS_CORTEX_A35) */
 
 /*
  *  Dキャッシュのラインの無効化
@@ -642,21 +649,5 @@ extern void mmu_init(void);
  */
 extern void mmu_mmap_add(const mmap_t *pmm);
 
-#if defined(TOPPERS_CORTEX_A53) || defined(TOPPERS_CORTEX_A57)
-/*
- *  プロセッサINDEX（0オリジン）の取得
- */
-Inline uint32_t
-get_my_prcidx(void)
-{
-	uint64_t mpidr;
-	uint32_t index;
-
-	Asm("mrs %0, mpidr_el1":"=r"(mpidr));
-	index = (uint32_t)mpidr & 0x000000ff;
-
-	return index;
-}
-#endif /* defined(TOPPERS_CORTEX_A53) || defined(TOPPERS_CORTEX_A57) */
 #endif  /* TOPPERS_MACRO_ONLY */
 #endif /* TOPPERS_ARM64_H */

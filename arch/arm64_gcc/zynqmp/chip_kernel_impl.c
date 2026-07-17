@@ -35,7 +35,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  *
- *  @(#) $Id: chip_kernel_impl.c 345 2023-04-20 12:58:48Z ertl-honda $
+ *  @(#) $Id: chip_kernel_impl.c 453 2026-05-06 05:01:16Z ertl-honda $
  */
 
 /*
@@ -151,9 +151,11 @@ chip_mprc_initialize(void)
 	/*
 	 *  FSBLから起動する場合
 	 */
+#if TNUM_PRCID >= 2    
 	uint32_t mask = 0;
 	uint32_t result;
-
+#endif /* TNUM_PRCID >= 2 */
+    
 #if TNUM_PRCID >= 2
 	sil_wrw_mem((void*)APU_RVBARADDR1H, 0x00);
 	sil_wrw_mem((void*)APU_RVBARADDR1L, (uint32_t)((uint64_t)start));

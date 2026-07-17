@@ -4,7 +4,7 @@
  *
  *  Copyright (C) 2000-2003 by Embedded and Real-Time Systems Laboratory
  *                              Toyohashi Univ. of Technology, JAPAN
- *  Copyright (C) 2004-2020 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2004-2025 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  *
  *  上記著作権者は，以下の(1)～(4)の条件を満たす場合に限り，本ソフトウェ
@@ -36,7 +36,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  *
- *  @(#) $Id: core_sil.h 260 2020-10-26 09:11:16Z ertl-honda $
+ *  @(#) $Id: core_sil.h 446 2025-06-27 07:54:07Z ertl-honda $
  */
 
 /*
@@ -123,26 +123,10 @@ TOPPERS_set_fiq_irq(uint32_t fiq_irq_mask)
 #define SIL_LOC_INT()	((void)(TOPPERS_fiq_irq_mask = TOPPERS_disint()))
 #define SIL_UNL_INT()	(TOPPERS_set_fiq_irq(TOPPERS_fiq_irq_mask))
 
-#if defined(TOPPERS_CORTEX_A53) || defined(TOPPERS_CORTEX_A57)
-/*
- *  プロセッサIDの取得
- */
-Inline void
-sil_get_pid(ID *p_prcid)
-{
-	uint64_t	reg;
-	uint32_t	index;
-
-	Asm("mrs %0, mpidr_el1":"=r"(reg));
-	index = (uint32_t)reg & 0x000000ff;
-	*p_prcid = (ID)index + 1;
-}
-#endif /* defined(TOPPERS_CORTEX_A53) || defined(TOPPERS_CORTEX_A57) */
-
 /*
  *  スピンロック変数（core_kernel_impl.c）
  */
-extern uint32_t TOPPERS_sil_spn_var;
+extern volatile uint32_t TOPPERS_sil_spn_var[];
 
 /*
  *  Test&Assign操作
@@ -180,13 +164,13 @@ TOPPERS_sil_loc_spn(void)
 
 	/* スピンロックのチェック */
 	sil_get_pid(&prcid);
-	if (TOPPERS_sil_spn_var == prcid) {
+	if (TOPPERS_sil_spn_var[0] == prcid) {
 		/* スピンロックを取得している場合 */
 		fiq_irq_mask |= 0x01U;
 	}
 	else {
 		/* スピンロックの取得 */
-		while (TOPPERS_test_and_assign(&TOPPERS_sil_spn_var, prcid)) {
+		while (TOPPERS_test_and_assign(&TOPPERS_sil_spn_var[0], prcid)) {
 			TOPPERS_set_daif(daif);
 			TOPPERS_DSB();
 			Asm("wfe");
@@ -212,7 +196,7 @@ TOPPERS_sil_unl_spn(uint32_t fiq_irq_mask)
 	else {
 		TOPPERS_MEMORY_CHANGED;
 		TOPPERS_DMB();
-		TOPPERS_sil_spn_var = 0U;
+		TOPPERS_sil_spn_var[0] = 0U;
 #ifndef TOPPERS_OMIT_USE_WFE
 		TOPPERS_DSB();
 		Asm("sev");
@@ -238,8 +222,8 @@ TOPPERS_sil_force_unl_spn(void)
 	ID	prcid;
 
 	sil_get_pid(&prcid);
-	if (TOPPERS_sil_spn_var == prcid) {
-		TOPPERS_sil_spn_var = 0U;
+	if (TOPPERS_sil_spn_var[0] == prcid) {
+		TOPPERS_sil_spn_var[0] = 0U;
 		TOPPERS_DSB();
 		Asm("sev");
 	}

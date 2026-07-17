@@ -36,7 +36,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  *
- *  @(#) $Id: start.S 364 2023-07-21 06:50:02Z ertl-honda $
+ *  @(#) $Id: start.S 446 2025-06-27 07:54:07Z ertl-honda $
  */
 
 /*
@@ -47,7 +47,7 @@
 #define ULONG_C(val)	(val)		/* ulong_t型の定数を作るマクロ */
 
 #include "kernel_impl.h"
-#include "core_asm.inc"
+#include "target_asm.inc"
 
 /*
  *  同期用のマジックナンバー
@@ -192,7 +192,7 @@ ALABEL(start_1)
 	/*
 	 *  マスタプロセッサ以外は初期化待ち
 	 */
-	my_core_index x0, x1
+	my_prcidx x0, x1
 	cmp   x0, #(TOPPERS_MASTER_PRCID - 1)
 	b.ne  slave_wait
 
@@ -270,8 +270,8 @@ ALABEL(start_8)
 	sev
 
 	/* マスタプロセッサ用のstart_syncを初期化 */
-	my_core_index x1, x3
-	lsl   x1, x1, #3
+	my_prcidx x1, x3
+	lsl   x1, x1, #2
 	str   w2, [x0, x1]
 	bl    sta_ker
 
@@ -279,7 +279,7 @@ ALABEL(start_8)
 	 *  マスタプロセッサ以外の初期化待ちルーチン
 	 */
 ALABEL(slave_wait)
-	my_core_index x0, x1
+	my_prcidx x0, x1
 	lsl   x0, x0, #2
 	ldr   x1, =start_sync
 ALABEL(slave_wait_1)

@@ -35,7 +35,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  *
- *  @(#) $Id: core_timer.c 350 2023-04-21 01:59:41Z ertl-honda $
+ *  @(#) $Id: core_timer.c 446 2025-06-27 07:54:07Z ertl-honda $
  */
 
 /*
@@ -47,7 +47,7 @@
 #include "time_event.h"
 #include "target_timer.h"
 
-#ifdef  _RUN_TTSP3_
+#ifdef  TOPPERS_RUN_TTSP3
     /*  ttsp3実行用     */
 #include "ttsp_target_test.h"
 extern volatile bool_t tick_int;
@@ -78,7 +78,7 @@ target_hrt_initialize(EXINF exinf)
 	 */
 	timer_cval[get_my_prcidx()] = target_timer_get_count();
 
-#ifdef  _RUN_TTSP3_
+#ifdef  TOPPERS_RUN_TTSP3
 	/*  ttsp3実行用  */
 	tick_int = false;
 #endif
@@ -115,7 +115,7 @@ target_hrt_handler(void)
 	CNTP_CTL_EL0_WRITE((uint32_t)CNTP_CTL_IMASK_BIT);
 #endif /* TOPPERS_TZ_S */
 
-#ifdef  _RUN_TTSP3_
+#ifdef  TOPPERS_RUN_TTSP3
 	/*  ttsp3実行用     */
 	tick_int = true;
 #endif
@@ -130,4 +130,3 @@ target_hrt_handler(void)
 	 */
 	signal_time();				/* タイムティックの供給 */
 }
-

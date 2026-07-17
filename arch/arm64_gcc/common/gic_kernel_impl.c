@@ -5,7 +5,7 @@
  *
  *  Copyright (C) 2000-2003 by Embedded and Real-Time Systems Laboratory
  *                              Toyohashi Univ. of Technology, JAPAN
- *  Copyright (C) 2006-2023 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2006-2025 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  *
  *  上記著作権者は，以下の(1)～(4)の条件を満たす場合に限り，本ソフトウェ
@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  *
- *  @(#) $Id: gic_kernel_impl.c 361 2023-07-21 06:23:26Z ertl-honda $
+ *  @(#) $Id: gic_kernel_impl.c 465 2026-06-03 08:51:58Z ertl-honda $
  */
 
 /*
@@ -50,6 +50,7 @@
 #include "interrupt.h"
 #include <sil.h>
 #include "arm64.h"
+#include "gic_ipi.h"			/* IPINO_EXT_KER / IPINO_DISPATCH（残留IPIクリア用） */
 
 /* 前方参照 */
 static void gicc_init(void);
@@ -166,10 +167,65 @@ gicc_init(void)
 
 	/* CPUインタフェースを有効に */
 #ifdef TOPPERS_TZ_S
+#ifdef GIC_NO_FIQ_IN_SECURE
+	/*
+	 *  セキュア(Group0)割込みを FIQ ではなく IRQ で配送するため，FIQEN を立てず
+	 *  ENABLEGRP0 のみとする．FIQEN を立てるとハンドラが GIC ack 前に FIQ を再許可して
+	 *  同一割込みが暴走再入する（カーネルの CPU ロックは IRQ マスクモデルのため）．
+	 *  既定（マクロ未定義）の挙動は従来どおり（FIQEN を立てる）で他ターゲットに影響しない．
+	 */
+	sil_wrw_mem((void *)GICC_CTLR, GICC_CTLR_ENABLEGRP0);
+#else  /* !GIC_NO_FIQ_IN_SECURE */
 	sil_wrw_mem((void *)GICC_CTLR, (GICC_CTLR_FIQEN|GICC_CTLR_ENABLEGRP0));
+#endif /* GIC_NO_FIQ_IN_SECURE */
 #else  /* !TOPPERS_TZ_S */
 	sil_wrw_mem((void *)GICC_CTLR, GICC_CTLR_ENABLE);
 #endif /* TOPPERS_TZ_S */
+
+	/*
+	 *  残留するペンディング/アクティブ割込みの正規化（GICv2）
+	 *
+	 *  リセットを介さずにカーネルを再起動した場合（JTAGによる再ロード等）に，
+	 *  前回実行時のペンディング割込みや，完了せずに残ったアクティブ割込みが
+	 *  CPUインタフェースに残存することがある．特にカーネル終了IPI（ext_ker）
+	 *  は irc_end_int を実行せずに停止するためEOIされず，アクティブのまま残
+	 *  る．アクティブ割込みが残るとその実行優先度により以降のIPI（他プロセッ
+	 *  サからのディスパッチ要求等）がマスクされ，マルチプロセッサ動作がデッ
+	 *  ドロックする．これを正常な状態へ正規化する．
+	 *
+	 *  通常のリセット起動時はペンディング/アクティブ割込みは存在せず（GICC_RPR
+	 *  はアイドル0xffを示す），本処理は実質的な副作用を持たない．
+	 *  （ARM32版 arm_gcc/common/gic_kernel_impl.c の同等処理をGICv2へ適用）
+	 */
+	{
+		uint_t		i;
+		uint32_t	iar;
+
+		/* ペンディング割込みのドレイン（IARでack→EOIで完了） */
+		for (i = 0; i < 64U; i++) {
+			iar = sil_rew_mem((void *)GICC_IAR);
+			if ((iar & 0x03ffU) == 0x03ffU) {
+				break;					/* spurious(1023)＝ペンディング無し */
+			}
+			sil_wrw_mem((void *)GICC_EOIR, iar);
+		}
+
+		/*
+		 *  残留アクティブ割込みのクリア．GICC_RPRがアイドル(0xff)以外なら，
+		 *  前回実行で完了しなかったIPIハンドラのアクティブ状態が残っている．
+		 *  カーネルが用いるIPI(SGI)をEOIして解除する（SGIのEOIRは送信元CPU
+		 *  を含むため，両プロセッサ分＝CPUID=0とCPUID=1を発行する）．
+		 */
+		for (i = 0; i < 16U; i++) {
+			if ((sil_rew_mem((void *)GICC_RPR) & 0xffU) == 0xffU) {
+				break;					/* アクティブ割込み無し */
+			}
+			sil_wrw_mem((void *)GICC_EOIR, IPINO_EXT_KER);
+			sil_wrw_mem((void *)GICC_EOIR, (1U << 10) | IPINO_EXT_KER);
+			sil_wrw_mem((void *)GICC_EOIR, IPINO_DISPATCH);
+			sil_wrw_mem((void *)GICC_EOIR, (1U << 10) | IPINO_DISPATCH);
+		}
+	}
 }
 
 /*
@@ -369,6 +425,20 @@ gic_sgi_ppi_init(void)
 	/* ペンディングをクリア */
 	sil_wrw_mem((void *)(GICD_ICPENDRn + (uintptr_t)(4 * 0)), 0xffff0000);
 
+	/*
+	 *  アクティブをクリア（PPI: INTID16-31）
+	 *
+	 *  リセットを介さずにカーネルを再起動した場合（JTAGによる再ロード等）に，
+	 *  前回実行で完了せずに残ったPPI（特にタイマ割込み）のアクティブ状態が
+	 *  CPUインタフェースのバンク化レジスタに残存することがある．アクティブが
+	 *  残ると以降の同一PPI（タイマ割込み）が配送されず，時間イベント（アラー
+	 *  ム/周期ハンドラ/タイムアウト）が一切発火しなくなる．本関数は各プロセッ
+	 *  サ上で実行されるため，ICACTIVERへの書き込みは当該CPUのバンクに作用する．
+	 *  通常のリセット起動時はアクティブ割込みは存在せず本処理は副作用を持たない．
+	 *  （Kria/KR260等，システムリセットを介さず起動するターゲットで必要）
+	 */
+	sil_wrw_mem((void *)(GICD_ICACTIVERn + (uintptr_t)(4 * 0)), 0xffff0000);
+
 	/* 優先度最低に設定  */
 	for(i = 0; i < TMIN_GLOBAL_INTNO/4; i++){
 		sil_wrw_mem((void *)(GICD_IPRIORITYRn + (uintptr_t)(4 * i)), 0xffffffff);
@@ -380,7 +450,6 @@ gic_sgi_ppi_init(void)
 
 /*
  *  GIC割込みターゲットの設定（GICv2）
- *  cpusはターゲットとするCPUのビットパターンで指定
  * 
  *  この関数は，プロセッサ間排他制御を行った状態で呼び出さなければなら
  *  ない．  
@@ -397,7 +466,7 @@ gicd_set_target(uint8_t id, ID iprcid, uint8_t cpus)
     
 	itr_reg_val  = sil_rew_mem((void *)(GICD_ITARGETSRn + offset_addr));
 	itr_reg_val &= ~(0xf << shift);
-	itr_reg_val |= (cpus << shift);
+	itr_reg_val |= (conv_prcid_to_gicdtarget(iprcid) << shift);
 	sil_wrw_mem((void *)(GICD_ITARGETSRn + offset_addr), itr_reg_val);
 
 	SIL_UNL_SPN();
@@ -408,7 +477,12 @@ gicd_set_target(uint8_t id, ID iprcid, uint8_t cpus)
  *  GICv3,4向けの関数
  */
 
-uintptr_t	gicr_base[TNUM_PRCID];
+/*
+ *  Redistributor フレーム先頭アドレスは GICR_BASE_ADDR(x)（= GICR_BASE +
+ *  GICR_SIZE * x）で毎回計算する（gic_kernel_impl.h 参照）．以前は共有可変配列
+ *  gicr_base[] に保存していたが，false sharing 不具合の根絶のため配列を廃止した
+ *  （doc/arm64_design.txt 参照）．
+ */
 static bool_t	gicr_init(void);
 
 /*
@@ -467,6 +541,47 @@ gicc_init(void)
 
 	/* Disable IRQ,FIQ bypass */
 	ICC_SRE_EL1_WRITE(3);
+
+	/*
+	 *  残留するペンディング/アクティブ割込みの正規化（GICv3）
+	 *
+	 *  GICv2版gicc_initの同等処理をCPUインタフェースのシステムレジスタ
+	 *  （ICC_IAR1/EOIR1/RPR_EL1）で実施する．リセットを介さずにカーネルを
+	 *  再起動した場合（JTAGによる再ロード等）や，カーネル終了IPI（ext_ker）
+	 *  がirc_end_intを実行せず停止した場合，前回実行のペンディング割込みや，
+	 *  EOIされずに残ったアクティブ割込みがCPUインタフェースに残存する．
+	 *  アクティブ割込みが残るとその実行優先度により以降のIPI（他プロセッサ
+	 *  からのディスパッチ要求等）がマスクされ，マルチプロセッサ動作がデッ
+	 *  ドロックする．本処理で正常な状態へ正規化する（Secure Group1割込みは
+	 *  ICC_IAR1_EL1でackする）．通常のリセット起動時は副作用を持たない．
+	 */
+	{
+		uint_t		i;
+		uint32_t	iar;
+
+		/* ペンディング割込みのドレイン（IAR1でack→EOI1で完了） */
+		for (i = 0; i < 64U; i++) {
+			ICC_IAR1_EL1_READ(iar);
+			if ((iar & 0x03ffU) == 0x03ffU) {
+				break;					/* spurious(1023)＝ペンディング無し */
+			}
+			ICC_EOIR1_EL1_WRITE(iar);
+		}
+
+		/*
+		 *  残留アクティブ割込みのクリア．ICC_RPR_EL1がアイドル(0xff)以外なら，
+		 *  前回実行で完了しなかったIPIハンドラのアクティブ状態が残っている．
+		 *  カーネルが用いるIPI(SGI)をEOIして実行優先度を解除する．
+		 */
+		for (i = 0; i < 16U; i++) {
+			ICC_RPR_EL1_READ(reg32_val);
+			if ((reg32_val & 0xffU) == 0xffU) {
+				break;					/* アクティブ割込み無し */
+			}
+			ICC_EOIR1_EL1_WRITE(IPINO_EXT_KER);
+			ICC_EOIR1_EL1_WRITE(IPINO_DISPATCH);
+		}
+	}
 #else  /* !TOPPERS_TZ_S */
 	/* Group1割込を無効に */
 	ICC_IGRPEN1_EL1_WRITE(0);
@@ -512,8 +627,6 @@ gicr_init(void)
 	volatile uint32_t   reg32_val;
 	uint_t  cnt;
 	uint_t	prc_id = get_my_prcidx();
-
-	gicr_base[prc_id] = GICR_BASE + (GICR_SIZE * prc_id);
 
 	/* Redistoributor起動 */
 	reg32_val = sil_rew_mem((void *)GICR_WAKER(prc_id));
@@ -587,13 +700,24 @@ gicd_initialize(void) {
 		sil_wrw_mem((void *)(GICD_ICFGRn + (uintptr_t)(4 * i)), 0x55555555);
 	}
 
-	/* Distibutor を有効に */
+	/*
+	 *  Distibutor を有効に
+	 *
+	 *  GICv3では GICD_CTLR への書込みが反映されるまで RWP(bit31)が立つ．
+	 *  ARE設定とグループ有効化を連続書込みする際，RWPの完了を待たないと
+	 *  2回目の書込み（グループ有効化）が取りこぼされ，Secure Group1の
+	 *  SPIが配送されない（ras_int等が効かない）．各書込み後にRWPを待つ．
+	 */
 #ifdef TOPPERS_TZ_S
 	sil_wrw_mem((void *)(GICD_CTLR), sil_rew_mem((void *)(GICD_CTLR)) | GICD_CTLR_ARE_S);
+	while ((sil_rew_mem((void *)GICD_CTLR) & GICD_CTLR_RWP) != 0U) ;
 	sil_wrw_mem((void *)(GICD_CTLR), sil_rew_mem((void *)(GICD_CTLR)) | GICD_CTLR_ENABLEGRP1S);
+	while ((sil_rew_mem((void *)GICD_CTLR) & GICD_CTLR_RWP) != 0U) ;
 #else  /* !TOPPERS_TZ_S */
 	sil_wrw_mem((void *)(GICD_CTLR), sil_rew_mem((void *)(GICD_CTLR)) | GICD_CTLR_ARE_NS);
+	while ((sil_rew_mem((void *)GICD_CTLR) & GICD_CTLR_RWP) != 0U) ;
 	sil_wrw_mem((void *)(GICD_CTLR), sil_rew_mem((void *)(GICD_CTLR)) | GICD_CTLR_ENABLEGRP1NS);
+	while ((sil_rew_mem((void *)GICD_CTLR) & GICD_CTLR_RWP) != 0U) ;
 #endif /* TOPPERS_TZ_S */
 }
 
@@ -675,7 +799,7 @@ gicd_set_pending(uint8_t id)
 	uint16_t	shift  = id % 32;
 	uint_t		prc_id = get_my_prcidx();
 
-	if (id < 32) {        
+	if (id < 32) {
 		sil_swrw_mem((void *)GICR_ISPENDR0(prc_id), (1 << shift));
 	}
     else {
@@ -854,14 +978,11 @@ void
 gicd_set_target(uint8_t id, ID iprcid, uint8_t cpus)
 {
 	uintptr_t offset_addr = id * 8;
-	uint64_t itr_reg_val;
 	SIL_PRE_LOC;
 
 	SIL_LOC_SPN();
 
-	itr_reg_val  = sil_rew_mem((void *)(GICD_IROUTERn + offset_addr));
-	itr_reg_val |= iprcid - 1;
-	sil_wrw_mem((void *)(GICD_IROUTERn + offset_addr), itr_reg_val);
+	sil_wrw_mem((void *)(GICD_IROUTERn + offset_addr), conv_prcid_to_mpidr(iprcid));
 
 	SIL_UNL_SPN();
 }

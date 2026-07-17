@@ -104,18 +104,26 @@ extern void target_hrt_initialize(EXINF exinf);
  */
 extern void target_hrt_terminate(EXINF exinf);
 
-#ifdef _RUN_TTSP3_
+#ifdef TOPPERS_RUN_TTSP3
 /*------------------------------------------------------------------*/
-/*  TTSP3ビルド時 _RUN_TTSP3_ を定義して全体をビルドする必要がある  */
-/*  ttsp3/library/FMP/target/imx8mm_evk_arm64_gcc/ttsp_target.sh の */
-/*  CONFIG_OPT で定義している                                       */
+/*  TTSP3ビルド時 TOPPERS_RUN_TTSP3 を定義して全体をビルドする必要がある    */
+/*  （各ターゲットの ttsp_target.sh の CONFIG_OPT で -DTOPPERS_RUN_TTSP3）   */
+/*  ARM64 のコア内蔵タイマはカウンタを停止できないため，TTSP3 では    */
+/*  ソフト制御クロック(stop_tick/gain_tick)で時刻を制御する．         */
 /*------------------------------------------------------------------*/
 extern volatile bool_t stop_tick;
 extern volatile HRTCNT temp_gtc;
 extern volatile HRTCNT stop_time;
 extern volatile bool_t tick_int;
 extern void ttsp_int_raise(INTNO intno);
-#endif  /*  _RUN_TTSP3_ */
+#if TNUM_PRCID >= 2
+/*  MP(2コア以上)の TTSP3 ソフト制御クロック用：gain_tick(タイムマスタPE)が
+    各PEのコンパレータ値を走査して cross-PE に割込みを発火させるための共有保存．
+    単一PE構成では不要なので宣言しない（cval_shared を定義しないターゲットの
+    単一PE TTSP3 ビルドを壊さないため）．  */
+extern volatile HRTCNT cval_shared[];
+#endif /* TNUM_PRCID >= 2 */
+#endif  /*  TOPPERS_RUN_TTSP3 */
 
 /*
  *  ジェネリックタイマの現在値の読出し
@@ -124,7 +132,7 @@ Inline CLOCK
 target_timer_get_count(void)
 {
 	CLOCK cnt;
-#ifdef _RUN_TTSP3_
+#ifdef TOPPERS_RUN_TTSP3
 	/*  ttsp3実行用 */
 	if(stop_tick == true)
 	  /*  ソフトカウンタを返す    */
@@ -135,7 +143,7 @@ target_timer_get_count(void)
 	CNTPCT_EL0_READ(cnt);
 #endif /* TOPPERS_TZ_S */
 	return cnt;
-#else /*  _RUN_TTSP3_ */
+#else /*  TOPPERS_RUN_TTSP3 */
     /*  現在のカウンタ値を返す  */
 #ifdef TOPPERS_TZ_S
 	CNTPCT_EL0_READ(cnt);
@@ -143,7 +151,7 @@ target_timer_get_count(void)
 	CNTPCT_EL0_READ(cnt);
 #endif /* TOPPERS_TZ_S */
 	return cnt;
-#endif /*  _RUN_TTSP3_ */
+#endif /*  TOPPERS_RUN_TTSP3 */
 }
 
 /*
@@ -152,6 +160,11 @@ target_timer_get_count(void)
 Inline void
 target_timer_set_cval(uint64_t cvr)
 {
+#if defined(TOPPERS_RUN_TTSP3) && (TNUM_PRCID >= 2)
+	/*  MP TTSP3：自PEのコンパレータ値を共有保存し，gain_tick(タイムマスタPE)が
+	    cross-PE に割込みを発火させる際の照合に用いる（単一PEでは不要）．  */
+	cval_shared[get_my_prcidx()] = (HRTCNT)cvr;
+#endif /* TOPPERS_RUN_TTSP3 && TNUM_PRCID >= 2 */
 	/* 割込みをディスエーブル */
 #ifdef TOPPERS_TZ_S
 	CNTPS_CTL_EL1_WRITE((uint32_t)CNTPS_CTL_IMASK_BIT);
@@ -166,11 +179,11 @@ target_timer_set_cval(uint64_t cvr)
 	CNTP_CVAL_EL0_WRITE(cvr);
 #endif /* TOPPERS_TZ_S */
 
-#ifdef _RUN_TTSP3_
+#ifdef TOPPERS_RUN_TTSP3
 	/*  ttsp3実行用     */
 	/*  割り込みが完了している場合のみ  */
 	if(stop_tick == false)
-#endif /*  _RUN_TTSP3_ */
+#endif /*  TOPPERS_RUN_TTSP3 */
 
 	/* 割込みをイネーブル */
 #ifdef TOPPERS_TZ_S
@@ -248,10 +261,10 @@ target_hrt_get_current(void)
 Inline void
 target_hrt_set_event(ID prcid, HRTCNT hrtcnt)
 {
-#ifdef  _RUN_TTSP3_
+#ifdef  TOPPERS_RUN_TTSP3
 	/*  ttsp3実行用     */
 	tick_int = false;
-#endif /*  _RUN_TTSP3_ */
+#endif /*  TOPPERS_RUN_TTSP3 */
 	/*
 	 *  コンパレータ値を，(現在のカウント値＋hrtcnt×timer_clock)
 	 *  に設定し，コンパレータと割込みをイネーブルする．
@@ -268,6 +281,11 @@ target_hrt_clear_event(ID prcid)
 {
 	uint32_t ctl;
 
+#if defined(TOPPERS_RUN_TTSP3) && (TNUM_PRCID >= 2)
+	/*  MP TTSP3：イベント無しを共有保存に反映し，gain_tick の誤発火を防ぐ  */
+	cval_shared[get_my_prcidx()] = 0U;
+#endif /* TOPPERS_RUN_TTSP3 && TNUM_PRCID >= 2 */
+
 #ifdef TOPPERS_TZ_S
 	CNTPS_CTL_EL1_READ(ctl);
 	CNTPS_CTL_EL1_WRITE(ctl & ~((uint32_t)CNTPS_CTL_ENABLE_BIT));
@@ -283,14 +301,27 @@ target_hrt_clear_event(ID prcid)
 Inline void
 target_hrt_raise_event(ID prcid)
 {
-#ifdef  _RUN_TTSP3_
+#ifdef  TOPPERS_RUN_TTSP3
 	/*  ttsp3実行用     */
-	ena_int(INTNO_TIMER_PRC1);
-	stop_time = temp_gtc;
+	/*  [arm64 MP] prcid のタイマ割込みを許可する（旧コードは自PE固定の
+	    INTNO_TIMER_PRC1 にハードコードされ，他PEの due イベントを自PEで処理して
+	    しまっていた．単一PEでは prcid=自PE なので従来と等価）．
+	    サービスコール ena_int() ではなく依存部の低レベル割込み許可関数
+	    enable_int() を直接呼ぶ（ena_int は CPU ロックやパラメータチェックを伴う
+	    ユーザAPIであり，カーネル依存部の内部から呼ぶのは不適切なため）．  */
+	enable_int((((INTNO) prcid) << 16) | INTNO_TIMER);
+	/*  [arm64 MP] stop_time(ソフト制御クロック)の temp_gtc 同期は gain_tick が
+	    動くタイムマスタPEでのみ行う．他PEで即時 due イベントを raise する際に
+	    temp_gtc(タイムマスタPE のローカル変数)で stop_time を上書きすると当該PEの
+	    current_evttim が狂い，RELTIM=0 等の cross-PE アラームが due 判定されず
+	    発火しなくなる．  */
+	if (get_my_prcidx() == 0U) {		/* タイムマスタPE(gain_tick 実行PE)のみ */
+		stop_time = temp_gtc;
+	}
 	ttsp_int_raise(INTNO_TIMER);
-#else   /*  _RUN_TTSP3_ */
+#else   /*  TOPPERS_RUN_TTSP3 */
 	target_hrt_set_event(prcid, 1U);
-#endif  /*  _RUN_TTSP3_ */
+#endif  /*  TOPPERS_RUN_TTSP3 */
 }
 
 /*

@@ -42,7 +42,17 @@ ifeq ($(SYSMON),ATF_S)
 else
 	 KERNEL_ASMOBJS := $(KERNEL_ASMOBJS) core_support.o gic_support.o
 endif
+#
+#  OMIT_CORE_TIMERが定義されている場合は，ARM64ジェネリックタイマの
+#  ドライバ（core_timer.o）をリンクしない．タイマドライバシミュレータを
+#  用いるターゲット（simtimer_*）がMakefile.targetで定義する．未定義時は
+#  従来通りcore_timer.oをリンクする（additive，他ターゲット非影響）．
+#
+ifeq ($(OMIT_CORE_TIMER),true)
+KERNEL_COBJS := $(KERNEL_COBJS) core_kernel_impl.o arm64.o gic_kernel_impl.o
+else
 KERNEL_COBJS := $(KERNEL_COBJS) core_kernel_impl.o core_timer.o arm64.o gic_kernel_impl.o
+endif
 
 #
 #  コンフィギュレータ関係の変数の定義

@@ -4,7 +4,7 @@
  *
  *  Copyright (C) 2000-2003 by Embedded and Real-Time Systems Laboratory
  *                              Toyohashi Univ. of Technology, JAPAN
- *  Copyright (C) 2006-2023 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2006-2025 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  *
  *  上記著作権者は，以下の(1)～(4)の条件を満たす場合に限り，本ソフトウェ
@@ -36,7 +36,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  *
- *  $Id: gic_support.S 345 2023-04-20 12:58:48Z ertl-honda $
+ *  $Id: gic_support.S 446 2025-06-27 07:54:07Z ertl-honda $
  */
 
 /*
@@ -49,14 +49,14 @@
 #define CAST(type, val)		(val)		/* 型キャストを行うマクロ */
 #define GIC_REG(base, offset)	((base) + (offset))
 #include "kernel_impl.h"
-#include "core_asm.inc"
+#include "target_asm.inc"
 #include "target_ipi.h"
 #include "offset.h"
 
 /*
  *  割込みハンドラ呼出し前の割込みコントローラ操作
  *
- *  x19に割込み番号を返す．
+ *  x0に割込み番号を返す．
  */
 	ATEXT
 	AALIGN(2)
@@ -72,22 +72,22 @@ ALABEL(irc_begin_int)
 	mrs		x2, ICC_IAR1_EL1
 #endif /* TOPPERS_GIC_VER == 2 */
 	ldr		w1, =GICC_IAR_INTERRUPTID_MASK
-	and		w19, w2, w1
+	and		w0, w2, w1
 
 	/*
 	 *  割込み発生前の割込み優先度を保存する．
 	 */
 #if TOPPERS_GIC_VER == 2
 	ldr		x3, =GICC_PMR			/* 割込み発生前の割込み優先度を取得 */
-	ldr		w20, [x3]
+	ldr		w4, [x3]
 #elif (TOPPERS_GIC_VER == 3) || (TOPPERS_GIC_VER == 4)
-	mrs		x20,ICC_PMR_EL1			/* 割込み発生前の割込み優先度を取得 */
+	mrs		x4,ICC_PMR_EL1			/* 割込み発生前の割込み優先度を取得 */
 #endif /* TOPPERS_GIC_VER == 2 */
 
-	stp		x2, x20, [sp, #-16]!	/* irc_end_intで用いる情報を保存 */
+	stp		x2, x4, [sp, #-16]!	/* irc_end_intで用いる情報を保存 */
 
 	/*
-	 *  x19に割込み番号を入れた状態でリターンする
+	 *  x0に割込み番号を入れた状態でリターンする
 	 */
 	ret
 
@@ -99,15 +99,15 @@ ALABEL(irc_begin_int)
 	AGLOBAL(irc_end_int)
 ALABEL(irc_end_int)
 
-	ldp		x2, x20, [sp], #16		/* irc_begin_intで保存した情報を復帰 */
+	ldp		x2, x4, [sp], #16		/* irc_begin_intで保存した情報を復帰 */
 
 #if (TOPPERS_GIC_VER == 3) || (TOPPERS_GIC_VER == 4)
 	/*
 	 *  Spurious割込み(1022/1023)の場合は優先度の設定やEOIへの書き込みは行わない
 	 */
 	ldr		w1, =GICC_IAR_INTERRUPTID_MASK
-	and		w19, w2, w1
-	sub		w0, w19, #1022
+	and		w3, w2, w1
+	sub		w0, w3, #1022
 	cmp		w0, 1
 	bls		irc_end_int_1
 #endif /* (TOPPERS_GIC_VER == 3) || (TOPPERS_GIC_VER == 4) */
@@ -127,9 +127,9 @@ ALABEL(irc_end_int)
 	 */
 #if TOPPERS_GIC_VER == 2
 	ldr		x1, =GICC_PMR		/* 割込み優先度マスクを元に戻す */
-	str		w20, [x1]
+	str		w4, [x1]
 #elif (TOPPERS_GIC_VER == 3) || (TOPPERS_GIC_VER == 4)
-	msr		ICC_PMR_EL1, x20		/* 割込み優先度マスクを元に戻す */
+	msr		ICC_PMR_EL1, x4		/* 割込み優先度マスクを元に戻す */
 #endif /* TOPPERS_GIC_VER == 2 */
 	dsb		sy						/* 割込み優先度マスクがセットされるのを待つ */
 

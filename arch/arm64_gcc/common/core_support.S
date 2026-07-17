@@ -3,7 +3,7 @@
  *      Toyohashi Open Platform for Embedded Real-Time Systems/
  *      Flexible MultiProcessor Kernel
  *
- *  Copyright (C) 2006-2021 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2006-2025 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  *
  *  上記著作権者は，以下の(1)～(4)の条件を満たす場合に限り，本ソフトウェ
@@ -35,7 +35,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  *
- *  @(#) $Id: core_support.S 370 2023-09-01 08:27:56Z ertl-honda $
+ *  @(#) $Id: core_support.S 461 2026-05-06 12:29:29Z ertl-honda $
  */
 
 /*
@@ -50,7 +50,7 @@
 #include "kernel_impl.h"
 #include "target_ipi.h"
 #include "offset.h"
-#include "core_asm.inc"
+#include "target_asm.inc"
 
 /*
  *  例外ベクタ
@@ -345,6 +345,9 @@ ALABEL(start_r)
 
 /*
  *  割込みハンドラの出入口処理
+ *  
+ *  x19,x20はノンスクラッチレジスタであるが，割込みハンドラの呼び出しを
+ *  を跨いで割込み番号をx19に保持するために保存する．
  */
 #ifndef OMIT_IRQ_HANDLER
 	ATEXT
@@ -365,7 +368,7 @@ ALABEL(cur_spx_irq_handler)
 	stp		x14, x15, [sp, #0x70]
 	stp		x16, x17, [sp, #0x80]
 	stp		x18, x30, [sp, #0x90]
-	stp		x19, x20, [sp, #0xa0]	/* ノンスクラッチレジスタ */
+	stp		x19, x20, [sp, #0xa0]
 
 	/*
 	 *  elr(戻り先), spsrを保存．
@@ -416,8 +419,9 @@ ALABEL(cur_spx_irq_handler)
 	ldr		w3, [x0, #PCB_excpt_nest_count]
 	add		w3, w3, #1
 	str		w3, [x0, #PCB_excpt_nest_count]
-	tbnz	x3, #1, irq_handler_1		/* CPU例外発生前が非タスクコンテキスト */
-										/* (x3==1)	ならirq_handler_1に分岐 */
+	cmp		x3, #1			/* 割込み発生前が非タスクコンテキスト(x3>1) */
+	b.ne	irq_handler_1	/* ならirq_handler_1に分岐 */
+
 
 #ifdef TOPPERS_SUPPORT_OVRHDR
 	/*
@@ -439,9 +443,10 @@ ALABEL(irq_handler_1)
 	/*
 	 *  割込みコントローラを操作し，割込み番号を取得する．
 	 *
-	 *  irc_begin_intは，x19に割込みハンドラ番号を入れてリターンする
+	 *  irc_begin_intは，x0に割込みハンドラ番号を入れてリターンする
 	 */
 	bl		irc_begin_int
+	mov		x19, x0					/* 関数呼び出しをまたいで保持するためノンスクラッチレジスタx19に保存 */
 #ifdef USE_BYPASS_IPI_DISPATCH_HANDER
 	cmp		w19, #IPINO_DISPATCH
 	b.eq	irq_handler_2			/* ディスパッチ要求なら */
@@ -477,7 +482,8 @@ ALABEL(irq_handler_1)
 	 */
 	my_pcb	x1, x2
 	ldr		x2, [x1, #PCB_p_inh_tbl]	/* 割込みハンドラテーブルの読み込み */
-	ldr		x1, [x2, x19, lsl #3]		/* 割込みハンドラの番地 → x13 */
+	ldr		x1, [x2, x19, lsl #3]		/* 割込みハンドラの番地 → x1 */
+	mov		x0, x19						/* 割込み番号をパラメータに渡す */
 	blr		x1							/* 割込みハンドラの呼出し */
 
 #ifdef LOG_INH_LEAVE
@@ -556,10 +562,10 @@ ALABEL(irq_handler_3)
 	 *  コンテキストを保存する．
 	 */
 	sub		sp, sp, #(16 * 5)			/* 残りのレジスタの保存 */
-	stp		x21, x22, [sp, #0x10]
-	stp		x23, x24, [sp, #0x20]
-	stp		x25, x26, [sp, #0x30]
-	stp		x27, x28, [sp, #0x40]
+	stp		x21, x22, [sp, #0x00]
+	stp		x23, x24, [sp, #0x10]
+	stp		x25, x26, [sp, #0x20]
+	stp		x27, x28, [sp, #0x30]
 	str		x29,[sp, #0x50]
 #ifdef USE_ARM64_FPU
 	sub		sp, sp, #(16 * 8)			/* 残りのFPUレジスタ保存 */
@@ -587,10 +593,10 @@ ALABEL(ret_int_r)
 	add		sp, sp, #(16 * 8)
 #endif /* USE_ARM64_FPU */
 	ldr		x29, [sp, #0x50]		/* 残りのレジスタの復帰 */
-	ldp		x27, x28, [sp, #0x40]
-	ldp		x25, x26, [sp, #0x30]
-	ldp		x23, x24, [sp, #0x20]
-	ldp		x21, x22, [sp, #0x10]
+	ldp		x27, x28, [sp, #0x30]
+	ldp		x25, x26, [sp, #0x20]
+	ldp		x23, x24, [sp, #0x10]
+	ldp		x21, x22, [sp, #0x00]
 	add		sp, sp, #(16 * 5)
 
 ALABEL(irq_handler_4)
@@ -1039,8 +1045,8 @@ ALABEL(exc_handler_1)
 	 */
 	add		w3, w3, #1
 	str		w3, [x0, #PCB_excpt_nest_count]
-	tbnz	w3, #1, exc_handler_2	/* CPU例外発生前が非タスクコンテキスト */
-									/*			   ならexc_handler_2に分岐 */
+	cmp		x3, #1			/* CPU例外発生前が非タスクコンテキスト(x3>1) */
+	b.ne	exc_handler_2	/* ならexc_handler_2に分岐 */
 
 #ifdef TOPPERS_SUPPORT_OVRHDR
 	/*
@@ -1252,7 +1258,6 @@ ALABEL(nk_exc_handler_1)
 	/*
 	 * 【この時点のレジスタ状態】
 	 *  x0 ：p_my_pcb
-	 *  x1 ：CPU例外発生前のCPSRのFビットとIビットの値
 	 *  x3 ：excpt_nest_countの値
 	 *  x19：CPU例外ハンドラ番号
 	 *  x20：CPU例外の情報を記憶している領域の先頭番地
@@ -1268,10 +1273,12 @@ ALABEL(nk_exc_handler_1)
 
 	/*
 	 *  非タスクコンテキスト用のスタックに切り換える．
+	 *
+	 * 【この時点のレジスタ状態】
+	 *  x0 ：p_my_pcb
 	 */
 	mov		x3, sp					/* この時点のスタックポインタをx3に */
-	my_pcb	x2, x1
-	ldr		x1, [x2,#PCB_istkpt]	/* 非タスクコンテキスト用スタックに */
+	ldr		x1, [x0,#PCB_istkpt]	/* 非タスクコンテキスト用スタックに */
 	mov		sp, x1
 	stp		x0, x3, [sp, #-16]!		/* 切換え前のスタックポインタを保存 */
 									/* r0はアラインメントのため */
@@ -1331,3 +1338,97 @@ ALABEL(_sil_dly_nse1)
 	cmp		x0, xzr
 	b.gt  _sil_dly_nse1
 	ret
+
+/*
+ *  エントリ時キャッシュ／MMU状態の正規化（ARM64, EL1）
+ *
+ *  ブートローダ（TF-A等）やデバッガがキャッシュ／MMU有効のまま制御を渡し
+ *  た場合（リセットを介さない再ロード等）でも，カーネル初期化が前提とする
+ *  「MMU・D/Iキャッシュ無効」状態をカーネル自身が作り出す．ターゲット依存
+ *  部の hardware_init_hook（start.Sのweak定義を上書き）から tail-call(b)で
+ *  呼ぶこと（スタック未設定でも安全．ロード／ストアを一切発行しない）．
+ *  マルチコアでは各コアが他コア起動前に自コアで実行する（set/wayは自PEのみ）．
+ *  設計根拠・前提・再現方法は stm32mp2_init/work/asp3_core/arch/arm64_gcc/
+ *  docs/entry-cache-normalization.md（ARM64版の同問題と対策）を参照．
+ */
+	ATEXT
+	AALIGN(2)
+	AGLOBAL(arm64_normalize_cache_state_el1)
+ALABEL(arm64_normalize_cache_state_el1)
+	/*
+	 *  D/統合キャッシュの全レベルを clean&invalidate（DC CISW）
+	 *
+	 *  CLIDR_EL1 の LoC までの各レベルについて，CCSIDR_EL1 から
+	 *  way数・set数・ラインサイズを取得し全ラインを掃引する
+	 *  （TF-A lib/aarch64/cache_helpers.S の dcsw_op_all と同構造）．
+	 */
+	mrs	x0, clidr_el1
+	ubfx	x3, x0, #24, #3			/* x3 = LoC */
+	cbz	x3, ncs_dcsw_done
+	mov	x10, xzr			/* x10 = CSSELR値（level << 1） */
+ALABEL(ncs_dcsw_level)
+	add	x2, x10, x10, lsr #1		/* x2 = level * 3 */
+	lsr	x1, x0, x2
+	and	x1, x1, #7			/* x1 = ctype */
+	cmp	x1, #2
+	b.lt	ncs_dcsw_next			/* Dキャッシュ無しレベルはスキップ */
+	msr	csselr_el1, x10
+	isb
+	mrs	x1, ccsidr_el1
+	and	x2, x1, #7
+	add	x2, x2, #4			/* x2 = log2(ラインサイズ) */
+	ubfx	x4, x1, #3, #10			/* x4 = way数 - 1 */
+	clz	w5, w4				/* x5 = wayフィールドのシフト量 */
+	ubfx	x6, x1, #13, #15		/* x6 = set数 - 1 */
+	mov	x7, x4				/* x7 = wayカウンタ */
+ALABEL(ncs_dcsw_way)
+	lsl	x8, x7, x5
+	orr	x8, x8, x10			/* x8 = way | level */
+	mov	x9, x6				/* x9 = setカウンタ */
+ALABEL(ncs_dcsw_set)
+	lsl	x11, x9, x2
+	orr	x11, x11, x8			/* x11 = way | set | level */
+	dc	cisw, x11
+	subs	x9, x9, #1
+	b.ge	ncs_dcsw_set
+	subs	x7, x7, #1
+	b.ge	ncs_dcsw_way
+ALABEL(ncs_dcsw_next)
+	add	x10, x10, #2			/* 次のレベルへ */
+	lsl	x1, x3, #1
+	cmp	x1, x10
+	b.gt	ncs_dcsw_level
+	msr	csselr_el1, xzr
+	dsb	sy
+	isb
+ALABEL(ncs_dcsw_done)
+
+	/*
+	 *  MMU・D/Iキャッシュの無効化（SCTLR_EL1.{M,C,I} クリア）
+	 *
+	 *  論理即値の制約上，1ビットずつクリアする．
+	 */
+	mrs	x0, sctlr_el1
+	bic	x0, x0, #SCTLR_M_BIT
+	bic	x0, x0, #SCTLR_C_BIT
+	bic	x0, x0, #SCTLR_I_BIT
+	msr	sctlr_el1, x0
+	dsb	sy
+	isb
+
+	/*
+	 *  Iキャッシュの全無効化（stale命令の排除）
+	 */
+	ic	iallu
+	dsb	nsh
+	isb
+
+	/*
+	 *  TLBの全無効化（旧実行の変換の排除）
+	 */
+	tlbi	vmalle1
+	dsb	nsh
+	isb
+
+	ret
+

@@ -40,3 +40,7 @@ common/Makefile.core
 common/psci.h
 common/psci_support.S
 common/start.S
+common/core_os_awareness.py
+
+doc/arm64_design.txt
+doc/arm64_user.txt

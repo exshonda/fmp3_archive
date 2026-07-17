@@ -5,7 +5,7 @@
  *
  *  Copyright (C) 2000-2003 by Embedded and Real-Time Systems Laboratory
  *                              Toyohashi Univ. of Technology, JAPAN
- *  Copyright (C) 2006-2021 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2006-2025 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  *
  *  上記著作権者は，以下の(1)～(4)の条件を満たす場合に限り，本ソフトウェ
@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  *
- *  @(#) $Id: core_kernel_impl.h 282 2021-06-03 06:35:25Z ertl-honda $
+ *  @(#) $Id: core_kernel_impl.h 466 2026-06-03 13:25:10Z ertl-honda $
  */
 
 /*
@@ -444,6 +444,35 @@ exc_sense_intmask(void *p_excinf)
 }
 
 #endif /* TOPPERS_MACRO_ONLY */
+
+/*
+ *  MMUの設定情報を静的なテーブルで与える場合の定義
+ *
+ *  USE_ARM64_MMU_CONFIG_TABLEを定義した場合，ターゲット依存部は
+ *  target_mmu_init()に代えて，以下のテーブルを提供する
+ *  （arm依存部のarm_memory_area[]と同等の方式）．
+ */
+#ifdef USE_ARM64_MMU_CONFIG_TABLE
+#ifndef TOPPERS_MACRO_ONLY
+
+/*
+ *  MMUの設定情報のデータ型
+ */
+typedef mmap_t ARM64_MMU_CONFIG;
+
+/*
+ *  MMUの設定情報の数（メモリエリアの数）（target_kernel_impl.c）
+ */
+extern const uint_t arm64_tnum_memory_area;
+
+/*
+ *  MMUの設定情報（メモリエリアの情報）（target_kernel_impl.c）
+ */
+extern ARM64_MMU_CONFIG arm64_memory_area[];
+
+#endif /* TOPPERS_MACRO_ONLY */
+#endif /* USE_ARM64_MMU_CONFIG_TABLE */
+
 #ifndef TOPPERS_MACRO_ONLY
 
 /*
@@ -490,7 +519,7 @@ extern void l32_serr_handler(void);
 /*
  *  未定義の割込みが入った場合の処理
  */
-extern void default_int_handler(void);
+extern void default_int_handler(uint32_t intno);
 
 /*
  *  未定義の例外が入った場合の処理
@@ -501,10 +530,18 @@ extern void default_exc_handler(void *p_excinf, EXCNO excno);
  *  ロックに関する定義と操作
  */
 
+#ifndef ARM64_CACHELINE_SIZE
+#define ARM64_CACHELINE_SIZE	64		/* キャッシュラインのサイズ */
+#endif /* ARM64_CACHELINE_SIZE */
+
 /*
  *  ロックの型
+ *
+ *  ロックがキャッシュラインを専有するように，キャッシュライン長の配列
+ *  として確保する（フォルスシェアリングの防止）．
  */
-typedef uint32_t	LOCK;
+typedef volatile uint32_t __attribute__((aligned(ARM64_CACHELINE_SIZE)))
+							LOCK[ARM64_CACHELINE_SIZE / sizeof(uint32_t)];
 
 /*
  *  ロックの初期化
@@ -512,7 +549,7 @@ typedef uint32_t	LOCK;
 Inline void
 initialize_lock(LOCK *p_lock)
 {
-	*p_lock = 0U;
+	(*p_lock)[0] = 0U;
 }
 
 /*
@@ -537,7 +574,7 @@ initialize_lock(LOCK *p_lock)
 Inline void
 acquire_lock(LOCK *p_lock)
 {
-	while (test_and_set_uint32(p_lock)) {
+	while (test_and_set_uint32(&(*p_lock)[0])) {
 		unlock_cpu();
 #ifndef TOPPERS_OMIT_USE_WFE
 		data_sync_barrier();
@@ -558,7 +595,7 @@ acquire_lock(LOCK *p_lock)
 Inline bool_t
 try_lock(LOCK *p_lock)
 {
-	if (test_and_set_uint32(p_lock)) {
+	if (test_and_set_uint32(&(*p_lock)[0])) {
 		return(true);
 	}
 	/* ロック取得成功 */
@@ -575,7 +612,7 @@ release_lock(LOCK *p_lock)
 {
 	ARM64_MEMORY_CHANGED;
 	data_memory_barrier();
-	*p_lock = 0U;
+	(*p_lock)[0] = 0U;
 #ifndef TOPPERS_OMIT_USE_WFE
 	data_sync_barrier();
 	arm64_send_event();
@@ -588,7 +625,7 @@ release_lock(LOCK *p_lock)
 Inline bool_t
 refer_lock(LOCK *p_lock)
 {
-	return(*p_lock != 0U);
+	return((*p_lock)[0] != 0U);
 }
 
 /*
@@ -609,6 +646,11 @@ extern LOCK giant_lock;
  *  ロックの取得
  */
 #define acquire_glock()		acquire_lock(&giant_lock)
+
+/*
+ *  ロックの取得の試行（ポーリング）
+ */
+#define try_glock()			try_lock(&giant_lock)
 
 /*
  *  ロックの解放

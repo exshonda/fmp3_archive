@@ -162,7 +162,7 @@ arm64_send_event(void)
  *  Test&Set操作
  */
 Inline bool_t
-test_and_set_uint32(uint32_t *p_var)
+test_and_set_uint32(volatile uint32_t *p_var)
 {
 	uint32_t		locked;
 
