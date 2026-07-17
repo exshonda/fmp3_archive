@@ -59,5 +59,12 @@
 #define plic_global_initialize		_kernel_plic_global_initialize
 #define plic_initialize_interrupt	_kernel_plic_initialize_interrupt
 
+/*
+ *  clic_kernel_impl.c
+ */
+#define clic_context_initialize		_kernel_clic_context_initialize
+#define clic_global_initialize		_kernel_clic_global_initialize
+#define clic_initialize_interrupt	_kernel_clic_initialize_interrupt
+
 
 #endif /* TOPPERS_CORE_RENAME_H */

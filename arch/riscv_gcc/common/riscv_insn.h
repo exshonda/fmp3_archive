@@ -204,7 +204,7 @@ riscv_dmwb_smp(void)
  *   false : 取得に成功
  */
 Inline bool_t
-riscv_tas_uint32(uint32_t *p_var)
+riscv_tas_uint32(volatile uint32_t *p_var)
 {
     uint32_t  failed;
     

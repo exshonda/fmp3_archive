@@ -380,10 +380,15 @@ ALABEL(exit_and_migrate)
     /*
      * 【この時点のレジスタ状態】
      *  a0：p_runtsk（タスク切換え後）
+     *
+     *  init_additional_regs_start_r（チップ依存, chip_asm.inc）は，タスク実行
+     *  開始時の追加コンテキスト初期化フック（例: TLS初期化による tp 設定）．
+     *  a0（p_runtsk）は不変とする契約．既定は空マクロ（他チップは無影響）．
      */
-ALABEL(start_r)   
-    unlock_cpu_asm t0         /* CPUロック解除状態に */                                    
+ALABEL(start_r)
+    unlock_cpu_asm t0         /* CPUロック解除状態に */
     la  ra, ext_tsk           /* タスク本体からの戻り番地を設定 */
+    init_additional_regs_start_r a0   /* チップ依存の追加コンテキスト初期化(a0=p_runtsk) */
     lx  a1, TCB_p_tinib(a0)   /* p_runtsk->p_tinib → r2 */
     lx  a0, TINIB_exinf(a1)   /* exinfをパラメータに */
     lx  a2, TINIB_task(a1)    /* タスク起動番地にジャンプ */
@@ -426,7 +431,7 @@ ALABEL(core_int_entry)
     sf   fa0,   8*FREG_SIZE(sp)  /* f10 */
     sf   fa1,   9*FREG_SIZE(sp)  /* f11 */
     sf   fa2,  10*FREG_SIZE(sp)  /* f12 */
-    sf   fs3,  11*FREG_SIZE(sp)  /* f13 */
+    sf   fa3,  11*FREG_SIZE(sp)  /* f13 */
     sf   fa4,  12*FREG_SIZE(sp)  /* f14 */
     sf   fa5,  13*FREG_SIZE(sp)  /* f15 */
     sf   fa6,  14*FREG_SIZE(sp)  /* f16 */
@@ -591,11 +596,24 @@ ALABEL(core_int_entry_2)
     addi sp, sp, 16  
     add  sp, sp, t0
 
+    addi sp, sp, (TNUM_RISCV_INT_XREG * XREG_SIZE)
 #ifdef __riscv_flen
-    addi sp, sp, -(TNUM_RISCV_INT_FREG * FREG_SIZE)
+    addi sp, sp, (TNUM_RISCV_INT_FREG * FREG_SIZE)
 #endif /* __riscv_flen */
-    addi sp, sp, -(TNUM_RISCV_INT_XREG * XREG_SIZE)  
-    j    dispatcher_0
+    /*
+     *  IDLE に割り込んだ割込みからのリターン．dispatcher_0 へ mret で復帰する
+     *  (arm_m_gcc の return_to_idle と同設計)．MPP=M / MPIE クリア(MIE=0)で
+     *  CPUロックを維持．CLIC の mil(in-service level)の復帰は，直前に通る
+     *  irc_end_int が mcause.mpil=0 を強制することで担う(本リダイレクトは
+     *  PLIC/CLIC 共通の素の mret)．
+     */
+    la    t0, dispatcher_0
+    csrw  mepc, t0
+    li    t0, MSTATUS_MPP_M     /* MPP = M-mode */
+    csrs  mstatus, t0
+    li    t0, MSTATUS_MPIE     /* MPIE クリア → mret 後 MIE=0(CPUロック維持) */
+    csrc  mstatus, t0
+    mret
 
 ALABEL(core_int_entry_3)
     /*
@@ -656,7 +674,19 @@ ALABEL(core_int_entry_3)
     sx sp, TCB_sp(a0)  /* スタックポインタを保存 */
     la t0, ret_int_r   /* 実行再開番地を保存 */
     sx t0, TCB_pc(a0)
-    j  dispatcher       /* a0にはp_runtskが格納されている */
+    /*
+     *  割込み出口でのディスパッチ．dispatcher へ mret で復帰する(idle復帰と対称)．
+     *  a0=p_runtsk を渡したまま遷移(下記は t0 のみ使用し a0 を破壊しない)．
+     *  MPP=M / MPIE クリア(MIE=0)で CPUロックを維持．CLIC の mil 復帰は直前の
+     *  irc_end_int(mcause.mpil=0)が担う(本リダイレクトは PLIC/CLIC 共通の素の mret)．
+     */
+    la    t0, dispatcher        /* a0にはp_runtskが格納されている */
+    csrw  mepc, t0
+    li    t0, MSTATUS_MPP_M     /* MPP = M-mode */
+    csrs  mstatus, t0
+    li    t0, MSTATUS_MPIE     /* MPIE クリア → mret 後 MIE=0(CPUロック維持) */
+    csrc  mstatus, t0
+    mret
 
 ALABEL(ret_int_r)
     /*
@@ -755,7 +785,7 @@ ALABEL(core_int_entry_5)
     lf   fa0,   8*FREG_SIZE(sp)  /* f10 */
     lf   fa1,   9*FREG_SIZE(sp)  /* f11 */
     lf   fa2,  10*FREG_SIZE(sp)  /* f12 */
-    lf   fs3,  11*FREG_SIZE(sp)  /* f13 */
+    lf   fa3,  11*FREG_SIZE(sp)  /* f13 */
     lf   fa4,  12*FREG_SIZE(sp)  /* f14 */
     lf   fa5,  13*FREG_SIZE(sp)  /* f15 */
     lf   fa6,  14*FREG_SIZE(sp)  /* f16 */
@@ -799,7 +829,7 @@ ALABEL(core_exc_entry)
     sf   fa0,   8*FREG_SIZE(sp)  /* f10 */
     sf   fa1,   9*FREG_SIZE(sp)  /* f11 */
     sf   fa2,  10*FREG_SIZE(sp)  /* f12 */
-    sf   fs3,  11*FREG_SIZE(sp)  /* f13 */
+    sf   fa3,  11*FREG_SIZE(sp)  /* f13 */
     sf   fa4,  12*FREG_SIZE(sp)  /* f14 */
     sf   fa5,  13*FREG_SIZE(sp)  /* f15 */
     sf   fa6,  14*FREG_SIZE(sp)  /* f16 */
@@ -914,8 +944,13 @@ ALABEL(core_exc_entry_1)
     /*
      *  CPU例外番号の取得と保存
      */
-    csrr a1, mcause           /* CPU例外番号を保存 */
-    sx   a1, 2*XREG_SIZE(sp)  
+    /*
+     *  CPU例外番号(exccode)の取得はチップ依存マクロ core_get_exccode_asm で
+     *  インライン展開する(標準版は mcause そのまま，CLIC 版は下位12bitのみ)．
+     *  マクロは対象 reg(a1)のみ破壊する．
+     */
+    core_get_exccode_asm a1   /* a1 = CPU例外番号(exccode) */
+    sx   a1, 2*XREG_SIZE(sp)
 
     /*
      *  CPUロック解除状態 & 全割込みロック解除状態とする．
@@ -1004,10 +1039,11 @@ ALABEL(core_exc_entry_1)
     addi sp, sp, 16  
     add  sp, sp, t0
 
+    addi sp, sp, (2 * 4) /* 割込み優先度マスク, 例外ネストカウント保存領域分を戻す */
+    addi sp, sp, (TNUM_RISCV_INT_XREG * XREG_SIZE)
 #ifdef __riscv_flen
-    addi sp, sp, -(TNUM_RISCV_INT_FREG * FREG_SIZE)
+    addi sp, sp, (TNUM_RISCV_INT_FREG * FREG_SIZE)
 #endif /* __riscv_flen */
-    addi sp, sp, -(TNUM_RISCV_INT_XREG * XREG_SIZE)  
     j    dispatcher_0
 
 ALABEL(core_exc_entry_2)
@@ -1168,7 +1204,7 @@ ALABEL(core_exc_entry_4)
     lf   fa0,   8*FREG_SIZE(sp)  /* f10 */
     lf   fa1,   9*FREG_SIZE(sp)  /* f11 */
     lf   fa2,  10*FREG_SIZE(sp)  /* f12 */
-    lf   fs3,  11*FREG_SIZE(sp)  /* f13 */
+    lf   fa3,  11*FREG_SIZE(sp)  /* f13 */
     lf   fa4,  12*FREG_SIZE(sp)  /* f14 */
     lf   fa5,  13*FREG_SIZE(sp)  /* f15 */
     lf   fa6,  14*FREG_SIZE(sp)  /* f16 */
@@ -1220,7 +1256,13 @@ ALABEL(nk_exc_entry_2)
     /*
      *  CPU例外ハンドラの呼出し
      */
-    csrr   a1, mcause  /* CPU例外番号を第2引数に */
+    /*
+     *  CPU例外番号(exccode)の取得はチップ依存マクロ core_get_exccode_asm で
+     *  インライン展開する．a0(=ハンドラ第1引数 p_excinf)が生きているが，マクロは
+     *  対象 reg(a1)のみ破壊し a0/ra を保たないため，従来の jal に伴う a0/ra 退避は
+     *  不要(例外番号を直接 a1 へ取り出す)．
+     */
+    core_get_exccode_asm a1   /* a1 = CPU例外番号(a0=p_excinf/ra は不破壊) */
     my_pcb t0, t1
     lx     t1, PCB_p_exc_tbl(t0)  /* CPU例外ハンドラテーブルの読込み */
     slli   t2, a1, INTPTR_T_SHIFT

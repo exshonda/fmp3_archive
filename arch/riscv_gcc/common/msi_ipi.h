@@ -58,6 +58,17 @@ extern bool_t ext_ker_req_flg_table[TNUM_PRCID];
 extern bool_t set_hrt_event_req_flg_table[TNUM_PRCID];
 
 /*
+ *  プロセッサ間割込み発行関数
+ *
+ *  TOPPERS_OMIT_MSI_IPI_REQUESTが定義されている場合（例：タイマドライバ
+ *  シミュレータ用ターゲット simtimer_polarfire_soc_kit_gcc）は，ここでの
+ *  発行関数の定義を抑止し，ターゲット依存部（target_ipi.h）でsimtim_set_
+ *  int_flag()付きの発行関数を定義する．未定義時は従来通りの定義となり，
+ *  既存ターゲットに影響しない．
+ */
+#ifndef TOPPERS_OMIT_MSI_IPI_REQUEST
+
+/*
  *  ディスパッチ要求プロセッサ間割込みの発行
  */
 Inline void
@@ -85,6 +96,8 @@ request_set_hrt_event(ID prcid)
     set_hrt_event_req_flg_table[INDEX_PRC(prcid)] = true;
     raise_msip(prcid);
 }
+
+#endif /* TOPPERS_OMIT_MSI_IPI_REQUEST */
 
 /*
  *  Machine Software Interrupt Handler

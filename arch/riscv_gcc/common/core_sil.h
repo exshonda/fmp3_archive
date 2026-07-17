@@ -143,13 +143,13 @@ TOPPERS_set_mie(ulong_t mie_mask)
 /*
  *  スピンロック変数（core_kernel_impl.c）
  */
-extern uint32_t TOPPERS_sil_spn_var;
+extern volatile uint32_t TOPPERS_sil_spn_var[];
 
 /*
  *  Test&Assign操作 
  */
 Inline bool_t
-TOPPERS_test_and_assign(uint32_t *p_var, uint32_t prcid)
+TOPPERS_test_and_assign(volatile uint32_t *p_var, uint32_t prcid)
 {
     uint32_t  failed;
 
@@ -187,13 +187,13 @@ TOPPERS_sil_loc_spn(void)
 
     /* スピンロックのチェック */
     sil_get_pid(&prcid);
-    if (TOPPERS_sil_spn_var == prcid) {
+    if (TOPPERS_sil_spn_var[0] == prcid) {
         /* スピンロックを取得している場合 */
         mie_mask |= 0x01U;
     }
     else {
         /* スピンロックの取得 */
-        while (TOPPERS_test_and_assign(&TOPPERS_sil_spn_var, prcid)) {
+        while (TOPPERS_test_and_assign(&TOPPERS_sil_spn_var[0], prcid)) {
             /* TOPPERS_sil_loc_spn()呼び出し時の MIEの状態にする */
             TOPPERS_set_mie(mie_mask); 
             TOPPERS_clear_mstatus_mie();
@@ -218,7 +218,7 @@ TOPPERS_sil_unl_spn(ulong_t mie_mask)
     else {
         TOPPERS_MEMORY_CHANGED;
         Asm("fence rw, w" : : : "memory");
-        TOPPERS_sil_spn_var = 0U;
+        TOPPERS_sil_spn_var[0] = 0U;
     }
     TOPPERS_set_mie(mie_mask);
 }
@@ -240,8 +240,8 @@ TOPPERS_sil_force_unl_spn(void)
     ID	prcid;
 
     sil_get_pid(&prcid);
-    if (TOPPERS_sil_spn_var == prcid) {
-        TOPPERS_sil_spn_var = 0U;
+    if (TOPPERS_sil_spn_var[0] == prcid) {
+        TOPPERS_sil_spn_var[0] = 0U;
     }
 }
 

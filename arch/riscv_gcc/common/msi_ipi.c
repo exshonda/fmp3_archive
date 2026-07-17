@@ -45,6 +45,16 @@
 #include "kernel_impl.h"
 #include "target_ipi.h"
 #include "time_event.h"
+#ifdef TOPPERS_SIMTIMER
+#include "target_timer.h"
+#endif /* TOPPERS_SIMTIMER */
+
+/*
+ *  IPI(MSI)受信処理の入口フック．msi_handler の先頭(clear_msip の前)で呼ばれる．
+ *  割込みコントローラ依存部(チップ)が実体を提供する．必要な処理が無ければ空に
+ *  定義する．本汎用 IPI ハンドラに割込みコントローラ依存を持ち込まないための関数．
+ */
+extern void irc_begin_ipi(PCB *p_my_pcb);
 
 /*
  *  ext_ker 要求フラグ
@@ -55,6 +65,17 @@ bool_t ext_ker_req_flg_table[TNUM_PRCID];
  *  set_hrt_event 要求フラグ
  */
 bool_t set_hrt_event_req_flg_table[TNUM_PRCID];
+
+#ifdef TOPPERS_SIMTIMER
+/*
+ *  高分解能タイマローカル割込み要求フラグ（タイマドライバシミュレータ用）
+ *
+ *  target_timer.c（simtimer_polarfire_soc_kit_gcc）で定義される．
+ *  simtim_target_raise_hrt_int()が自プロセッサ分をセットし，本ハンドラが
+ *  自プロセッサ分をクリアして target_hrt_handler() を呼び出す．
+ */
+extern bool_t sim_hrt_local_req_flg_table[TNUM_PRCID];
+#endif /* TOPPERS_SIMTIMER */
 
 /*
  *  Machine Software Interrupt Handler
@@ -68,6 +89,12 @@ void
 msi_handler(void)
 {
     PCB *p_my_pcb = get_my_pcb();
+
+    /*
+     *  IPI 受信処理の入口フック(clear_msip の前)．割込みコントローラ依存部が
+     *  必要な処理を行う(不要なら空)．
+     */
+    irc_begin_ipi(p_my_pcb);
 
     /*
      *  MSIのクリア
@@ -93,4 +120,16 @@ msi_handler(void)
         set_hrt_event_req_flg_table[INDEX_PRC(p_my_pcb->prcid)] = false;
         set_hrt_event_handler();
     }
+
+#ifdef TOPPERS_SIMTIMER
+    /*
+     *  高分解能タイマローカル割込みの要求があれば，シミュレートされた
+     *  高分解能タイマ割込みハンドラを呼び出す（タイマドライバシミュレータ
+     *  用．msipをHRTローカル割込み源として流用する）．
+     */
+    if (sim_hrt_local_req_flg_table[INDEX_PRC(p_my_pcb->prcid)]) {
+        sim_hrt_local_req_flg_table[INDEX_PRC(p_my_pcb->prcid)] = false;
+        target_hrt_handler();
+    }
+#endif /* TOPPERS_SIMTIMER */
 }

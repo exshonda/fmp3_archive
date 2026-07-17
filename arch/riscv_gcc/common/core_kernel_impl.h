@@ -431,10 +431,18 @@ extern void default_exc_handler(void *p_excinf, EXCNO excno);
  *  ロックに関する定義と操作
  */
 
+#ifndef RISCV_CACHELINE_SIZE
+#define RISCV_CACHELINE_SIZE  64  /* キャッシュラインのサイズ */
+#endif /* RISCV_CACHELINE_SIZE */
+
 /*
  *  ロックの型
+ *
+ *  ロックがキャッシュラインを専有するように，キャッシュライン長の配列
+ *  として確保する（フォルスシェアリングとLR/SCの予約の衝突の防止）．
  */
-typedef uint32_t  LOCK;
+typedef volatile uint32_t __attribute__((aligned(RISCV_CACHELINE_SIZE)))
+                          LOCK[RISCV_CACHELINE_SIZE / sizeof(uint32_t)];
 
 /*
  *  ロックの初期化
@@ -442,7 +450,7 @@ typedef uint32_t  LOCK;
 Inline void
 initialize_lock(LOCK *p_lock)
 {
-    *p_lock = 0U;
+    (*p_lock)[0] = 0U;
 }
 
 /*
@@ -451,7 +459,7 @@ initialize_lock(LOCK *p_lock)
 Inline void
 acquire_lock(LOCK *p_lock)
 {
-    while (riscv_tas_uint32(p_lock)) {
+    while (riscv_tas_uint32(&(*p_lock)[0])) {
         unlock_cpu();
         delay_for_interrupt();
         lock_cpu();
@@ -467,7 +475,7 @@ acquire_lock(LOCK *p_lock)
 Inline bool_t
 try_lock(LOCK *p_lock)
 {
-    while (riscv_tas_uint32(p_lock)) {
+    while (riscv_tas_uint32(&(*p_lock)[0])) {
         return(true);
     }
     /* ロック取得成功 */
@@ -484,7 +492,7 @@ release_lock(LOCK *p_lock)
 {
     RISCV_MEMORY_CHANGED;
     riscv_dmwb_smp();
-    *p_lock = 0U;
+    (*p_lock)[0] = 0U;
 }
 
 /*
@@ -493,7 +501,7 @@ release_lock(LOCK *p_lock)
 Inline bool_t
 refer_lock(LOCK *p_lock)
 {
-    return(*p_lock != 0U);
+    return((*p_lock)[0] != 0U);
 }
 
 /*
@@ -514,6 +522,14 @@ extern LOCK giant_lock;
  *  ロックの取得
  */
 #define acquire_glock()  acquire_lock(&giant_lock)
+
+/*
+ *  ロックの試行的取得（FMP3 3.4 対応）
+ *
+ *  3.4 の kernel/startup.c の sta_ker() が try_glock() を呼ぶため追加．
+ *  arm_gcc/arm64_gcc と同形．
+ */
+#define try_glock()  try_lock(&giant_lock)
 
 /*
  *  ロックの解放

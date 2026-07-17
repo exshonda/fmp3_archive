@@ -41,3 +41,8 @@ target_hrt_handler
 plic_context_initialize
 plic_global_initialize
 plic_initialize_interrupt
+
+# clic_kernel_impl.c
+clic_context_initialize
+clic_global_initialize
+clic_initialize_interrupt

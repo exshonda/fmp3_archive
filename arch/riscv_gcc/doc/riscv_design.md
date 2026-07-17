@@ -164,6 +164,73 @@ PLICの場合には，割込みを割り付けた Hart n M-mode enables レジ�
 PLICの場合には，割込み要求のプローブは，Interrupt Pending Register によって実現する．割込み要求のクリアはサポートしない．
 
 
+# ロック変数のキャッシュラインの専有
+
+## 背景：なぜ専有させる必要があるか
+
+FMP3のロック（ジャイアントロック，カーネルオブジェクトのスピンロック，SILスピンロック）は，
+RISC-V依存部では **LR/SC**（`lr.w.aq`／`sc.w.rl`．`riscv_insn.h` の `riscv_tas_uint32`，
+`core_sil.h` の `TOPPERS_test_and_assign`）で実現している．
+
+LR/SCの**予約セットの大きさはISA上「実装依存」**であり，実装ではキャッシュライン粒度と
+するのが一般的である．**予約セット内のいずれかのアドレスへのストアで予約は失効する**ため，
+複数のロックや無関係な変数が同一キャッシュラインに同居していると，
+
+- あるハートのロックAの解放（`sc.w`）が，別のハートのロックBに対する予約を失効させる
+- 無関係な変数（ログカウンタ等）への**通常のストア**でも予約が失効する
+
+という形で，SCの失敗が繰り返される．ISAの前進保証（constrained LR/SC sequence）は
+「他のハートが予約セットにストアしないこと」を条件とするため，この状態は保証の枠外である．
+詳細は `riscv_memo.md`「“A” Standard Extension」を参照．
+
+ARM依存部（LDREX/STREX）でも排他予約グラニュールに関して同じ問題があり，同様の対処をしている．
+
+## 対処：LOCK型をキャッシュライン長の配列とする
+
+`core_kernel_impl.h` で，LOCK型をキャッシュライン長の配列として定義する．
+
+	#ifndef RISCV_CACHELINE_SIZE
+	#define RISCV_CACHELINE_SIZE  64
+	#endif
+	typedef volatile uint32_t __attribute__((aligned(RISCV_CACHELINE_SIZE)))
+	                          LOCK[RISCV_CACHELINE_SIZE / sizeof(uint32_t)];
+
+ロックの操作は先頭要素（`(*p_lock)[0]`）を対象とする．SILスピンロック変数
+（`TOPPERS_sil_spn_var`）もLOCK型で確保し，`core_sil.h` では
+`extern volatile uint32_t TOPPERS_sil_spn_var[];` と宣言する．
+
+**型自身がサイズとアラインメントを保証する**ため，実体側でのアライン指定や，リンカスクリプト
+による専用セクションへの集約は不要である（ARM依存部・ARM64依存部・HRMP3のARM依存部と同一の
+記述）．`core_kernel.trb` が生成するカーネルオブジェクトのスピンロックも，この型により
+自動的にラインを専有する．
+
+なお `start_sync`（start.Sでの起動同期用）は専有させていない．起動時にのみ使用し，定常的な
+競合がないためである（ARM依存部・HRMP3と同じ扱い）．
+
+## キャッシュライン長を64とした根拠
+
+Linuxは **RISC-Vアーキテクチャ全体で単一の64バイト**を採用しており，SoC毎には分けていない
+（`arch/riscv/include/asm/cache.h`：`L1_CACHE_SHIFT 6`，`L1_CACHE_BYTES (1 << L1_CACHE_SHIFT)`．
+`SMP_CACHE_BYTES` はこれと同値）．arm64も同じく6（64バイト）である．
+本依存部が対象とするチップ（PolarFire SoC の U54，ESP32-P4 の HP コア）はいずれもこれに
+反しないため，アーキ共通の既定値64とし，必要な場合にのみ `RISCV_CACHELINE_SIZE` を
+チップ依存部で上書きできるようにしている．
+
+参考：Linuxはロック型自体をパディングせず，`__cacheline_aligned`（`aligned(SMP_CACHE_BYTES)`
+＋ `.data..cacheline_aligned` セクション）を必要な変数に選択的に付ける方式を採る．本依存部が
+型による方式を採るのは，リンカスクリプトへの依存をなくし，ロックを定義するだけで専有が
+保証されるようにするためである．
+
+## 対処前に観測された状態（PolarFire SoC，4コアSMP）
+
+対処前は，LOCK型が `typedef uint32_t LOCK;`（4バイトのスカラ）であったため，実機向けELFで
+**4つのロックがすべて同一の64バイトライン（0x802e100）に同居**し，さらに頻繁に書き換えられる
+無関係な変数（`syslog_count`，`sys_phase` 等）も同じラインに配置されていた．
+
+対処後は，各ロックが `size=0x40` でそれぞれ独立したラインを専有し，他の変数との同居も
+解消されることを確認している．
+
+
 # タスクコンテキストの保存復帰
 RISC-Vは様々な拡張が用意されており，拡張によってはタスクコンテキストとして保存・復帰するレジスタが追加される．
 RISC-Vコア依存部では汎用レジスタと浮動小数点汎用レジスタに対するコードのみを記載し，他の拡張に必要となるレジスタはターゲット依存部でマクロとして記載することにする．

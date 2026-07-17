@@ -119,6 +119,47 @@ RISC-Vコア依存部は，すべての処理単位でFPUを使用できるよ�
 		- u54mc_memo.md			U54-MCのアーキテクチャに関するメモ
 
 # バージョン履歴
+## 2026/06/29
+ESP32-P4（RV32，CLIC モード，SMP）移植に伴う common 部の変更．CLIC 依存部を
+PLIC と対等な共通部として追加し，トラップ復帰機構を CLIC 非依存に保った．
+- common/clic_kernel_impl.h／clic_kernel_impl.c／clic_kernel.trb（新規）
+  - CLIC（Core-Local Interrupt Controller）の割込みコントローラ依存部．
+    plic_kernel_impl に対応するチップ非依存の CLIC 共通部．割込み許可／優先度／
+    ペンディング／IPM ソフトシャドウ等．設計は doc/clic_design.md・clic_memo.md．
+- common/core_support.S
+  - トラップ復帰（アイドル復帰・割込み文脈ディスパッチ）を PLIC/CLIC 共通の
+    素の mret リダイレクトに統一（arm_m_gcc の return_to_idle と同設計）．CLIC の
+    in-service level（mil）復帰はチップの割込み出口フック irc_end_int に局所化し，
+    本ファイルは CLIC 非依存（中立）に保つ．CPU 例外番号取得はチップマクロ
+    core_get_exccode_asm でインライン展開（関数フック廃止）．`li t0, 0x1800` を
+    マクロ MSTATUS_MPP_M に置換．参照されなくなった dispatcher／dispatcher_0 の
+    AGLOBAL を削除．
+- common/riscv.h
+  - MSTATUS_MPP_M（MPP=M モード，0x1800）を追加．
+- common/msi_ipi.c
+  - IPI（MSI）受信入口の処理を，マクロから関数フック irc_begin_ipi へ変更．
+    実体は割込みコントローラ依存部（チップ）が提供する（不要なら空）．
+- common/mtimer.h
+  - RV32 で 64bit mtimecmp を 32bit アクセスで書く際の手順を修正（上位を最大値に
+    して一致抑止 → 下位 → 上位）．従来は下位32bit切詰の値を上位に書いており，
+    タイマ割込みが発火しないことがあった．
+- common/core_kernel.h
+  - スタックの型 STK_T の __int128 可否判定を ISA 系統ではなく __SIZEOF_INT128__
+    で行うよう変更（rv32／RV32E 等の 32bit ターゲットに対応）．型の実体 typedef を
+    TOPPERS_MACRO_ONLY ブロックへ移し，個別の __ASSEMBLER__ ガードを撤去．
+- common/core_rename.def／core_rename.h／core_unrename.h
+  - CLIC 依存部の内部識別名のリネーム定義を追加．
+
+## 2026/06/06
+- common/core_support.S
+  - 割込み・例外入口/出口のFPUスクラッチレジスタ保存・復帰で，スロット11（コメント  
+-   は `/* f13 */`）に fa3 ではなく fs3 を読み書きしている問題を修正
+  - `p_runtsk==NULL`（アイドルへ戻る）経路でスクラッチレジスタフレームを
+     「捨てる」処理が `addi sp, sp, -(...)` と負値でspをさらに下げている問題を修正．
+	 `dispatcher_1` が `PCB_idstkpt`（アイドル専用スタック）にspを差し替えるため，
+	 問題にはならなかった．
+   - `core_exc_entry`で，割込み優先度マスク／例外ネストカウント保存領域
+    （2×4バイト）の戻し漏れを修正．
 
 ## 2024/12/23
 - common/core_sil.h

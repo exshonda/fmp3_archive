@@ -94,10 +94,18 @@ mtimer_set_mtimecmp(ID prcid, uint64_t cmp)
     uint32_t cmp_u, cmp_l;
     cmp_u = (uint32_t)(cmp >> 32);
     cmp_l = (uint32_t)cmp;
-    sil_swrw_mem((void *)MTIMER_MTIMECMP_U(prcid), 0xFFFFFFU);
-    sil_swrw_mem((void *)MTIMER_MTIMECMP_L(prcid), cmp);
-    sil_swrw_mem((void *)MTIMER_MTIMECMP_U(prcid), cmp);
-#endif /* __riscv_xlen == 64 */    
+    /*
+     *  64bit mtimecmp を 32bit アクセスで書く場合の安全な書込み手順
+     *  （spurious 割込み回避）．RV32 では mtimecmp を上位/下位の 2 ワードに分けて
+     *  書くため，先に上位を最大値にして一致を抑止 → 下位 → 上位の順で書く．
+     *  修正前は cmp_u/cmp_l を計算しながら cmp(下位32bitに切詰)を書いており，
+     *  上位に下位の値が入って一致しないバグがあった（RV32 でタイマ割込みが
+     *  発火しない原因となる）．cmp_u/cmp_l を正しく使う．
+     */
+    sil_swrw_mem((void *)MTIMER_MTIMECMP_U(prcid), 0xFFFFFFFFU);
+    sil_swrw_mem((void *)MTIMER_MTIMECMP_L(prcid), cmp_l);
+    sil_swrw_mem((void *)MTIMER_MTIMECMP_U(prcid), cmp_u);
+#endif /* __riscv_xlen == 64 */
 }
 
 /*

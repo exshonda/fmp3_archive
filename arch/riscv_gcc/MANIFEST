@@ -21,10 +21,14 @@ common/core_syssvc.h
 common/core_test.h
 common/core_unrename.h
 common/Makefile.core
+common/arch_design.md
 common/msi_ipi.c
 common/msi_ipi.h
 common/mtimer.c
 common/mtimer.h
+common/clic_kernel.trb
+common/clic_kernel_impl.c
+common/clic_kernel_impl.h
 common/plic_kernel.trb
 common/plic_kernel_impl.c
 common/plic_kernel_impl.h
@@ -32,6 +36,8 @@ common/riscv.h
 common/riscv_insn.h
 common/start.S
 
+doc/clic_design.md
+doc/clic_memo.md
 doc/plic_design.md
 doc/plic_memo.md
 doc/riscv_design.md

@@ -60,5 +60,12 @@
 #undef plic_global_initialize
 #undef plic_initialize_interrupt
 
+/*
+ *  clic_kernel_impl.c
+ */
+#undef clic_context_initialize
+#undef clic_global_initialize
+#undef clic_initialize_interrupt
+
 
 #endif /* TOPPERS_CORE_RENAME_H */

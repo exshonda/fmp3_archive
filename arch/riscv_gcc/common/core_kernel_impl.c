@@ -57,7 +57,7 @@ volatile uint_t start_sync[TNUM_PRCID];
  *
  *  スタートアップルーチンで，0に初期化されることを期待している．
  */
-uint32_t TOPPERS_sil_spn_var = 0U;
+LOCK TOPPERS_sil_spn_var = { 0U };
 
 /*
  *  ジャイアントロック

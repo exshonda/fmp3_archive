@@ -53,8 +53,18 @@
  *  スタックの型
  *
  *  RISC-Vでは，スタックを16バイト境界に配置する必要がある．
+ *  __int128 の可否は ISA 系統ではなく汎用レジスタのワード幅(TImode の有無)で
+ *  決まる(rv64/AArch64 等の64bitターゲットは可, rv32/RV32E 等の32bitは不可)．
+ *  GCC が __int128 を持つ場合に定義する __SIZEOF_INT128__ で直接判定する．
+ *  ・__int128 あり : __int128 で16バイト幅・境界を確保(従来通り)．
+ *  ・__int128 なし : 16バイト幅・16バイト境界の構造体 toppers_stk_t で代替する
+ *                   (型の実体 typedef は下の TOPPERS_MACRO_ONLY ブロック内)．
  */
+#ifdef __SIZEOF_INT128__
 #define TOPPERS_STK_T    __int128
+#else /* __SIZEOF_INT128__ */
+#define TOPPERS_STK_T    toppers_stk_t
+#endif /* __SIZEOF_INT128__ */
 
 /*
  *  CPU例外ハンドラ番号の数
@@ -84,6 +94,17 @@
 #define EXCNO_STORE_PAGE_FAULT  UINT_C(15)
 
 #ifndef TOPPERS_MACRO_ONLY
+
+/*
+ *  スタックの型の実体（__int128 非対応ターゲット: rv32/RV32E 等）．
+ *  16バイト幅かつ16バイト境界の型が必要(スタック領域確保単位)．要素サイズ<
+ *  アラインメントだと配列に使えないため，サイズ・アラインメントとも16の構造体
+ *  で代替する．本宣言は C 専用のため TOPPERS_MACRO_ONLY ブロック内に置き，
+ *  アセンブラからは自動的に除外する(個別の __ASSEMBLER__ ガードは不要)．
+ */
+#ifndef __SIZEOF_INT128__
+typedef struct { unsigned int _stkunit[4]; } __attribute__((aligned(16))) toppers_stk_t;
+#endif /* __SIZEOF_INT128__ */
 
 #if __riscv_flen == 64
 #define FREG_T  double
