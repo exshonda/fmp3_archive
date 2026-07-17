@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: core_kernel_impl.h 335 2023-04-18 10:50:40Z ertl-honda $
+ *  $Id: core_kernel_impl.h 541 2026-06-30 13:07:32Z ertl-honda $
  */
 
 /*
@@ -548,9 +548,22 @@ extern void default_exc_handler(void *p_excinf, EXCNO excno);
  */
 
 /*
+ *  キャッシュラインのサイズ
+ *
+ *  1つのキャッシュラインに1つのロック変数のみを配置するために使用する．
+ *  キャッシュラインのサイズはコアによって異なるため，チップ依存部で定
+ *  義すべきである．32または64であることが多いため，ここでは，大きい側
+ *  の64で定義する．
+ */
+#ifndef ARM_CACHELINE_SIZE
+#define ARM_CACHELINE_SIZE	64		/* キャッシュラインのサイズ */
+#endif /* ARM_CACHELINE_SIZE */
+
+/*
  *  ロックの型
  */
-typedef uint32_t	LOCK;
+typedef volatile uint32_t __attribute__((aligned(ARM_CACHELINE_SIZE)))
+							LOCK[ARM_CACHELINE_SIZE / sizeof(uint32_t)];
 
 /*
  *  ロックの初期化
@@ -558,7 +571,7 @@ typedef uint32_t	LOCK;
 Inline void
 initialize_lock(LOCK *p_lock)
 {
-	*p_lock = 0U;
+	(*p_lock)[0] = 0U;
 }
 
 /*
@@ -583,7 +596,7 @@ initialize_lock(LOCK *p_lock)
 Inline void
 acquire_lock(LOCK *p_lock)
 {
-	while (test_and_set_uint32(p_lock)) {
+	while (test_and_set_uint32(&(*p_lock)[0])) {
 		unlock_cpu();
 #ifndef TOPPERS_OMIT_USE_WFE
 		data_sync_barrier();
@@ -604,7 +617,7 @@ acquire_lock(LOCK *p_lock)
 Inline bool_t
 try_lock(LOCK *p_lock)
 {
-	if (test_and_set_uint32(p_lock)) {
+	if (test_and_set_uint32(&(*p_lock)[0])) {
 		return(true);
 	}
 	/* ロック取得成功 */
@@ -621,7 +634,7 @@ release_lock(LOCK *p_lock)
 {
 	ARM_MEMORY_CHANGED;
 	data_memory_barrier();
-	*p_lock = 0U;
+	(*p_lock)[0] = 0U;
 #ifndef TOPPERS_OMIT_USE_WFE
 	data_sync_barrier();
 	arm_send_event();
@@ -634,7 +647,7 @@ release_lock(LOCK *p_lock)
 Inline bool_t
 refer_lock(LOCK *p_lock)
 {
-	return(*p_lock != 0U);
+	return((*p_lock)[0] != 0U);
 }
 
 /*
@@ -655,6 +668,11 @@ extern LOCK giant_lock;
  *  ロックの取得
  */
 #define acquire_glock()		acquire_lock(&giant_lock)
+
+/*
+ *  ロックの取得の試行（ポーリング）
+ */
+#define try_glock()			try_lock(&giant_lock)
 
 /*
  *  ロックの解放
@@ -717,5 +735,12 @@ extern LOCK giant_lock;
 #define VALID_TSKCTXB(p_tskctxb, p_tcb)								\
 			((((uintptr_t)((p_tskctxb)->sp) & 0x03U) == 0U)			\
 				&& on_sstack((p_tskctxb)->sp, 0, (p_tcb)->p_tinib))
+
+/*
+ *  追加コンテキスト保存/解放フック（コプロセッサ等を持たないため空）
+ *    save_context: mig_tsk(移行時)，release_context: task_terminate(終了時)に呼ばれる．
+ */
+#define save_context(p_tcb)		((void)(p_tcb))
+#define release_context(p_tcb)		((void)(p_tcb))
 
 #endif /* TOPPERS_CORE_KERNEL_IMPL_H */

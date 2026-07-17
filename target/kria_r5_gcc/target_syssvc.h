@@ -2,12 +2,10 @@
  *  TOPPERS/FMP Kernel
  *      Toyohashi Open Platform for Embedded Real-Time Systems/
  *      Flexible MultiProcessor Kernel
- * 
- *  Copyright (C) 2000-2003 by Embedded and Real-Time Systems Laboratory
- *                              Toyohashi Univ. of Technology, JAPAN
- *  Copyright (C) 2004-2023 by Embedded and Real-Time Systems Laboratory
+ *
+ *  Copyright (C) 2026 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
- * 
+ *
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
  *  ア（本ソフトウェアを改変したものを含む．以下同じ）を使用・複製・改
  *  変・再配布（以下，利用と呼ぶ）することを無償で許諾する．
@@ -30,88 +28,99 @@
  *      また，本ソフトウェアのユーザまたはエンドユーザからのいかなる理
  *      由に基づく請求からも，上記著作権者およびTOPPERSプロジェクトを
  *      免責すること．
- * 
+ *
  *  本ソフトウェアは，無保証で提供されているものである．上記著作権者お
  *  よびTOPPERSプロジェクトは，本ソフトウェアに関して，特定の使用目的
  *  に対する適合性も含めて，いかなる保証も行わない．また，本ソフトウェ
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
- * 
- *  $Id: core_kernel.h 464 2026-05-27 11:42:34Z ertl-honda $
- */
-
-/*
- *		kernel.hのコア依存部（ARM用）
  *
- *  このヘッダファイルは，target_kernel.h（または，そこからインクルード
- *  されるファイル）のみからインクルードされる．他のファイルから直接イ
- *  ンクルードしてはならない．
+ *  $Id$
  */
 
-#ifndef TOPPERS_CORE_KERNEL_H
-#define TOPPERS_CORE_KERNEL_H
-
 /*
- *  ターゲット定義のタスク属性
- */
-#define TA_FPU		UINT_C(0x08)	/* FPUレジスタをコンテキストに含める */
-
-/*
- *  スタックの型
+ *		システムサービスのターゲット依存部（ZynqMP R5用）
  *
- *  ARMでは，スタックを8バイト境界に配置する必要がある．
+ *  システムサービスのターゲット依存部のヘッダファイル．
  */
-#define TOPPERS_STK_T	long long
+
+#ifndef TOPPERS_TARGET_SYSSVC_H
+#define TOPPERS_TARGET_SYSSVC_H
+
+#include "zynqmp_r5.h"
 
 /*
- *  CPU例外ハンドラ番号の数
- */
-#define TNUM_EXCNO		7
-#define TMAX_EXCNO		7
-
-/*
- *  CPU例外ハンドラ番号の定義
- */
-#define EXCNO_UNDEF		UINT_C(0)		/* 未定義命令 */
-#define EXCNO_SVC		UINT_C(1)		/* スーパバイザコール */
-#define EXCNO_PABORT	UINT_C(2)		/* プリフェッチアボート */
-#define EXCNO_DABORT	UINT_C(3)		/* データアボート */
-#define EXCNO_IRQ		UINT_C(4)		/* IRQ割込み */
-#define EXCNO_FIQ		UINT_C(5)		/* FIQ割込み */
-#define EXCNO_FATAL		UINT_C(6)		/* フェイタルデータアボート */
-
-#ifndef TOPPERS_MACRO_ONLY
-
-/*
- *  CPU例外の情報を記憶しているメモリ領域の構造
+ *  起動メッセージのターゲットシステム名
  *
- *  割込み優先度マスクは，CPU例外がタスクコンテキストで発生した場合に
- *  のみ有効である．非タスクコンテキストで発生した場合には，正しい値と
- *  ならない場合がある．
+ *  Kria 共通ターゲット（R5/RPU）．ボード名は Makefile.target の BOARD 変数から渡される
+ *  -DTOPPERS_KRIA_<BOARD> で切替える（KR260/KV260=K26 SOM, KD240=K24 SOM。RPU は同一）．
  */
-typedef struct t_excinf {
-	uint32_t	nest_count;				/* 例外ネストカウント */
-	int32_t	intpri;						/* 割込み優先度マスク */
-	uint32_t	r0;
-	uint32_t	r1;
-	uint32_t	r2;
-	uint32_t	r3;
-	uint32_t	r4;
-	uint32_t	r5;
-	uint32_t	r12;
-	uint32_t	lr;
-	uint32_t	pc;						/* 戻り番地 */
-	uint32_t	cpsr;					/* CPU例外発生時のCPSR */
-} T_EXCINF;
+#if defined(TOPPERS_KRIA_KR260)
+#define TARGET_BOARD_NAME  "KR260"
+#elif defined(TOPPERS_KRIA_KV260)
+#define TARGET_BOARD_NAME  "KV260"
+#elif defined(TOPPERS_KRIA_KD240)
+#define TARGET_BOARD_NAME  "KD240"
+#else /* ボード未指定時 */
+#define TARGET_BOARD_NAME  "Kria"
+#endif
+
+#define TARGET_NAME    TARGET_BOARD_NAME " <Cortex-R5F>"
 
 /*
- *  CPSRに常にセットするパターン
+ *  シリアルインタフェースドライバを実行するクラスの定義
  */
-#ifdef TOPPERS_SAFEG_SECURE
-#define CPSR_ALWAYS_SET  CPSR_IRQ_BIT
-#else  /* !TOPPERS_SAFEG_SECURE */
-#define CPSR_ALWAYS_SET  0x00
-#endif /* TOPPERS_SAFEG_SECURE */
+#define CLS_SERIAL		CLS_PRC1
 
-#endif /* TOPPERS_MACRO_ONLY */
-#endif /* TOPPERS_CORE_KERNEL_H */
+/*
+ *  システムログの低レベル出力のための文字出力
+ *
+ *  ターゲット依存の方法で，文字cを表示/出力/保存する．
+ */
+extern void	target_fput_log(char c);
+
+/*
+ *  サポートするシリアルポートの数
+ */
+#define TNUM_PORT		1
+
+/*
+ *  SIOドライバで使用するXUartPsに関する設定
+ *
+ *  コンソールにはUART1を使用する（QEMUでは2番目の-serialオプション）．
+ *  ボーレートの設定値は，UARTの入力クロックを100MHzとして115.2Kbpsと
+ *  なる値（100MHz / (62 * (13 + 1)) ≒ 115207bps）．QEMUではボーレー
+ *  ト設定は動作に影響しない．
+ */
+#define SIO_XUARTPS_BASE	ZYNQMP_UART1_BASE
+#define SIO_XUARTPS_MODE	(XUARTPS_MR_CHARLEN_8 \
+								| XUARTPS_MR_PARITY_NONE | XUARTPS_MR_STOPBIT_1)
+#define SIO_XUARTPS_BAUDGEN	62U
+#define SIO_XUARTPS_BAUDDIV	13U
+
+/*
+ *  SIO割込みを登録するための定義
+ */
+#define INTNO_SIO		ZYNQMP_UART1_IRQ	/* SIO割込み番号 */
+#define ISRPRI_SIO		1					/* SIO ISR優先度 */
+#define INTPRI_SIO		(-4)				/* SIO割込み優先度 */
+#define INTATR_SIO		TA_NULL				/* SIO割込み属性 */
+
+/*
+ *  低レベル出力で使用するSIOポート
+ */
+#define SIOPID_FPUT		1
+
+/*
+ *  トレースログに関する設定
+ */
+#ifdef TOPPERS_ENABLE_TRACE
+#include "arch/tracelog/trace_log.h"
+#endif /* TOPPERS_ENABLE_TRACE */
+
+/*
+ *  コアで共通な定義（チップ依存部は飛ばす）
+ */
+#include "core_syssvc.h"
+
+#endif /* TOPPERS_TARGET_SYSSVC_H */

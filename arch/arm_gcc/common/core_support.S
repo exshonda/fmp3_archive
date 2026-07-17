@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: core_support.S 434 2024-10-05 00:46:15Z ertl-honda $
+ *  $Id: core_support.S 463 2026-05-20 14:16:03Z ertl-honda $
  */
 
 /*
@@ -1010,8 +1010,8 @@ ALABEL(exc_handler_2)
 	/*
 	 *  タスクのスタックに保存したスクラッチレジスタ等を捨てる．
 	 */
-	pop		{r0,r1}					/* スタックポインタの調整を元に戻す */
-	add		sp, sp, r1
+	pop		{r1,r2}					/* スタックポインタの調整を元に戻す */
+	add		sp, sp, r2
 #ifdef USE_ARM_FPU_ALWAYS
 #ifdef USE_ARM_FPU_D32
 	add		sp, sp, #240			/* スクラッチレジスタとCPU例外が発生した */
@@ -1115,15 +1115,15 @@ ALABEL(exc_handler_4)
 	 *  表しているため，CPSRを元に戻してリターンすればよい．
 	 */
 ALABEL(exc_handler_5)
-	pop		{r0,r1}
+	pop		{r1,r2}
 #ifdef USE_ARM_FPU_ALWAYS
-	vmsr	fpscr, r0				/* FPSCRを復帰 */
+	vmsr	fpscr, r1				/* FPSCRを復帰 */
 	vpop	{d0-d7}					/* スクラッチFPUレジスタの復帰 */
 #ifdef USE_ARM_FPU_D32
 	vpop	{d16-d31}
 #endif /* USE_ARM_FPU_D32 */
 #endif /* USE_ARM_FPU_ALWAYS */	
-	add		sp, sp, r1				/* スタックポインタの調整を元に戻す */
+	add		sp, sp, r2				/* スタックポインタの調整を元に戻す */
 	add		sp, sp, #8				/* スタック上の情報を捨てる */
 	pop		{r0-r5,r12,lr}			/* スクラッチレジスタ＋αの復帰 */
 	rfefd	sp!
@@ -1135,7 +1135,6 @@ ALABEL(nk_exc_handler_1)
 	/*
 	 * 【この時点のレジスタ状態】
 	 *  r0：p_my_pcb
-	 *  r1：CPU例外発生前のCPSRのFビットとIビットの値
 	 *  r3：excpt_nest_countの値
 	 *  r4：CPU例外ハンドラ番号
 	 *  r5：CPU例外の情報を記憶している領域の先頭番地
@@ -1161,10 +1160,12 @@ ALABEL(nk_exc_handler_1)
 
 	/*
 	 *  非タスクコンテキスト用のスタックに切り換える．
+	 *
+	 * 【この時点のレジスタ状態】
+	 *  r0：p_my_pcb
 	 */
 	mov		r3, sp					/* この時点のスタックポインタをr3に */
-	my_pcb	r2, r1
-	ldr		sp, [r2,#PCB_istkpt]	/* 非タスクコンテキスト用のスタックに */
+	ldr		sp, [r0,#PCB_istkpt]	/* 非タスクコンテキスト用のスタックに */
 	push	{r0,r3}					/* 切換え前のスタックポインタを保存 */
 									/* r0はアラインメントのため */
 ALABEL(nk_exc_handler_2)

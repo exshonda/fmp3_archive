@@ -36,7 +36,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: arm.h 341 2023-04-19 13:42:56Z ertl-honda $
+ *  $Id: arm.h 489 2026-06-13 17:04:20Z ertl-honda $
  */
 
 /*
@@ -129,6 +129,93 @@
 #define CP15_CPACR_D32DIS			UINT_C(0x40000000)
 #define CP15_CPACR_CP11_FULLACCESS	UINT_C(0x00c00000)
 #define CP15_CPACR_CP10_FULLACCESS	UINT_C(0x00300000)
+
+#ifdef __TARGET_PROFILE_R
+/*
+ *  Rプロファイル（Cortex-R5）のMPUリージョン設定値
+ *
+ *  DRSR（リージョンサイズ／イネーブル）の設定値．
+ */
+#define RSAE_EN			UINT_C(0x01)
+#define RSAE_RS_OFFSET	1U
+
+#define RSAE_32			UINT_C(0x00000004)
+#define RSAE_64			UINT_C(0x00000005)
+#define RSAE_128		UINT_C(0x00000006)
+#define RSAE_256		UINT_C(0x00000007)
+#define RSAE_512		UINT_C(0x00000008)
+#define RSAE_1K			UINT_C(0x00000009)
+#define RSAE_2K			UINT_C(0x0000000A)
+#define RSAE_4K			UINT_C(0x0000000B)
+#define RSAE_8K			UINT_C(0x0000000C)
+#define RSAE_16K		UINT_C(0x0000000D)
+#define RSAE_32K		UINT_C(0x0000000E)
+#define RSAE_64K		UINT_C(0x0000000F)
+#define RSAE_128K		UINT_C(0x00000010)
+#define RSAE_256K		UINT_C(0x00000011)
+#define RSAE_512K		UINT_C(0x00000012)
+#define RSAE_1M			UINT_C(0x00000013)
+#define RSAE_2M			UINT_C(0x00000014)
+#define RSAE_4M			UINT_C(0x00000015)
+#define RSAE_8M			UINT_C(0x00000016)
+#define RSAE_16M		UINT_C(0x00000017)
+#define RSAE_32M		UINT_C(0x00000018)
+#define RSAE_64M		UINT_C(0x00000019)
+#define RSAE_128M		UINT_C(0x0000001A)
+#define RSAE_256M		UINT_C(0x0000001B)
+#define RSAE_512M		UINT_C(0x0000001C)
+#define RSAE_1G			UINT_C(0x0000001D)
+#define RSAE_2G			UINT_C(0x0000001E)
+#define RSAE_4G			UINT_C(0x0000001F)
+
+/*
+ *  DRACR（リージョンアクセス制御）のメモリタイプ設定値（TEX/C/B）．
+ */
+#define RAC_STRONGO_SHAR	UINT_C(0x00000000)
+#define RAC_DEV_SHAR		UINT_C(0x00000001)
+#define RAC_DEV_NSHAR		UINT_C(0x00000010)
+#define RAC_NORM_OI_WT_NWA	UINT_C(0x00000002)
+#define RAC_NORM_OI_WB_NWA	UINT_C(0x00000003)
+#define RAC_OI_NCACHE		UINT_C(0x00000008)
+#define RAC_OI_WB_WA		UINT_C(0x0000000B)
+
+#define RAC_NORM_I_NCACHE	UINT_C(0x00000020)
+#define RAC_NORM_I_WB_WA	UINT_C(0x00000021)
+#define RAC_NORM_I_WT_NWA	UINT_C(0x00000022)
+#define RAC_NORM_I_WB_NWA	UINT_C(0x00000023)
+
+#define RAC_NORM_O_NCACHE	UINT_C(0x00000020)
+#define RAC_NORM_O_WB_WA	UINT_C(0x00000028)
+#define RAC_NORM_O_WT_NWA	UINT_C(0x00000030)
+#define RAC_NORM_O_WB_NWA	UINT_C(0x00000038)
+
+/*  DRACR（リージョンアクセス制御）のアクセス権設定値（AP）．*/
+#define RAC_AP_OFFSET		8U
+#define RAC_AP_NO_ACCESS	(UINT_C(0x00000000)<<RAC_AP_OFFSET)
+#define RAC_AP_PRW_UNA		(UINT_C(0x00000001)<<RAC_AP_OFFSET)
+#define RAC_AP_PRW_URO		(UINT_C(0x00000002)<<RAC_AP_OFFSET)
+#define RAC_AP_PRW_URW		(UINT_C(0x00000003)<<RAC_AP_OFFSET)
+#define RAC_AP_PRO_UNA		(UINT_C(0x00000005)<<RAC_AP_OFFSET)
+#define RAC_AP_PRO_URO		(UINT_C(0x00000006)<<RAC_AP_OFFSET)
+
+#define RAC_XN				UINT_C(0x00001000)	/* Execute Never */
+#define RAC_S				UINT_C(0x00000004)	/* Shareable */
+
+/*
+ *  Cortex-R5の補助制御レジスタ（ACTLR）のビット定義
+ */
+#define ACTLR_RSDIS			(UINT_C(0x1) << 17)
+#define ACTLR_BP_MASK		(UINT_C(0x3) << 15)
+#define ACTLR_BP_NOP		(UINT_C(0x0) << 15)
+#define ACTLR_BP_BAWT_DU	(UINT_C(0x1) << 15)
+#define ACTLR_BP_BAWNT_DU	(UINT_C(0x2) << 15)
+#define ACTLR_ATCMPCEN		(UINT_C(0x1) << 25)
+#define ACTLR_B0TCMPCEN		(UINT_C(0x1) << 26)
+#define ACTLR_B1TCMPCEN		(UINT_C(0x1) << 27)
+#define ACTLR_CEC_MASK		(UINT_C(0x7) << 3)
+#define ACTLR_CEC_NPE		(UINT_C(0x5) << 3)
+#define ACTLR_DBWR			(UINT_C(0x5) << 14)
+#endif /* __TARGET_PROFILE_R */
 
 /*
  *  CP15のフォールト状態レジスタの参照値
@@ -609,6 +696,38 @@ arm_invalidate_icache(void)
 {
 	CP15_INVALIDATE_ICACHE();
 }
+
+#ifdef __TARGET_PROFILE_R
+/*
+ *  MPUのイネーブル（Cortex-R5）
+ */
+Inline void
+mpu_enable(void)
+{
+	uint32_t	reg;
+
+	CP15_READ_SCTLR(reg);
+	reg |= CP15_SCTLR_MMU;			/* RプロファイルではMビットがMPUイネーブル */
+	data_sync_barrier();
+	CP15_WRITE_SCTLR(reg);
+	inst_sync_barrier();
+}
+
+/*
+ *  MPUのディスエーブル（Cortex-R5）
+ */
+Inline void
+mpu_disable(void)
+{
+	uint32_t	reg;
+
+	CP15_READ_SCTLR(reg);
+	reg &= ~CP15_SCTLR_MMU;
+	data_sync_barrier();
+	CP15_WRITE_SCTLR(reg);
+	inst_sync_barrier();
+}
+#endif /* __TARGET_PROFILE_R */
 
 #endif /* TOPPERS_MACRO_ONLY */
 #endif /* TOPPERS_ARM_H */

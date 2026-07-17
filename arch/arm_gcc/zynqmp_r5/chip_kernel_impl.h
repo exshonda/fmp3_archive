@@ -2,12 +2,10 @@
  *  TOPPERS/FMP Kernel
  *      Toyohashi Open Platform for Embedded Real-Time Systems/
  *      Flexible MultiProcessor Kernel
- * 
- *  Copyright (C) 2000-2003 by Embedded and Real-Time Systems Laboratory
- *                              Toyohashi Univ. of Technology, JAPAN
- *  Copyright (C) 2004-2023 by Embedded and Real-Time Systems Laboratory
+ *
+ *  Copyright (C) 2026 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
- * 
+ *
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
  *  ア（本ソフトウェアを改変したものを含む．以下同じ）を使用・複製・改
  *  変・再配布（以下，利用と呼ぶ）することを無償で許諾する．
@@ -30,88 +28,80 @@
  *      また，本ソフトウェアのユーザまたはエンドユーザからのいかなる理
  *      由に基づく請求からも，上記著作権者およびTOPPERSプロジェクトを
  *      免責すること．
- * 
+ *
  *  本ソフトウェアは，無保証で提供されているものである．上記著作権者お
  *  よびTOPPERSプロジェクトは，本ソフトウェアに関して，特定の使用目的
  *  に対する適合性も含めて，いかなる保証も行わない．また，本ソフトウェ
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
- * 
- *  $Id: core_kernel.h 464 2026-05-27 11:42:34Z ertl-honda $
- */
-
-/*
- *		kernel.hのコア依存部（ARM用）
  *
- *  このヘッダファイルは，target_kernel.h（または，そこからインクルード
- *  されるファイル）のみからインクルードされる．他のファイルから直接イ
- *  ンクルードしてはならない．
+ *  $Id$
  */
 
-#ifndef TOPPERS_CORE_KERNEL_H
-#define TOPPERS_CORE_KERNEL_H
-
 /*
- *  ターゲット定義のタスク属性
- */
-#define TA_FPU		UINT_C(0x08)	/* FPUレジスタをコンテキストに含める */
-
-/*
- *  スタックの型
+ *		kernel_impl.hのチップ依存部（ZynqMP RPU用）
  *
- *  ARMでは，スタックを8バイト境界に配置する必要がある．
+ *  このヘッダファイルは，target_kernel_impl.h（または，そこからインク
+ *  ルードされるファイル）のみからインクルードされる．他のファイルから
+ *  直接インクルードしてはならない．
  */
-#define TOPPERS_STK_T	long long
+
+#ifndef TOPPERS_CHIP_KERNEL_IMPL_H
+#define TOPPERS_CHIP_KERNEL_IMPL_H
 
 /*
- *  CPU例外ハンドラ番号の数
+ *  ZynqMP RPU（Cortex-R5F）のハードウェア資源の定義
  */
-#define TNUM_EXCNO		7
-#define TMAX_EXCNO		7
+#include "zynqmp_r5.h"
 
 /*
- *  CPU例外ハンドラ番号の定義
+ *  FPUに関する設定
+ *
+ *  Cortex-R5FはVFPv3-D16を持つ．アセンブラファイルの.fpu指定に使用する．
  */
-#define EXCNO_UNDEF		UINT_C(0)		/* 未定義命令 */
-#define EXCNO_SVC		UINT_C(1)		/* スーパバイザコール */
-#define EXCNO_PABORT	UINT_C(2)		/* プリフェッチアボート */
-#define EXCNO_DABORT	UINT_C(3)		/* データアボート */
-#define EXCNO_IRQ		UINT_C(4)		/* IRQ割込み */
-#define EXCNO_FIQ		UINT_C(5)		/* FIQ割込み */
-#define EXCNO_FATAL		UINT_C(6)		/* フェイタルデータアボート */
+#define ASM_ARM_FPU_TYPE	vfpv3-d16
+
+/*
+ *  デフォルトの非タスクコンテキスト用のスタック領域の定義
+ */
+#ifndef DEFAULT_ISTKSZ
+#define DEFAULT_ISTKSZ  0x2000U			/* 8KB */
+#endif /* DEFAULT_ISTKSZ */
+
+/*
+ *  デフォルトのアイドル処理用のスタック領域の定義
+ */
+#define DEFAULT_IDSTKSZ		0x0300U
+
+/*
+ *  GICで共通な定義
+ */
+#include "gic_kernel_impl.h"
 
 #ifndef TOPPERS_MACRO_ONLY
 
 /*
- *  CPU例外の情報を記憶しているメモリ領域の構造
- *
- *  割込み優先度マスクは，CPU例外がタスクコンテキストで発生した場合に
- *  のみ有効である．非タスクコンテキストで発生した場合には，正しい値と
- *  ならない場合がある．
+ *  sta_ker() の前でマスタプロセッサで行う初期化
  */
-typedef struct t_excinf {
-	uint32_t	nest_count;				/* 例外ネストカウント */
-	int32_t	intpri;						/* 割込み優先度マスク */
-	uint32_t	r0;
-	uint32_t	r1;
-	uint32_t	r2;
-	uint32_t	r3;
-	uint32_t	r4;
-	uint32_t	r5;
-	uint32_t	r12;
-	uint32_t	lr;
-	uint32_t	pc;						/* 戻り番地 */
-	uint32_t	cpsr;					/* CPU例外発生時のCPSR */
-} T_EXCINF;
+extern void chip_mprc_initialize(void);
 
 /*
- *  CPSRに常にセットするパターン
+ *  チップ依存の初期化
  */
-#ifdef TOPPERS_SAFEG_SECURE
-#define CPSR_ALWAYS_SET  CPSR_IRQ_BIT
-#else  /* !TOPPERS_SAFEG_SECURE */
-#define CPSR_ALWAYS_SET  0x00
-#endif /* TOPPERS_SAFEG_SECURE */
+extern void chip_initialize(PCB *p_my_pcb);
+
+/*
+ *  チップ依存の終了処理
+ */
+extern void chip_terminate(void);
+
+/*
+ *  MPU 設定（chip_kernel_impl.c で定義．ターゲット依存部の MPU 初期化から呼ぶ）
+ *  ※ chip_rename.h で _kernel_mpu_* にリネームされる．プロトタイプが無いと
+ *     gcc14 以降では implicit-function-declaration エラーになる．
+ */
+extern void mpu_disable_allregion(void);
+extern void mpu_set_region(uint32_t base, uint32_t size, uint32_t number, uint32_t attr);
 
 #endif /* TOPPERS_MACRO_ONLY */
-#endif /* TOPPERS_CORE_KERNEL_H */
+#endif /* TOPPERS_CHIP_KERNEL_IMPL_H */

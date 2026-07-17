@@ -34,7 +34,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: gic_kernel_impl.c 376 2023-09-02 04:34:49Z ertl-honda $
+ *  $Id: gic_kernel_impl.c 483 2026-06-13 15:00:34Z ertl-honda $
  */
 
 /*
@@ -45,6 +45,7 @@
 #include "interrupt.h"
 #include <sil.h>
 #include "arm.h"
+#include "gic_ipi.h"			/* IPINO_EXT_KER / IPINO_DISPATCH（残留IPIクリア用）*/
 
 /*
  *  CPUインタフェースの操作
@@ -72,12 +73,9 @@ gicc_initialize(PCB *p_my_pcb)
 	sil_wrw_mem(GICC_BPR, 0U);
 
 	/*
-	 *  アクティブな割込みがあれば，EOIによりクリアする
-	 */
-	sil_wrw_mem(GICC_EOIR, sil_rew_mem(GICC_IAR));
-
-	/*
 	 *  CPUインタフェースをイネーブル
+	 *
+	 *  以降のペンディング/アクティブ割込みクリアのため，先にイネーブルする．
 	 */
 #ifdef TOPPERS_SAFEG_SECURE
 	sil_wrw_mem(GICC_CTLR, (GICC_CTLR_FIQEN|GICC_CTLR_ENABLEGRP1
@@ -85,6 +83,50 @@ gicc_initialize(PCB *p_my_pcb)
 #else /* TOPPERS_SAFEG_SECURE */
 	sil_wrw_mem(GICC_CTLR, GICC_CTLR_ENABLE);
 #endif /* TOPPERS_SAFEG_SECURE */
+
+	/*
+	 *  残留するペンディング/アクティブ割込みの正規化
+	 *
+	 *  リセットを介さずにカーネルを再起動した場合（JTAGによる再ロード等）に，
+	 *  前回実行時のペンディング割込みや，完了せずに残ったアクティブ割込みが
+	 *  CPUインタフェースに残存することがある．特にカーネル終了IPI（ext_ker）
+	 *  は irc_end_int を実行せずに停止するためEOIされず，アクティブのまま残
+	 *  る．アクティブ割込みが残るとその実行優先度により以降のIPI（他プロセッ
+	 *  サからのディスパッチ要求等）がマスクされ，マルチプロセッサ動作がデッ
+	 *  ドロックする．これを正常な状態へ正規化する．
+	 *
+	 *  通常のリセット起動時はペンディング/アクティブ割込みは存在せず（GICC_RPR
+	 *  はアイドル0xffを示す），本処理は実質的な副作用を持たない．
+	 */
+	{
+		uint_t		i;
+		uint32_t	iar;
+
+		/* ペンディング割込みのドレイン（IARでack→EOIで完了） */
+		for (i = 0; i < 64U; i++) {
+			iar = sil_rew_mem(GICC_IAR);
+			if ((iar & 0x03ffU) == 0x03ffU) {
+				break;					/* spurious(1023)＝ペンディング無し */
+			}
+			sil_wrw_mem(GICC_EOIR, iar);
+		}
+
+		/*
+		 *  残留アクティブ割込みのクリア．GICC_RPRがアイドル(0xff)以外なら，
+		 *  前回実行で完了しなかったIPIハンドラのアクティブ状態が残っている．
+		 *  カーネルが用いるIPI(SGI)をEOIして解除する（SGIのEOIRは送信元CPU
+		 *  を含むため，両プロセッサ分を発行する）．
+		 */
+		for (i = 0; i < 16U; i++) {
+			if ((sil_rew_mem(GICC_RPR) & 0xffU) == 0xffU) {
+				break;					/* アクティブ割込み無し */
+			}
+			sil_wrw_mem(GICC_EOIR, IPINO_EXT_KER);
+			sil_wrw_mem(GICC_EOIR, (1U << 10) | IPINO_EXT_KER);
+			sil_wrw_mem(GICC_EOIR, IPINO_DISPATCH);
+			sil_wrw_mem(GICC_EOIR, (1U << 10) | IPINO_DISPATCH);
+		}
+	}
 }
 
 /*

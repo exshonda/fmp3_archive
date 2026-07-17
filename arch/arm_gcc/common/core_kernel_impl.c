@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: core_kernel_impl.c 335 2023-04-18 10:50:40Z ertl-honda $
+ *  $Id: core_kernel_impl.c 558 2026-07-17 12:33:18Z ertl-honda $
  */
 
 /*
@@ -51,7 +51,7 @@
 
 /*
  *  start.Sでの同期用変数
- */
+ */ 
 volatile uint_t start_sync[TNUM_PRCID];
 
 /*
@@ -59,7 +59,7 @@ volatile uint_t start_sync[TNUM_PRCID];
  *
  *  スタートアップルーチンで，0に初期化されることを期待している．
  */
-uint32_t TOPPERS_sil_spn_var = 0U;
+LOCK TOPPERS_sil_spn_var = { 0U };
 
 /*
  *  ジャイアントロック

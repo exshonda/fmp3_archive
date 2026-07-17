@@ -37,7 +37,7 @@
 #   アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
 #   の責任を負わない．
 # 
-#   $Id: core_kernel.trb 263 2021-01-08 06:08:59Z ertl-honda $
+#   $Id: core_kernel.trb 558 2026-07-17 12:33:18Z ertl-honda $
 # 
 
 #
@@ -48,11 +48,14 @@
 #  有効なCPU例外ハンドラ番号
 #
 $EXCNO_VALID = {}
-excno_list = [ 0, 1, 2, 3, 4, 5, 6 ]
+$EXCNO_GLOBAL = {}
+excno_list = [ 0, 1, 2, 3, 4, 5, 6, 7 ]
 1.upto($TNUM_PRCID) do |prcid|
   $EXCNO_VALID[prcid] = []
+  $EXCNO_GLOBAL[prcid] = {}
   excno_list.each do |excno|
     $EXCNO_VALID[prcid].push((prcid << 16) | excno)
+    $EXCNO_GLOBAL[prcid][excno] = ((prcid << 16) | excno)
   end
 end
 
@@ -60,7 +63,7 @@ end
 #  DEF_EXCで使用できるCPU例外ハンドラ番号
 #
 $EXCNO_DEFEXC_VALID = {}
-excno_list = [ 0, 1, 2, 3, 5, 6 ]
+excno_list = [ 0, 1, 2, 3, 5, 6, 7 ]
 1.upto($TNUM_PRCID) do |prcid|
   $EXCNO_DEFEXC_VALID[prcid] = []
   excno_list.each do |excno|
@@ -121,9 +124,10 @@ $kernelCfgC.comment_header("Interrupt Handler Table")
 
 1.upto($TNUM_PRCID) do |prcid|
   $kernelCfgC.add("const FP _kernel_inh_table_prc#{prcid}" \
-									"[#{$INHNO_VALID[prcid].size}] = {")
-  $INHNO_VALID[prcid].each_with_index do |inhnoVal, index|
+											"[TMAX_INHNO + 1] = {")
+  0.upto($TMAX_INHNO).each_with_index do |localInhnoVal, index|
     $kernelCfgC.add(",") if index > 0
+    inhnoVal = $INHNO_GLOBAL[prcid][localInhnoVal]
     $kernelCfgC.append("\t/* 0x#{sprintf("%05x", inhnoVal)} */ ")
     if $cfgData[:DEF_INH].has_key?(inhnoVal)
       $kernelCfgC.append("(FP)(#{$cfgData[:DEF_INH][inhnoVal][:inthdr]})")
@@ -153,9 +157,10 @@ if $USE_INTCFG_TABLE
   $kernelCfgC.comment_header("Interrupt Configuration Table")
   1.upto($TNUM_PRCID) do |prcid|
     $kernelCfgC.add("const uint8_t _kernel_intcfg_table_prc#{prcid}" \
-									"[#{$INTNO_VALID[prcid].size}] = {")
-    $INTNO_VALID[prcid].each_with_index do |intnoVal, index|
+											"[TMAX_INTNO + 1] = {")
+    0.upto($TMAX_INTNO).each_with_index do |localIntnoVal, index|
       $kernelCfgC.add(",") if index > 0
+      intnoVal = $INTNO_GLOBAL[prcid][localIntnoVal]
       $kernelCfgC.append("\t/* 0x#{sprintf("%05x", intnoVal)} */ ")
       if $cfgData[:CFG_INT].has_key?(intnoVal)
         $kernelCfgC.append("1U")
@@ -183,9 +188,10 @@ $kernelCfgC.comment_header("CPU Exception Handler Table")
 
 1.upto($TNUM_PRCID) do |prcid|
   $kernelCfgC.add("const FP _kernel_exc_table_prc#{prcid}" \
-									"[#{$EXCNO_VALID[prcid].size}] = {")
-  $EXCNO_VALID[prcid].each_with_index do |excnoVal, index|
+											"[TMAX_EXCNO + 1] = {")
+  0.upto($TMAX_EXCNO).each_with_index do |localExcnoVal, index|
     $kernelCfgC.add(",") if index > 0
+    excnoVal = $EXCNO_GLOBAL[prcid][localExcnoVal]
     $kernelCfgC.append("\t/* 0x#{sprintf("%05x", excnoVal)} */ ")
     if ($cfgData[:DEF_EXC].has_key?(excnoVal))
       $kernelCfgC.append("(FP)(#{$cfgData[:DEF_EXC][excnoVal][:exchdr]})")

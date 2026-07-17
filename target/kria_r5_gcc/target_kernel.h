@@ -2,12 +2,10 @@
  *  TOPPERS/FMP Kernel
  *      Toyohashi Open Platform for Embedded Real-Time Systems/
  *      Flexible MultiProcessor Kernel
- * 
- *  Copyright (C) 2000-2003 by Embedded and Real-Time Systems Laboratory
- *                              Toyohashi Univ. of Technology, JAPAN
- *  Copyright (C) 2004-2023 by Embedded and Real-Time Systems Laboratory
+ *
+ *  Copyright (C) 2026 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
- * 
+ *
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
  *  ア（本ソフトウェアを改変したものを含む．以下同じ）を使用・複製・改
  *  変・再配布（以下，利用と呼ぶ）することを無償で許諾する．
@@ -30,88 +28,92 @@
  *      また，本ソフトウェアのユーザまたはエンドユーザからのいかなる理
  *      由に基づく請求からも，上記著作権者およびTOPPERSプロジェクトを
  *      免責すること．
- * 
+ *
  *  本ソフトウェアは，無保証で提供されているものである．上記著作権者お
  *  よびTOPPERSプロジェクトは，本ソフトウェアに関して，特定の使用目的
  *  に対する適合性も含めて，いかなる保証も行わない．また，本ソフトウェ
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
- * 
- *  $Id: core_kernel.h 464 2026-05-27 11:42:34Z ertl-honda $
- */
-
-/*
- *		kernel.hのコア依存部（ARM用）
  *
- *  このヘッダファイルは，target_kernel.h（または，そこからインクルード
- *  されるファイル）のみからインクルードされる．他のファイルから直接イ
- *  ンクルードしてはならない．
+ *  $Id$
  */
 
-#ifndef TOPPERS_CORE_KERNEL_H
-#define TOPPERS_CORE_KERNEL_H
-
 /*
- *  ターゲット定義のタスク属性
- */
-#define TA_FPU		UINT_C(0x08)	/* FPUレジスタをコンテキストに含める */
-
-/*
- *  スタックの型
+ *		kernel.hのターゲット依存部（ZynqMP R5用）
  *
- *  ARMでは，スタックを8バイト境界に配置する必要がある．
+ *  このヘッダファイルは，kernel.hからインクルードされる．他のファイル
+ *  から直接インクルードしてはならない．
  */
-#define TOPPERS_STK_T	long long
+
+#ifndef TOPPERS_TARGET_KERNEL_H
+#define TOPPERS_TARGET_KERNEL_H
 
 /*
- *  CPU例外ハンドラ番号の数
- */
-#define TNUM_EXCNO		7
-#define TMAX_EXCNO		7
-
-/*
- *  CPU例外ハンドラ番号の定義
- */
-#define EXCNO_UNDEF		UINT_C(0)		/* 未定義命令 */
-#define EXCNO_SVC		UINT_C(1)		/* スーパバイザコール */
-#define EXCNO_PABORT	UINT_C(2)		/* プリフェッチアボート */
-#define EXCNO_DABORT	UINT_C(3)		/* データアボート */
-#define EXCNO_IRQ		UINT_C(4)		/* IRQ割込み */
-#define EXCNO_FIQ		UINT_C(5)		/* FIQ割込み */
-#define EXCNO_FATAL		UINT_C(6)		/* フェイタルデータアボート */
-
-#ifndef TOPPERS_MACRO_ONLY
-
-/*
- *  CPU例外の情報を記憶しているメモリ領域の構造
+ *  プロセッサ数
  *
- *  割込み優先度マスクは，CPU例外がタスクコンテキストで発生した場合に
- *  のみ有効である．非タスクコンテキストで発生した場合には，正しい値と
- *  ならない場合がある．
+ *  ZynqMPのRPUは，split（パフォーマンス）モードで2個のCortex-R5Fを
+ *  独立に動作させられる．TNUM_PRCID==1はlockstep相当のシングルコア構成．
  */
-typedef struct t_excinf {
-	uint32_t	nest_count;				/* 例外ネストカウント */
-	int32_t	intpri;						/* 割込み優先度マスク */
-	uint32_t	r0;
-	uint32_t	r1;
-	uint32_t	r2;
-	uint32_t	r3;
-	uint32_t	r4;
-	uint32_t	r5;
-	uint32_t	r12;
-	uint32_t	lr;
-	uint32_t	pc;						/* 戻り番地 */
-	uint32_t	cpsr;					/* CPU例外発生時のCPSR */
-} T_EXCINF;
+#ifndef TNUM_PRCID
+#define TNUM_PRCID		1
+#endif /* TNUM_PRCID */
 
 /*
- *  CPSRに常にセットするパターン
+ *  プロセッサIDの定義
  */
-#ifdef TOPPERS_SAFEG_SECURE
-#define CPSR_ALWAYS_SET  CPSR_IRQ_BIT
-#else  /* !TOPPERS_SAFEG_SECURE */
-#define CPSR_ALWAYS_SET  0x00
-#endif /* TOPPERS_SAFEG_SECURE */
+#define PRC1		1
+#define PRC2		2
 
-#endif /* TOPPERS_MACRO_ONLY */
-#endif /* TOPPERS_CORE_KERNEL_H */
+/*
+ *  マスタプロセッサ
+ */
+#define TOPPERS_MASTER_PRCID	PRC1
+
+/*
+ *  タイムマスタプロセッサ
+ */
+#define TOPPERS_TMASTER_PRCID	PRC1
+
+/*
+ *  タイムイベント処理プロセッサとするプロセッサ
+ *
+ *  各プロセッサに専用のTTC3カウンタ（高分解能タイマ）を割り当てるため，
+ *  全プロセッサを時刻管理プロセッサとする（全ビットを1にする）．
+ */
+#ifndef TOPPERS_TEPP_PRC
+#define TOPPERS_TEPP_PRC	((1U << TNUM_PRCID) - 1U)
+#endif /* TOPPERS_TEPP_PRC */
+
+/*
+ *  クラスIDの定義
+ */
+#if TNUM_PRCID == 1
+#define CLS_PRC1		1		/* 割付け可能：PRC1，初期割付け：PRC1 */
+#define CLS_ALL_PRC1	2		/* 割付け可能：すべて，初期割付け：PRC1 */
+#elif TNUM_PRCID == 2
+#define CLS_PRC1		1		/* 割付け可能：PRC1，初期割付け：PRC1 */
+#define CLS_PRC2		2		/* 割付け可能：PRC2，初期割付け：PRC2 */
+#define CLS_ALL_PRC1	3		/* 割付け可能：すべて，初期割付け：PRC1 */
+#define CLS_ALL_PRC2	4		/* 割付け可能：すべて，初期割付け：PRC2 */
+#else
+#error TNUM_PRCID is out of range.
+#endif /* TNUM_PRCID == 1 */
+
+/*
+ *  高分解能タイマのタイマ周期
+ */
+#ifndef USE_64BIT_HRTCNT
+/* TCYC_HRTCNTは定義しない．*/
+#endif /* USE_64BIT_HRTCNT */
+
+/*
+ *  高分解能タイマのカウント値の進み幅
+ */
+#define TSTEP_HRTCNT	1U
+
+/*
+ *  チップで共通な定義
+ */
+#include "chip_kernel.h"
+
+#endif /* TOPPERS_TARGET_KERNEL_H */

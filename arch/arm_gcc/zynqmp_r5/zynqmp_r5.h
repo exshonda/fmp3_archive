@@ -2,12 +2,10 @@
  *  TOPPERS/FMP Kernel
  *      Toyohashi Open Platform for Embedded Real-Time Systems/
  *      Flexible MultiProcessor Kernel
- * 
- *  Copyright (C) 2000-2003 by Embedded and Real-Time Systems Laboratory
- *                              Toyohashi Univ. of Technology, JAPAN
- *  Copyright (C) 2004-2023 by Embedded and Real-Time Systems Laboratory
+ *
+ *  Copyright (C) 2026 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
- * 
+ *
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
  *  ア（本ソフトウェアを改変したものを含む．以下同じ）を使用・複製・改
  *  変・再配布（以下，利用と呼ぶ）することを無償で許諾する．
@@ -30,88 +28,71 @@
  *      また，本ソフトウェアのユーザまたはエンドユーザからのいかなる理
  *      由に基づく請求からも，上記著作権者およびTOPPERSプロジェクトを
  *      免責すること．
- * 
+ *
  *  本ソフトウェアは，無保証で提供されているものである．上記著作権者お
  *  よびTOPPERSプロジェクトは，本ソフトウェアに関して，特定の使用目的
  *  に対する適合性も含めて，いかなる保証も行わない．また，本ソフトウェ
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
- * 
- *  $Id: core_kernel.h 464 2026-05-27 11:42:34Z ertl-honda $
- */
-
-/*
- *		kernel.hのコア依存部（ARM用）
  *
- *  このヘッダファイルは，target_kernel.h（または，そこからインクルード
- *  されるファイル）のみからインクルードされる．他のファイルから直接イ
- *  ンクルードしてはならない．
+ *  $Id$
  */
 
-#ifndef TOPPERS_CORE_KERNEL_H
-#define TOPPERS_CORE_KERNEL_H
-
 /*
- *  ターゲット定義のタスク属性
+ *		ZynqMP RPU（Cortex-R5）のハードウェア資源の定義
  */
-#define TA_FPU		UINT_C(0x08)	/* FPUレジスタをコンテキストに含める */
+#ifndef TOPPERS_ZYNQMP_R5_H
+#define TOPPERS_ZYNQMP_R5_H
 
 /*
- *  スタックの型
+ *  GIC依存部を使用するための定義（RPU用GIC，PL390/GICv1相当）
+ */
+#define GICC_BASE			UINT_C(0xF9001000)
+#define GICD_BASE			UINT_C(0xF9000000)
+
+#ifndef GIC_TNUM_INTNO
+#define GIC_TNUM_INTNO		UINT_C(187)		/* SGI 16 + PPI 16 + SPI 155 */
+#endif /* GIC_TNUM_INTNO */
+
+/*
+ *  UARTのベースアドレスと割込み番号（Cadence UART）
+ */
+#define ZYNQMP_UART0_BASE	UINT_C(0xFF000000)
+#define ZYNQMP_UART1_BASE	UINT_C(0xFF010000)
+
+#define ZYNQMP_UART0_IRQ	UINT_C(21 + 32)		/* 53 */
+#define ZYNQMP_UART1_IRQ	UINT_C(22 + 32)		/* 54 */
+
+/*
+ *  TTC（Triple Timer Counter）のベースアドレスと割込み番号
  *
- *  ARMでは，スタックを8バイト境界に配置する必要がある．
+ *  TTC3のカウンタ0を高分解能タイマに使用する．
  */
-#define TOPPERS_STK_T	long long
+#define ZYNQMP_TTC3_BASE	UINT_C(0xFF140000)
+
+#define ZYNQMP_TTC3_0_IRQ	UINT_C(45 + 32)		/* 77 */
+#define ZYNQMP_TTC3_1_IRQ	UINT_C(46 + 32)		/* 78 */
+#define ZYNQMP_TTC3_2_IRQ	UINT_C(47 + 32)		/* 79 */
 
 /*
- *  CPU例外ハンドラ番号の数
+ *  RPU制御レジスタ（lockstep/split設定等）
  */
-#define TNUM_EXCNO		7
-#define TMAX_EXCNO		7
+#define RPU_BASEADDR					UINT_C(0xFF9A0000)
+
+#define RPU_RPU_GLBL_CNTL				(RPU_BASEADDR + 0x00000000U)
+#define RPU_RPU_GLBL_CNTL_SLSPLIT_MASK	0x00000008U
+#define RPU_RPU_GLBL_CNTL_SLCLAMP_MASK	0x00000010U
+#define RPU_RPU_GLBL_CNTL_TCM_COMB_MASK	0x00000040U
+
+#define RPU_RPU_ERR_INJ					(RPU_BASEADDR + 0x00000020U)
+#define RPU_RPU_ERR_INJ_FAULTLOGENABLE	0x00000101U
 
 /*
- *  CPU例外ハンドラ番号の定義
+ *  CRL_APB（低消費電力ドメインのクロック・リセット制御）
  */
-#define EXCNO_UNDEF		UINT_C(0)		/* 未定義命令 */
-#define EXCNO_SVC		UINT_C(1)		/* スーパバイザコール */
-#define EXCNO_PABORT	UINT_C(2)		/* プリフェッチアボート */
-#define EXCNO_DABORT	UINT_C(3)		/* データアボート */
-#define EXCNO_IRQ		UINT_C(4)		/* IRQ割込み */
-#define EXCNO_FIQ		UINT_C(5)		/* FIQ割込み */
-#define EXCNO_FATAL		UINT_C(6)		/* フェイタルデータアボート */
+#define CRL_APB_BASEADDR				UINT_C(0xFF5E0000)
 
-#ifndef TOPPERS_MACRO_ONLY
+#define CRL_APB_RST_LPD_IOU2			(CRL_APB_BASEADDR + 0x00000238U)
+#define CRL_APB_RST_LPD_IOU2_TTC3_RESET_MASK	0x00004000U
 
-/*
- *  CPU例外の情報を記憶しているメモリ領域の構造
- *
- *  割込み優先度マスクは，CPU例外がタスクコンテキストで発生した場合に
- *  のみ有効である．非タスクコンテキストで発生した場合には，正しい値と
- *  ならない場合がある．
- */
-typedef struct t_excinf {
-	uint32_t	nest_count;				/* 例外ネストカウント */
-	int32_t	intpri;						/* 割込み優先度マスク */
-	uint32_t	r0;
-	uint32_t	r1;
-	uint32_t	r2;
-	uint32_t	r3;
-	uint32_t	r4;
-	uint32_t	r5;
-	uint32_t	r12;
-	uint32_t	lr;
-	uint32_t	pc;						/* 戻り番地 */
-	uint32_t	cpsr;					/* CPU例外発生時のCPSR */
-} T_EXCINF;
-
-/*
- *  CPSRに常にセットするパターン
- */
-#ifdef TOPPERS_SAFEG_SECURE
-#define CPSR_ALWAYS_SET  CPSR_IRQ_BIT
-#else  /* !TOPPERS_SAFEG_SECURE */
-#define CPSR_ALWAYS_SET  0x00
-#endif /* TOPPERS_SAFEG_SECURE */
-
-#endif /* TOPPERS_MACRO_ONLY */
-#endif /* TOPPERS_CORE_KERNEL_H */
+#endif /* TOPPERS_ZYNQMP_R5_H */

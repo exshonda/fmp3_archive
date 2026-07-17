@@ -34,7 +34,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: gic_kernel_impl.h 361 2023-07-21 06:23:26Z ertl-honda $
+ *  $Id: gic_kernel_impl.h 464 2026-05-27 11:42:34Z ertl-honda $
  */
 
 /*
@@ -54,14 +54,13 @@
 /*
  *  割込み番号の数，最小値と最大値
  */
-#define TNUM_INTNO		GIC_TNUM_INTNO
-#define TMIN_INTNO		UINT_C(0)
 #define TMAX_INTNO		(GIC_TNUM_INTNO - 1)
 
 /*
  *  割込みハンドラ番号の数
  */
 #define TNUM_INHNO		GIC_TNUM_INTNO
+#define TMAX_INHNO		TMAX_INTNO
 
 /*
  *  割込み番号の定義
@@ -473,7 +472,7 @@ extern void gicd_terminate(void);
  *  割込み番号の範囲の判定
  */
 #define VALID_INTNO(prcid, intno) \
-			(((TMIN_INTNO <= INTNO_MASK(intno))					\
+			(((GIC_INTNO_SGI0 <= INTNO_MASK(intno))				\
 					&& (INTNO_MASK(intno) < GIC_INTNO_SPI0)		\
 					&& (INTNO_PRCID(intno) == prcid))			\
 			|| ((GIC_INTNO_SPI0 <= INTNO_MASK(intno))			\
@@ -595,7 +594,7 @@ clear_int(INTNO intno)
  *  割込みが要求できる割込み番号の範囲の判定
  */
 #define VALID_INTNO_RASINT(prcid, intno) \
-			(((TMIN_INTNO <= INTNO_MASK(intno))					\
+			(((GIC_INTNO_SGI0 <= INTNO_MASK(intno))				\
 					&& (INTNO_MASK(intno) < GIC_INTNO_PPI0)		\
 					&& (TMIN_PRCID <= INTNO_PRCID(intno))		\
 					&& (INTNO_PRCID(intno) <= TMAX_PRCID))		\

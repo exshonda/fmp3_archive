@@ -35,7 +35,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: mpcore_timer.c 335 2023-04-18 10:50:40Z ertl-honda $
+ *  $Id: mpcore_timer.c 474 2026-06-06 15:03:35Z ertl-honda $
  */
 
 /*
@@ -152,6 +152,7 @@ target_hrt_handler(void)
 	 */
 	signal_time();
 }
+
 
 
 #ifdef USE_MPCORE_WDG_OVRTIMER

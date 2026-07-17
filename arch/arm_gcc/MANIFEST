@@ -27,7 +27,6 @@ common/core_test.h
 common/core_unrename.h
 common/gic_ipi.cfg
 common/gic_ipi.h
-common/gic_kernel.trb
 common/gic_kernel_impl.c
 common/gic_kernel_impl.h
 common/gic_support.S

@@ -1,7 +1,7 @@
 #
 #		Makefileのコア依存部（ARM用）
 #
-#  $Id: Makefile.core 345 2023-04-20 12:58:48Z ertl-honda $
+#  $Id: Makefile.core 384 2023-09-14 05:26:40Z ertl-honda $
 #
 
 #

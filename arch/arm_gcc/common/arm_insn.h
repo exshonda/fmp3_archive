@@ -36,7 +36,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: arm_insn.h 335 2023-04-18 10:50:40Z ertl-honda $
+ *  $Id: arm_insn.h 489 2026-06-13 17:04:20Z ertl-honda $
  */
 
 /*
@@ -184,7 +184,7 @@ enable_fiq_irq(void)
  *  Test&Set操作
  */
 Inline bool_t
-test_and_set_uint32(uint32_t *p_var)
+test_and_set_uint32(volatile uint32_t *p_var)
 {
 	bool_t	failed;
 
@@ -252,6 +252,30 @@ arm_send_event(void)
 /* コプロセッサアクセス制御レジスタ */
 #define CP15_READ_CPACR(reg)	Asm("mrc p15, 0, %0, c1, c0, 2":"=r"(reg))
 #define CP15_WRITE_CPACR(reg)	Asm("mcr p15, 0, %0, c1, c0, 2"::"r"(reg))
+
+#ifdef __TARGET_PROFILE_R
+/*
+ *  Rプロファイル（PMSAv7，Cortex-R5）のMPU操作レジスタ
+ *
+ *  Rプロファイルはメモリ保護ユニット（MPU）を持つ．リージョンの設定は，
+ *  RGNR（リージョン番号）を選択した後，DRBAR（ベースアドレス），
+ *  DRACR（アクセス制御），DRSR（サイズ／イネーブル）を書き込む．
+ */
+/* MPUタイプレジスタ（MPUIR）*/
+#define CP15_READ_MPUIR(reg)	Asm("mrc p15, 0, %0, c0, c0, 4":"=r"(reg))
+/* リージョン番号レジスタ（RGNR）*/
+#define CP15_WRITE_RGNR(reg)	Asm("mcr p15, 0, %0, c6, c2, 0"::"r"(reg))
+/* データリージョンベースアドレスレジスタ（DRBAR）*/
+#define CP15_WRITE_DRBAR(reg)	Asm("mcr p15, 0, %0, c6, c1, 0"::"r"(reg))
+/* データリージョンアクセス制御レジスタ（DRACR）*/
+#define CP15_WRITE_DRACR(reg)	Asm("mcr p15, 0, %0, c6, c1, 4"::"r"(reg))
+/* データリージョンサイズ／イネーブルレジスタ（DRSR）*/
+#define CP15_READ_DRSR(reg)		Asm("mrc p15, 0, %0, c6, c1, 2":"=r"(reg))
+#define CP15_WRITE_DRSR(reg)	Asm("mcr p15, 0, %0, c6, c1, 2"::"r"(reg))
+/* データキャッシュ全体の無効化（Cortex-R5）*/
+#define CP15_INVALIDATE_DCACHE_R5() \
+								Asm("mcr p15, 0, %0, c15, c5, 0"::"r"(0))
+#endif /* __TARGET_PROFILE_R */
 
 /*
  *  CP15によるキャッシュ操作マクロ

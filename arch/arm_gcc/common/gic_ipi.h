@@ -35,7 +35,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  *
- *  $Id: gic_ipi.h 335 2023-04-18 10:50:40Z ertl-honda $
+ *  $Id: gic_ipi.h 508 2026-06-16 06:29:17Z ertl-honda $
  */
 
 /*
@@ -124,7 +124,14 @@
 #define INHNO_IPI_START_SCYC_PRC3	(0x00030000 | IPINO_START_SCYC)
 #define INHNO_IPI_START_SCYC_PRC4	(0x00040000 | IPINO_START_SCYC)
 
-#ifndef TOPPERS_MACRO_ONLY
+/*
+ *  プロセッサ間割込み発行関数の定義
+ *
+ *  TOPPERS_OMIT_GIC_IPI_REQUESTが定義されている場合，以下の発行関数を
+ *  定義しない．タイマドライバシミュレータ対応ターゲットなど，発行関数
+ *  をターゲット依存部で独自に定義する場合に用いる．
+ */
+#if !defined(TOPPERS_MACRO_ONLY) && !defined(TOPPERS_OMIT_GIC_IPI_REQUEST)
 
 /*
  *  ディスパッチ要求プロセッサ間割込みの発行
