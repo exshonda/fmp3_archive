@@ -25,7 +25,7 @@
  */
 #define core_int_entry				_kernel_core_int_entry
 #define core_exc_entry				_kernel_core_exc_entry
-#define svc_handler					_kernel_svc_handler
+#define svc_handler				    _kernel_svc_handler
 #define pendsv_handler				_kernel_pendsv_handler
 #define dispatch					_kernel_dispatch
 #define do_dispatch					_kernel_do_dispatch

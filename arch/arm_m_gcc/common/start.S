@@ -71,8 +71,13 @@ ALABEL(_kernel_start)
     /*
      * スタックポインタの初期化
      * sp = _kernel_istkpt_table[get_my_prcidx()]
+     *
+     * スタック設定前は my_prcidx が依存しうる手段（例：SSE-200 では istack
+     * 範囲からの導出）が未確立のため，起動時専用の my_prcidx_boot を用いる．
+     * CPUID 等で常に自コア番号が分かるチップでは my_prcidx_boot は my_prcidx
+     * に委譲される（core_asm.inc のデフォルト）．
      */
-    my_prcidx r0
+    my_prcidx_boot r0
     ldr  r1, =_kernel_istkpt_table
 #if __TARGET_ARCH_THUMB >= 4
     ldr  sp, [r1, r0, lsl #2]

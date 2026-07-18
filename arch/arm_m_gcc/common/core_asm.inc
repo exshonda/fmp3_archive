@@ -82,6 +82,22 @@
 #define DATA_TABLE_END __data_section_table_end
 
 /*
+ * dstに自プロセッサのインデックス（0オリジン）を代入する起動時専用マクロ．
+ * dst = get_my_prcidx() 相当
+ *
+ * _kernel_start の冒頭，スタックポインタを設定する前に呼び出される．自コア
+ * 番号を確定できるハードウェア機構（CPUID 等）を持つチップでは my_prcidx と
+ * 同一でよいため，デフォルトでは my_prcidx に委譲する．自コア番号確定にブー
+ * トハンドシェイクが必要なチップ（SSE-200 等）では，チップ依存部
+ * （chip_asm.inc）で本マクロを上書きする．
+ */
+#ifndef MY_PRCIDX_BOOT_DEFINED
+.macro my_prcidx_boot reg
+    my_prcidx \reg
+.endm
+#endif /* MY_PRCIDX_BOOT_DEFINED */
+
+/*
  * dstに自プロセッサのPCBを代入するマクロ．
  * dst = get_my_pcb()
  */

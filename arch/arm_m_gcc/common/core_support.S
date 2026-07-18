@@ -193,7 +193,7 @@ ALABEL(pendsv_handler_1)
 #endif /* __TARGET_ARCH_THUMB >= 5 */
 	/* 戻り先が EXC_RETURN でないなら Thread モードへ */
 	ldr    r1, [r0, #TCB_pc]
-	and    r2, r0, #EXC_RETURN_PREFIX
+	and    r2, r1, #EXC_RETURN_PREFIX
 	cmp    r2, #EXC_RETURN_PREFIX
 	bne    return_to_thread
 	ldr    r2, [r0, #TCB_sp]
@@ -262,8 +262,10 @@ ALABEL(return_to_thread_0)
 	 * lr  : p_runtsk->tskctxb.pc
 	 */
 ALABEL(return_to_thread_fp)
+#ifdef TOPPERS_FPU_CONTEXT
 	/* 例外リターンにより CONTROL.FPCA がクリアされるが，ここでまたセットされる． */
 	vpop   {s16-s31}
+#endif
 	bx     lr
 
 /*

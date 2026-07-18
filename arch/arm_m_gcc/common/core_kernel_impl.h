@@ -232,7 +232,7 @@ Inline void
 lock_cpu(void)
 {
 	uint32_t iipm;
-	PCB *p_pcb;
+	TPCB *p_pcb;
 
 	/* 
 	 * クリティカルセクションに入る前に全てのメモリアクセスが
@@ -247,14 +247,18 @@ lock_cpu(void)
 	 *  ある．
 	 */
 	iipm = get_basepri();
-	p_pcb = get_my_pcb();
 	/*
 	 *  BASEPRIレジスタは値が小さいほど優先度が高いが，IIPM_ENAALL が
 	 *  '0'であるため，単純に優先度比較だけでは不十分である．
+	 *
+	 *  get_my_tpcb()は必ずBASEPRIを設定した後に評価する．先に評価すると，
+	 *  自PCBを求めてからBASEPRIを設定するまでの間にディスパッチ・タスク
+	 *  移動が起こり得て，他プロセッサのPCBに書き込んでしまう．
 	 */
 	set_basepri_max(IIPM_LOCK);
-	p_pcb->target_pcb.saved_iipm = iipm;
-	p_pcb->target_pcb.lock_flag = true;
+	p_pcb = get_my_tpcb();
+	p_pcb->saved_iipm = iipm;
+	p_pcb->lock_flag = true;
 	/* クリティカルセクションの前後でメモリが書き換わる可能性がある */
 	ARM_MEMORY_CHANGED;
 }
@@ -271,17 +275,17 @@ lock_cpu(void)
 Inline void
 unlock_cpu(void)
 {
-	PCB *p_pcb;
+	TPCB *p_pcb;
 	/* クリティカルセクションの前後でメモリが書き換わる可能性がある */
 	ARM_MEMORY_CHANGED;
-	p_pcb = get_my_pcb();
-	p_pcb->target_pcb.lock_flag = false;
+	p_pcb = get_my_tpcb();
+	p_pcb->lock_flag = false;
 	/* 
 	 * クリティカルセクションを抜ける前に全てのメモリアクセスが
 	 * 終了していることを保証する．
 	 */
 	data_synchronization_barrier();
-	set_basepri(p_pcb->target_pcb.saved_iipm);
+	set_basepri(p_pcb->saved_iipm);
 }
 
 
@@ -295,22 +299,24 @@ unlock_cpu(void)
 Inline void
 lock_cpu_dsp(void)
 {
-	PCB *p_pcb;
+	TPCB *p_pcb;
 	/* 
 	 * クリティカルセクションに入る前に全てのメモリアクセスが
 	 * 終了していることを保証する．
 	 */
 	data_synchronization_barrier();
-	p_pcb = get_my_pcb();
 	/*
 	 * この時点では必ず割込み優先度全解除状態であるため，
 	 * ・割込み優先度マスクをCPUロック状態
 	 * ・割込み優先度マスクの保存値をIIPM_ENAALL
 	 * を必ず実行する
+	 *
+	 * get_my_tpcb()は必ずBASEPRIを設定した後に評価する（lock_cpu参照）．
 	 */
 	set_basepri(IIPM_LOCK);
-	p_pcb->target_pcb.saved_iipm = IIPM_ENAALL;
-	p_pcb->target_pcb.lock_flag = true;
+	p_pcb = get_my_tpcb();
+	p_pcb->saved_iipm = IIPM_ENAALL;
+	p_pcb->lock_flag = true;
 	/* クリティカルセクションの前後でメモリが書き換わる可能性がある */
 	ARM_MEMORY_CHANGED;
 }
@@ -326,11 +332,11 @@ lock_cpu_dsp(void)
 Inline void
 unlock_cpu_dsp(void)
 {
-	PCB *p_pcb;
+	TPCB *p_pcb;
 	/* クリティカルセクションの前後でメモリが書き換わる可能性がある */
 	ARM_MEMORY_CHANGED;
-	p_pcb = get_my_pcb();
-	p_pcb->target_pcb.lock_flag = false;
+	p_pcb = get_my_tpcb();
+	p_pcb->lock_flag = false;
 	/* 
 	 * クリティカルセクションを抜ける前に全てのメモリアクセスが
 	 * 終了していることを保証する．
@@ -345,7 +351,19 @@ unlock_cpu_dsp(void)
 Inline bool_t
 sense_lock(void)
 {
-	return get_my_pcb()->target_pcb.lock_flag;
+	bool_t		flag;
+	uint32_t	primask;
+
+	/*
+	 *  自PCBを求めてからlock_flagを読むまでの間にディスパッチ・タスク移動
+	 *  が起こると，他プロセッサのlock_flagを読んでしまう（誤ってE_CTXを返
+	 *  す）．PRIMASKで割込みを禁止し，この対を不可分にする．
+	 */
+	primask = get_primask();
+	set_primask();
+	flag = get_my_tpcb()->lock_flag;
+	assign_primask(primask);
+	return flag;
 }
 
 /*
@@ -370,12 +388,12 @@ sense_lock(void)
 Inline void
 t_set_ipm(PRI intpri)
 {
-	PCB *p_pcb = get_my_pcb();
+	TPCB *p_pcb = get_my_tpcb();
 	if (intpri == TIPM_ENAALL) {
-		p_pcb->target_pcb.saved_iipm = IIPM_ENAALL;
+		p_pcb->saved_iipm = IIPM_ENAALL;
 	} else {
 		const uint32_t iipm = INT_IPM(intpri);
-		p_pcb->target_pcb.saved_iipm = iipm;
+		p_pcb->saved_iipm = iipm;
 		set_basepri_max(iipm);
 	}
 }
@@ -389,8 +407,8 @@ t_set_ipm(PRI intpri)
 Inline PRI
 t_get_ipm(void)
 {
-	const PCB *p_pcb = get_my_pcb();
-	const uint32_t iipm = p_pcb->target_pcb.saved_iipm;
+	const TPCB *p_pcb = get_my_tpcb();
+	const uint32_t iipm = p_pcb->saved_iipm;
 	if (iipm == IIPM_ENAALL) {
 		return TIPM_ENAALL;
 	} else {
@@ -413,7 +431,7 @@ extern const uint32_t	*p_bitpat_cfgint[TNUM_PRCID];
 Inline bool_t
 check_intno_cfg(INTNO intno)
 {
-	if ((p_bitpat_cfgint[get_my_prcidx()][intno >> 5] & (1 << (intno & 0x1f))) == 0x00) {
+	if ((p_bitpat_cfgint[get_my_prcidx()][INTNO_MASK(intno) >> 5] & (1 << (INTNO_MASK(intno) & 0x1f))) == 0x00) {
 		return false;
 	}
 	return true;
@@ -428,12 +446,12 @@ disable_int(INTNO intno)
 {
 	uint32_t tmp;
 
-	if (intno == IRQNO_SYSTICK) {
+	if (INTNO_MASK(intno) == IRQNO_SYSTICK) {
 		tmp = sil_rew_mem((void *)SYSTIC_CONTROL_STATUS);
 		tmp &= ~SYSTIC_TICINT;
 		sil_wrw_mem((void *)SYSTIC_CONTROL_STATUS, tmp);
 	}else {
-		tmp = intno - 16;
+		tmp = INTNO_MASK(intno) - 16;
 		sil_wrw_mem((void *)((uint32_t *)NVIC_CLRENA0 + (tmp >> 5)),
 					(1 << (tmp & 0x1f)));
 	}
@@ -448,12 +466,12 @@ enable_int(INTNO intno)
 {
 	uint32_t tmp;
 
-	if (intno == IRQNO_SYSTICK) {
+	if (INTNO_MASK(intno) == IRQNO_SYSTICK) {
 		tmp = sil_rew_mem((void *)SYSTIC_CONTROL_STATUS);
 		tmp |= SYSTIC_TICINT;
 		sil_wrw_mem((void *)SYSTIC_CONTROL_STATUS, tmp);
 	}else {
-		tmp = intno - 16;
+		tmp = INTNO_MASK(intno) - 16;
 		sil_wrw_mem((void *)((uint32_t *)NVIC_SETENA0 + (tmp >> 5)),
 					(1 << (tmp & 0x1f)));
 	}
@@ -461,9 +479,13 @@ enable_int(INTNO intno)
 
 /*
  *  割込み要求がクリアできる割込み番号の範囲の判定
+ *
+ *  NVIC はプロセッサ毎に独立したインスタンスであり，すべての割込みがコア
+ *  ローカルである．したがって割込み番号に埋め込まれたプロセッサID が自プロ
+ *  セッサと一致することも判定条件に含める（下記 VALID_INTNO のコメント参照）．
  */
 #define VALID_INTNO_CLRINT(prcid, intno) \
-				(IRQNO_SYSTICK <= (intno) && (intno) <= TMAX_INTNO)
+				(IRQNO_SYSTICK <= (INTNO_MASK(intno)) && (INTNO_MASK(intno)) <= TMAX_INTNO)
 
 /*
  *  割込み要求がクリアできる状態か？
@@ -482,12 +504,12 @@ clear_int(INTNO intno)
 {
 	uint32_t tmp;
 
-	if (intno == IRQNO_SYSTICK) {
+	if (INTNO_MASK(intno) == IRQNO_SYSTICK) {
 		tmp = sil_rew_mem((void*)NVIC_ICSR);
 		tmp &= ~NVIC_PENDSTSET;
 		sil_wrw_mem((void*)NVIC_ICSR, tmp);
 	} else {
-		tmp = intno - 16;
+		tmp = INTNO_MASK(intno) - 16;
 		sil_wrw_mem((void *)((uint32_t *)NVIC_ICPR0 + (tmp >> 5)),
 					(1 << (tmp & 0x1f)));
 	}
@@ -510,12 +532,12 @@ raise_int(INTNO intno)
 {
 	uint32_t tmp;
 
-	if (intno == IRQNO_SYSTICK) {
+	if (INTNO_MASK(intno) == IRQNO_SYSTICK) {
 		tmp = sil_rew_mem((void*)NVIC_ICSR);
 		tmp |= NVIC_PENDSTSET;
 		sil_wrw_mem((void*)NVIC_ICSR, tmp);
 	} else {
-		tmp = intno - 16;
+		tmp = INTNO_MASK(intno) - 16;
 		sil_wrw_mem((void *)((uint32_t *)NVIC_ISPR0 + (tmp >> 5)),
 					(1 << (tmp & 0x1f)));
 	}
@@ -529,12 +551,21 @@ probe_int(INTNO intno)
 {
 	uint32_t tmp;
 
-	if (intno == IRQNO_SYSTICK) {
+	if (INTNO_MASK(intno) == IRQNO_SYSTICK) {
 		return ((sil_rew_mem((void *)NVIC_ICSR) & NVIC_PENDSTSET) == NVIC_PENDSTSET);
 	} else {
-		tmp = intno - 16;
-		return (sil_rew_mem((void *)NVIC_ISPR0 + (tmp >> 5)) & (1 << (tmp & 0x1f)))
-		  == (1 << (tmp & 0x1f));
+		tmp = INTNO_MASK(intno) - 16;
+		/*
+		 *  NVIC_ISPR0 は番地を表す整数マクロであり，ポインタではない．
+		 *  (void *) にキャストしてから加算すると，GCC 拡張により void * の
+		 *  算術がバイト単位になるため，IRQ 32 以上（(tmp >> 5) >= 1）で
+		 *  誤った番地（かつ 4 バイト境界違反）を読んでしまう．
+		 *  例: IRQ 32 では 0xE000E204 ではなく 0xE000E201 を読む．
+		 *  disable_int / enable_int / clear_int / raise_int は (uint32_t *) へ
+		 *  キャストしてから加算しており，本関数のみ漏れていた．
+		 */
+		return (sil_rew_mem((void *)((uint32_t *)NVIC_ISPR0 + (tmp >> 5)))
+		  & (1 << (tmp & 0x1f))) == (1 << (tmp & 0x1f));
 	}
 }
 
@@ -691,8 +722,22 @@ extern const FP* const p_exc_table[TNUM_PRCID];
 
 /*
  *  割込み番号の範囲の判定
+ *
+ *  ★未解決の適合性課題（2026-07-19 調査）
+ *
+ *  arm_gcc / arm64_gcc（GIC）は，コアローカルな割込み（SGI/PPI）について
+ *  INTNO_PRCID(intno) == prcid を判定しているが，本アーキでは判定していない．
+ *  ARM-M の NVIC はプロセッサ毎に独立で全割込みがコアローカルであるため，
+ *  本来は全域で判定すべきである．判定が無いと，他プロセッサの割込み番号を
+ *  渡した場合に E_PAR（NGKI3083 / NGKI3087）ではなく E_OBJ（NGKI3085）が返る．
+ *
+ *  ただし単純に「&& (INTNO_PRCID(intno) == (prcid))」を加えるとカーネルが
+ *  起動しなくなる（musca_b1 2コアで実測．コンソール出力に到達しない）．
+ *  初期化時に各プロセッサが他プロセッサ用に定義された割込み（PRC2 のタイマ等）も
+ *  走査して本マクロを通す経路があるためと推測されるが，未確認である．
+ *  修正するには初期化経路の調査が必要なため，現時点では判定を追加していない．
  */
-#define VALID_INTNO(prcid, intno)           ((TMIN_INTNO <= (intno)) && ((intno) <= TMAX_INTNO))
+#define VALID_INTNO(prcid, intno)           ((TMIN_INTNO <= INTNO_MASK(intno)) && (INTNO_MASK(intno) <= TMAX_INTNO))
 #define VALID_INTNO_DISINT(prcid, intno)    VALID_INTNO(prcid, intno)
 #define VALID_INTNO_CFGINT(prcid, intno)    VALID_INTNO(prcid, intno)
 
@@ -859,4 +904,12 @@ extern void default_exc_handler(void *p_excinf);
 extern void default_int_handler(void *p_excinf);
 
 #endif /* TOPPERS_MACRO_ONLY */
+
+/*
+ *  追加コンテキスト保存/解放フック（コプロセッサ等を持たないため空）
+ *    save_context: mig_tsk(移行時)，release_context: task_terminate(終了時)に呼ばれる．
+ */
+#define save_context(p_tcb)		((void)(p_tcb))
+#define release_context(p_tcb)		((void)(p_tcb))
+
 #endif /* TOPPERS_CORE_KERNEL_IMPL_H */

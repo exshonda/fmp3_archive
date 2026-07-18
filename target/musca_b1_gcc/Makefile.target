@@ -1,0 +1,87 @@
+#
+#		Makefileのターゲット依存部（ARM Musca-B1 / QEMU 用）
+#
+
+#
+#  システム名，チップ名，コア名，開発環境名の定義
+#
+SYS = musca_b1
+CHIP = musca_b1
+CORE = arm_m
+TOOL = gcc
+
+#
+#  QEMUに関する定義
+#
+#  QEMU上で実行するため，TOPPERS_USE_QEMUをマクロ定義する（セミホスティング
+#  による終了）．実行時は -semihosting-config enable=on を指定すること．
+#
+CDEFS := $(CDEFS) -DTOPPERS_USE_QEMU
+
+#
+#  コンパイルオプション
+#
+INCLUDES := $(INCLUDES) -I$(TARGETDIR)
+COPTS := $(COPTS) -mlittle-endian
+LDFLAGS := $(LDFLAGS) -mlittle-endian
+
+#
+#  カーネルに関する定義
+#
+KERNEL_DIRS := $(KERNEL_DIRS) $(TARGETDIR)
+KERNEL_COBJS := $(KERNEL_COBJS) target_kernel_impl.o target_timer.o target_ipi.o
+
+#
+#  システムサービスに関する定義
+#
+SYSSVC_DIRS := $(SYSSVC_DIRS) $(TARGETDIR)
+SYSSVC_COBJS := $(SYSSVC_COBJS) target_serial.o pl011_uart.o
+
+#
+#  リンカスクリプトの定義
+#
+LDSCRIPT = $(TARGETDIR)/musca_b1.ld
+
+#
+#  チップ依存部
+#
+include $(SRCDIR)/arch/$(CORE)_$(TOOL)/$(CHIP)/Makefile.chip
+
+#
+#  newlib のシステムコールスタブ
+#
+#  newlib の一部（stdio の reent 経路など）は _write / _read / _close /
+#  _lseek / _sbrk を参照する．本ターゲットはこれらを提供していないため，
+#  該当経路を引き込むアプリケーション（test_mtrans2 / test_mtrans5 等）が
+#  未定義参照でリンクできなかった．libnosys のスタブを与えて解決する．
+#
+#  リンクは左から右へ解決されるため，-lc より後に置く必要がある．本ファイルは
+#  生成される Makefile 中で -lc が LIBS に追加された後に include されるので，
+#  ここでの追記により -lc ... -lnosys の順序になる．
+#
+LIBS := $(LIBS) -lnosys
+
+#
+#  使用するツールの選択
+#
+QEMU = qemu-system-arm
+
+#
+#  QEMUによる実行
+#
+run: $(OBJFILE)
+	$(QEMU) -machine musca-b1 -nographic \
+		-semihosting-config enable=on,target=native -kernel $(OBJFILE)
+
+runq: run
+
+#
+#  QEMUによるデバッグ
+#
+qemug:
+	$(QEMU) -machine musca-b1 -nographic \
+		-semihosting-config enable=on,target=native -S -gdb tcp::1234 \
+		-kernel $(OBJFILE)
+
+db: $(OBJFILE)
+	arm-none-eabi-gdb -x $(TARGETDIR)/gdb.ini $(OBJFILE)

@@ -48,10 +48,12 @@
 #include "check.h"
 #include "task.h"
 
+#ifndef TOPPERS_OMIT_VECTOR_TABLE
 /*
  *  ベクタテーブル(kernel_cfg.c)
  */
 extern const FP* const p_vector_table[];
+#endif
 
 /*
  *  割り込みハンドラテーブル(kernel_cfg.c)
@@ -82,19 +84,19 @@ set_exc_int_priority(uint32_t excno, uint32_t iipm)
 	/*
 	 *  割込み優先度設定レジスタの決定
 	 */
-	if ((EXCNO_MPU <= excno) && (excno <= IRQNO_SYSTICK)) {
+	if ((EXCNO_MPU <= INTNO_MASK(excno)) && (INTNO_MASK(excno) <= IRQNO_SYSTICK)) {
 		/*
 		 * Exception Number 4(Memory Management)から
 		 * Exception Number 15(SysTick)までの割込み優先度はシステム優先度
 		 * レジスタにより設定．
 		 */
-		reg = nvic_sys_pri_reg[excno >> 2];
+		reg = nvic_sys_pri_reg[INTNO_MASK(excno) >> 2];
 	}
-	else if ((TMIN_INTNO < excno) && (excno <= TMAX_INTNO)){
+	else if ((TMIN_INTNO < INTNO_MASK(excno)) && (INTNO_MASK(excno) <= TMAX_INTNO)){
 		/*
 		 * IRQ割込みなら
 		 */
-		reg = NVIC_PRI0 + (((excno - (TMIN_INTNO + 1)) >> 2) * 4);
+		reg = NVIC_PRI0 + (((INTNO_MASK(excno) - (TMIN_INTNO + 1)) >> 2) * 4);
 	}
 	else {
 		return ;
@@ -194,12 +196,12 @@ core_initialize(PCB *p_my_pcb)
     p_my_pcb->target_pcb.lock_flag = true;
     p_my_pcb->target_pcb.current_iipm_enable_mask = &p_my_pcb->target_pcb.iipm_enable_masks[IIPM_ENAALL];
 #endif /* __TARGET_ARCH_THUMB >= 4 */
-
+#ifndef TOPPERS_OMIT_VECTOR_TABLE
 	/*
 	 *  ベクタテーブルを設定
 	 */
 	sil_wrw_mem((void *)NVIC_VECTTBL, (uint32_t)p_vector_table[INDEX_PRC(p_my_pcb->prcid)]);
-
+#endif
 	/*
 	 *  各例外の優先度を設定
 	 *  CPUロック状態でも発生するように，BASEPRIレジスタでマスクでき
