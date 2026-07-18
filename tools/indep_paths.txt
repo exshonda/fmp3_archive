@@ -3,8 +3,11 @@
 #   - simple 取込: この集合を除外（＝上書きしない）
 #
 # fmp3-3.0.0.tar.gz（個別パッケージ・非依存部）展開物のトップレベルを実測して確定。
-# arch/ は本パッケージにも同梱されるが、中身はツール共通スタブ（arch/gcc, arch/tracelog）
-# であり依存部（アーキ／チップ固有は簡易パッケージ由来）なのでここには入れない。
+#
+# arch/gcc, arch/tracelog は全ターゲット・全ツールチェイン（ARM/ARM64/RISC-V等）で
+# バイト完全一致し、カーネルのメジャー世代が変わる時のみ変化することを実パッケージ
+# 全数比較で確認済み（ツール共通スタブであり、ターゲット非依存）。
+# arch/ 配下でもチップ/アーキ固有のサブディレクトリ（arch/riscv_gcc 等）は依存部のまま。
 cfg/
 doc/
 include/
@@ -17,3 +20,5 @@ utils/
 configure.rb
 MANIFEST
 README.txt
+arch/gcc/
+arch/tracelog/

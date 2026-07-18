@@ -28,7 +28,7 @@ EXECUTE=0
 mapfile -t ROWS < <(
   grep -vE '^\s*(#|$)' "$CSV" \
     | grep -vE '^date,type,' \
-    | sort -t, -k1,1
+    | sort --stable -t, -k1,1
 )
 [ "${#ROWS[@]}" -gt 0 ] || die "RELEASES.csv に有効な行が無い"
 

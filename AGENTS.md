@@ -123,6 +123,7 @@ tools/verify_release.sh polarfire_soc_kit_gcc-20241224 \
 ## 7. RELEASES.csv 形式（取込の正）
 
 ヘッダ＋1リリース1行。`#` 始まりと空行は無視。**日付昇順で並べる**（`import_all.sh` 内でも安定ソートする）。
+同日に複数行がある場合は**ファイル内の記載順がタイブレークの正**（安定ソートのため）。同日なら `indep` を `simple` より先に書くこと。
 
 ```csv
 date,type,version,target,tool,package,sha256,branch,tag
@@ -156,7 +157,7 @@ date,type,version,target,tool,package,sha256,branch,tag
 - [ ] 取込は `tools/` スクリプト経由のみ。手 commit/tag していない。
 - [ ] コミット日付＝公開日になっている（`git log --format='%ad %s' --date=short`）。
 - [ ] `simple` 取込で `indep_paths.txt` のパスに差分が出ていない（`git show --stat` で確認）。
-- [ ] 日付が単調増加（`git log --date=short --format=%ad` が昇順）。
+- [ ] 取込コミットの日付が単調増加（`git log --grep='^Import ' --date=short --format=%ad` が昇順。運用ファイル同期用のマージコミット等は対象外）。
 - [ ] `verify_release.sh` が差分ゼロ。
 - [ ] `release/3.M` に派生版固有ファイルが無い。
 - [ ] `RELEASES.csv` の `tag` と実タグが一致。
