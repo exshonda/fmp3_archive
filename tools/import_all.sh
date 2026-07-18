@@ -66,6 +66,12 @@ for row in "${ROWS[@]}"; do
   pkg="$package"
   [[ "$pkg" = /* ]] || pkg="${REPO_ROOT}/${pkg}"
 
+  # 既にタグ済みの行はスキップ（再実行時の冪等性。CSV は追記専用の恒久台帳のため）
+  if [ -n "${tag}" ] && git rev-parse -q --verify "refs/tags/${tag}" >/dev/null; then
+    log "skip (既存タグ ${tag}): ${date} ${type} ${target}${version}"
+    continue
+  fi
+
   ensure_branch "$branch"
 
   args=( "$type" --date "$date" )
