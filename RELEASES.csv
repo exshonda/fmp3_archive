@@ -1,0 +1,12 @@
+date,type,version,target,tool,package,sha256,branch,tag
+# ↑ヘッダは変更しない。以下に1リリース1行を日付昇順で追記する。
+# # 始まり・空行は import_all.sh が無視する。
+#
+20190331,indep,3.0.0,,,fmp3-3.0.0.tar.gz,f3255c6a59e42f662a6a39799ff2cd22cf18e85d3f4832ebfed546323f1edc28,release/3.0,v3.0.0
+#
+# --- 記入例（実データに置き換えること。行頭の # を外すと有効化）---
+# 20240701,indep,3.1.0,,,pkg_fmp3-3.1.0.tar.gz,,release/3.1,v3.1.0
+# 20240930,simple,,zybo_z7,gcc,zybo_z7_gcc-20240930.tar.gz,,release/3.1,zybo_z7_gcc-20240930
+# 20241224,simple,,polarfire_soc_kit,gcc,polarfire_soc_kit_gcc-20241224.tar.gz,,release/3.1,polarfire_soc_kit_gcc-20241224
+# 20250315,indep,3.2.0,,,pkg_fmp3-3.2.0.tar.gz,,release/3.2,v3.2.0
+# 20250420,simple,,polarfire_soc_kit,gcc,polarfire_soc_kit_gcc-20250420.tar.gz,,release/3.2,polarfire_soc_kit_gcc-20250420

@@ -1,0 +1,8 @@
+# 取込元 tarball はコミットしない（toppers.jp から取得可能。provenance は RELEASES.csv の sha256）
+/packages/*
+!/packages/.gitkeep
+
+# 作業一時物
+*.tmp
+*.orig
+.DS_Store

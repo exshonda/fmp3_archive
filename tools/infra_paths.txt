@@ -1,0 +1,12 @@
+# パッケージ取込時に絶対に触れてはいけないリポジトリ運用ファイル/ディレクトリ。
+# indep/simple いずれの取込でも除外される。
+.git/
+.gitattributes
+.gitignore
+AGENTS.md
+CLAUDE.md
+README.md
+RELEASES.csv
+docs/
+tools/
+packages/

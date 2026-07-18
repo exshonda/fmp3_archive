@@ -1,0 +1,19 @@
+# ターゲット非依存部（カーネル本体 + cfg）のパス許可リスト。
+#   - indep 取込 : この集合のみ rm+copy（削除も反映）
+#   - simple 取込: この集合を除外（＝上書きしない）
+#
+# fmp3-3.0.0.tar.gz（個別パッケージ・非依存部）展開物のトップレベルを実測して確定。
+# arch/ は本パッケージにも同梱されるが、中身はツール共通スタブ（arch/gcc, arch/tracelog）
+# であり依存部（アーキ／チップ固有は簡易パッケージ由来）なのでここには入れない。
+cfg/
+doc/
+include/
+kernel/
+library/
+sample/
+syssvc/
+test/
+utils/
+configure.rb
+MANIFEST
+README.txt
