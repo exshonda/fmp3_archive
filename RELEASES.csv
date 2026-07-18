@@ -3,6 +3,10 @@ date,type,version,target,tool,package,sha256,branch,tag
 # # 始まり・空行は import_all.sh が無視する。
 #
 20190331,indep,3.0.0,,,packages/fmp3-3.0.0.tar.gz,f3255c6a59e42f662a6a39799ff2cd22cf18e85d3f4832ebfed546323f1edc28,release/3.0,v3.0.0
+20190331,simple,,zybo,gcc,packages/fmp3_zybo_gcc-20190331.tar.gz,fb69e7e831837ca8d38685c84fbf56e3ac039ebfe79a2f12fa54707f8f95a64d,release/3.0,zybo_gcc-20190331
+# 元配布は fmp3_zybo_gcc-20190828.zip (sha256 28d792826e541fa5bc1b091901c5d95213f4687e0b3413cd596897589db5f5f2)。
+# tar非対応のため同内容を tar.gz に再梱包して取込（sha256列は再梱包物のもの）。
+20190828,simple,,zybo,gcc,packages/fmp3_zybo_gcc-20190828.tar.gz,c66b62f9c8a6d181adb07b8ffc8a25a3fb367d7622520fbd9709219e62473db0,release/3.0,zybo_gcc-20190828
 #
 # --- 記入例（実データに置き換えること。行頭の # を外すと有効化）---
 # 20240701,indep,3.1.0,,,pkg_fmp3-3.1.0.tar.gz,,release/3.1,v3.1.0
