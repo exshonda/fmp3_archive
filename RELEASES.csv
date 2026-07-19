@@ -41,10 +41,11 @@ date,type,version,target,tool,package,sha256,branch,tag
 20260718,simple,,kria_arm64,gcc,packages/fmp3_kria_arm64_gcc-20260718.tar.gz,febe3567905c100e4cc7d22aec6103fe64d6ec22b048c7a852d5710e10e26f96,release/3.4,kria_arm64_gcc-20260718
 20260718,simple,,kria_r5,gcc,packages/fmp3_kria_r5_gcc-20260718.tar.gz,35079736fe48fd1cb23b8e1244d9ffb1872046cdd72b049d2142a71d74942d71,release/3.4,kria_r5_gcc-20260718
 20260718,simple,,m5stamp_esp32p4,gcc,packages/fmp3_m5stamp_esp32p4_gcc-20260718.tar.gz,8deb0b51d91283838e64798f8c435e42c45af699bd083924bb5254c16312a0b2,release/3.4,m5stamp_esp32p4_gcc-20260718
-20260718,simple,,musca_b1,gcc,packages/fmp3_musca_b1_gcc-20260718.tar.gz,5780d4f66d6922173aa37346f347bd0fe96c7f07cf7d938b5115656bbc4f6eee,release/3.4,musca_b1_gcc-20260718
+# musca_b1, rp2350_pico2 の20260718版は公開されない予定のため、実際に公開される20260719版に置き換え。
 20260718,simple,,polarfire_soc_kit,gcc,packages/fmp3_polarfire_soc_kit_gcc-20260718.tar.gz,85704d4e2b0d9db85c5087d6256cf1bbce5d1d997f6abab88feae5dd08fbe469,release/3.4,polarfire_soc_kit_gcc-20260718
-20260718,simple,,rp2350_pico2,gcc,packages/fmp3_rp2350_pico2_gcc-20260718.tar.gz,88c4e28c37c341e9be311233bec50df451c484d4b3c9863ed94367e583461123,release/3.4,rp2350_pico2_gcc-20260718
 20260718,simple,,stm32mp257f_dk_arm64,gcc,packages/fmp3_stm32mp257f_dk_arm64_gcc-20260718.tar.gz,30614187eef8480e209106411f9dea6fb39f755e86ef1c288a281c53a836f71f,release/3.4,stm32mp257f_dk_arm64_gcc-20260718
+20260719,simple,,musca_b1,gcc,packages/fmp3_musca_b1_gcc-20260719.tar.gz,f4a2389b3cfcd397b17f60338c92e0ca258c97159709998a7f5965844079ceed,release/3.4,musca_b1_gcc-20260719
+20260719,simple,,rp2350_pico2,gcc,packages/fmp3_rp2350_pico2_gcc-20260719.tar.gz,0bb15b947ae72e59e1ee6744a567a25012097228d05a9f25aa997715e6d260af,release/3.4,rp2350_pico2_gcc-20260719
 #
 # --- 記入例（実データに置き換えること。行頭の # を外すと有効化）---
 # 20240701,indep,3.1.0,,,pkg_fmp3-3.1.0.tar.gz,,release/3.1,v3.1.0
