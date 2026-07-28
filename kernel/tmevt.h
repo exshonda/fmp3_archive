@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: tmevt.h 265 2021-01-08 06:17:00Z ertl-honda $
+ *  $Id: tmevt.h 464 2026-05-27 11:42:34Z ertl-honda $
  */
 
 /*
@@ -60,16 +60,18 @@ typedef uint32_t	EVTTIM;
 /*
  *  タイムイベントヒープ中のノードのデータ型の前方参照
  */
-typedef union time_event_node TMEVTN;
+typedef struct time_event_node TMEVTN;
 
 /*
  *  タイムイベントブロックのデータ型の定義
+ *
+ *  タイムイベントヒープ中での位置（index）は，最初のノードを1とする．
  */
 typedef void	(*CBACK)(PCB *, void *);	/* コールバック関数の型 */
 
 typedef struct time_event_block {
 	EVTTIM	evttim;			/* タイムイベントの発生時刻 */
-	TMEVTN	*p_tmevtn;		/* タイムイベントヒープ中での位置 */
+	uint_t	index;			/* タイムイベントヒープ中での位置 */
 	CBACK	callback;		/* コールバック関数 */
 	void	*arg;			/* コールバック関数へ渡す引数 */
 } TMEVTB;
@@ -77,14 +79,15 @@ typedef struct time_event_block {
 /*
  *  タイムイベントヒープ中のノードのデータ型の定義
  *
- *  タイムイベントヒープの先頭のノード（*p_tmevt_heap）に，最後の使用領
- *  域を指すポインタ（p_last）を格納し，それ以降をタイムイベントヒープ
- *  として使用する．(p_tmevt_heap->p_last - p_tmevt_heap) が，タイムイ
- *  ベントヒープに登録されているタイムイベントの数となる．
+ *  タイムイベントヒープの先頭のノード（*p_tmevt_heap）に，最後のノー
+ *  ドのインデックス（last_index，タイムイベントヒープに登録されている
+ *  タイムイベントの数に等しい）を格納する．それ以降のノードは，本来の
+ *  ヒープ構造に使用し，タイムイベントブロック（TMEVTB）へのポインタを
+ *  保持する．
  */
-typedef union time_event_node {
+typedef struct time_event_node {
 	TMEVTB	*p_tmevtb;		/* 対応するタイムイベントブロック */
-	TMEVTN	*p_last;		/* タイムイベントヒープの最後の使用領域 */
+	uint_t	last_index;		/* 最後のノードのインデックス */
 } TMEVTN;
 
 /*

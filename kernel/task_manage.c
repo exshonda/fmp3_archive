@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: task_manage.c 376 2023-09-02 04:34:49Z ertl-honda $
+ *  $Id: task_manage.c 541 2026-06-30 13:07:32Z ertl-honda $
  */
 
 /*
@@ -342,54 +342,54 @@ mig_tsk(ID tskid, ID prcid)
 		 */
 		ercd = E_CTX;								/*［NGKI1159］*/
 	}
-	else if (TSTAT_RUNNABLE(p_tcb->tstat)) {
-		/*
-		 *  対象タスクが，実行できる状態の場合
-		 */
-		make_non_runnable(p_my_pcb, p_tcb);
-		LOG_TSKMIG(p_tcb, p_my_pcb->prcid, prcid);
-		p_tcb->p_pcb = p_new_pcb;
-
-		if (p_tcb == p_selftsk) {
-			/* 対象タスクが自タスク */
-			dispatch_and_migrate(p_my_pcb, p_selftsk);
-			/* ここに戻ってくる時にはジャイアントロックは解放されている */
-			ercd = E_OK; 
-			goto unlock_and_exit;
-		} 
-		else {
-			/* 対象タスクが他タスク */
-			/* マイグレート先のプロセッサでmake_runnableする */
-			make_runnable(p_my_pcb, p_tcb);
-
-			/*
-			 *  マイグレート先が自プロセッサの場合，自タスクの方が優先
-			 *  順位が高いため，自プロセッサでディスパッチが必要になる
-			 *  ことはない．
-			 */
-			ercd = E_OK;
-		}
-	}
-	else if (!TSTAT_WAITING(p_tcb->tstat)
-							|| p_tcb->winfo.tmevtb.callback == NULL) {
-		/*
-		 *  休止状態，強制待ち状態，タイムアウトのない待ち状態の場合
-		 */
-		LOG_TSKMIG(p_tcb, p_my_pcb->prcid, prcid);
-		p_tcb->p_pcb = p_new_pcb;
-		ercd = E_OK;
-	}
 	else {
-		/*
-		 * タイムアウトのある待ち状態の場合
-		 */
+		/* マイグレーションに関して追加のコンテキスト保存 */
+		save_context(p_tcb);
+		if (TSTAT_RUNNABLE(p_tcb->tstat)) {
+			/*
+			 *  対象タスクが，実行できる状態の場合
+			 */
+			make_non_runnable(p_my_pcb, p_tcb);
+			LOG_TSKMIG(p_tcb, p_my_pcb->prcid, prcid);
+			p_tcb->p_pcb = p_new_pcb;                
+			if (p_tcb == p_selftsk) {
+				/* 対象タスクが自タスク */
+				dispatch_and_migrate(p_my_pcb, p_selftsk);
+				/* ここに戻ってくる時にはジャイアントロックは解放されている */
+				ercd = E_OK;                
+				goto unlock_and_exit;
+			} 
+			else {
+				/* 対象タスクが他タスク */
+				/* マイグレート先のプロセッサでmake_runnableする */
+				make_runnable(p_my_pcb, p_tcb);
 
-		/* タイムイベントキューから削除 */
-		tmevtb_dequeue(&(p_tcb->winfo.tmevtb), p_my_pcb);
-		LOG_TSKMIG(p_tcb, p_my_pcb->prcid, prcid);
-		p_tcb->p_pcb = p_new_pcb;
-		/* マイグレート先のプロセッサのタイムイベントキューに挿入 */
-		tmevtb_enqueue(&(p_tcb->winfo.tmevtb), p_new_pcb);
+				/*
+				 *  マイグレート先が自プロセッサの場合，自タスクの方が優先
+				 *  順位が高いため，自プロセッサでディスパッチが必要になる
+				 *  ことはない．
+				 */
+			}
+		}
+		else if (!TSTAT_WAITING(p_tcb->tstat)
+								|| p_tcb->winfo.tmevtb.callback == NULL) {
+			/*
+			 *  休止状態，強制待ち状態，タイムアウトのない待ち状態の場合
+			 */
+			LOG_TSKMIG(p_tcb, p_my_pcb->prcid, prcid);
+			p_tcb->p_pcb = p_new_pcb;
+		}
+		else {
+			/*
+			 * タイムアウトのある待ち状態の場合
+			 */
+			/* タイムイベントキューから削除 */
+			tmevtb_dequeue(&(p_tcb->winfo.tmevtb), p_my_pcb);
+			LOG_TSKMIG(p_tcb, p_my_pcb->prcid, prcid);
+			p_tcb->p_pcb = p_new_pcb;
+			/* マイグレート先のプロセッサのタイムイベントキューに挿入 */
+			tmevtb_enqueue(&(p_tcb->winfo.tmevtb), p_new_pcb);
+		}
 		ercd = E_OK;
 	}
 	release_glock();

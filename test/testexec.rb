@@ -4,7 +4,7 @@
 #  TOPPERS Software
 #      Toyohashi Open Platform for Embedded Real-Time Systems
 # 
-#  Copyright (C) 2016-2020 by Embedded and Real-Time Systems Laboratory
+#  Copyright (C) 2016-2025 by Embedded and Real-Time Systems Laboratory
 #              Graduate School of Information Science, Nagoya Univ., JAPAN
 # 
 #  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -36,7 +36,7 @@
 #  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
 #  の責任を負わない．
 # 
-#  $Id: testexec.rb 376 2023-09-02 04:34:49Z ertl-honda $
+#  $Id: testexec.rb 584 2026-07-20 07:27:28Z ertl-honda $
 # 
 
 # 【実行方法】
@@ -93,6 +93,7 @@ TEST_SPEC = {
   "flg1"     => { SRC: "test_flg1" },
   "hrt1"     => { SRC: "test_hrt1" },
   "int1"     => { SRC: "test_int1" },
+  "mpf1"     => { SRC: "test_mpf1" },
   "mutex1"   => { SRC: "test_mutex1", CDL: "test_pf_bitkernel" },
   "mutex2"   => { SRC: "test_mutex2", CDL: "test_pf_bitkernel" },
   "mutex3"   => { SRC: "test_mutex3", CDL: "test_pf_bitkernel" },
@@ -102,6 +103,7 @@ TEST_SPEC = {
   "mutex7"   => { SRC: "test_mutex7", CDL: "test_pf_bitkernel" },
   "mutex8"   => { SRC: "test_mutex8", CDL: "test_pf_bitkernel" },
   "notify1"  => { SRC: "test_notify1" },
+  "pdq1"     => { SRC: "test_pdq1" },
   "raster1"  => { SRC: "test_raster1", CDL: "test_pf_bitkernel" },
   "raster2"  => { SRC: "test_raster2" },
   "sem1"     => { SRC: "test_sem1" },
@@ -111,6 +113,8 @@ TEST_SPEC = {
   "sysstat1" => { SRC: "test_sysstat1" },
   "task1"    => { SRC: "test_task1", CDL: "test_pf_bitkernel" },
   "tmevt1"   => { SRC: "test_tmevt1" },
+  # ASP3/HRMP3 から取り込み（機能）
+  "cyclic1"  => { SRC: "test_cyclic1" },
 
   # マルチプロセッサ対応のテストプログラム
   "mtskman1" => { SRC: "test_mtskman1" },
@@ -122,6 +126,12 @@ TEST_SPEC = {
   "mtrans5"  => { SRC: "test_mtrans5" },
   "mmutex1"  => { SRC: "test_mmutex1" },
   "malarm1"  => { SRC: "test_malarm1" },
+  "mstress1" => { SRC: "test_mstress1" },
+
+  # コア間 sus_tsk/rsm_tsk ディスパッチ遅延計測（histogram を CNTPCT/ns で使用）
+  #   histogram.o は各ターゲットの TARGET_OPTIONS の -S に含める（SYSOBJ の二重 -S 回避）
+  "perf6"    => { SRC: "perf6",
+						DEFS: "-DPERF6_HIST_NS -DHIST_MAX_TIME=4000 -DTNUM_HISTID=4" },
 
   # スピンロック機能のテストプログラム
   "spinlock1"      => { SRC: "test_spinlock1" },
@@ -135,13 +145,42 @@ TEST_SPEC = {
   "subprio2" => { SRC: "test_subprio2" },
   "subprio3" => { SRC: "test_subprio3" },
 
-  # 性能評価プログラム
-  "perf0" => { TARGET: 1, CDL: "perf_pf", NK_DEFS: "-DHIST_INVALIDATE_CACHE" },
-  "perf1" => { TARGET: 1, CDL: "perf_pf", NK_DEFS: "-DHIST_INVALIDATE_CACHE" },
-  "perf2" => { TARGET: 1, CDL: "perf_pf", NK_DEFS: "-DHIST_INVALIDATE_CACHE" },
-  "perf3" => { TARGET: 1, CDL: "perf_pf", NK_DEFS: "-DHIST_INVALIDATE_CACHE" },
-  "perf4" => { TARGET: 1, CDL: "perf_pf", NK_DEFS: "-DHIST_INVALIDATE_CACHE" },
-  "perf5" => { TARGET: 1, CDL: "perf_pf", NK_DEFS: "-DHIST_INVALIDATE_CACHE" },
+  # タイマドライバシミュレータのテストプログラム（TARGET:2）
+  #   HRMP3 から取り込み．実行には simtimer 基盤（arch/simtimer および
+  #   simtimer 版ターゲット）の FMP3 移植が必要．テストは別途実施する．
+  #   （twd1=タイムウィンドウ, drift*=ファイル無 のため取り込み対象外）
+  "simtimer1" => { TARGET: 2, SRC: "simt_simtimer1",
+								DEFS: "-DHRT_CONFIG1 -DSIMTIM_TEST" },
+  "simtimer2" => { TARGET: 2, SRC: "simt_simtimer2",
+								DEFS: "-DHRT_CONFIG1 -DSIMTIM_TEST" },
+  "systim1" => { TARGET: 2, SRC: "simt_systim1",
+								DEFS: "-DHRT_CONFIG1 -DSIMTIM_TEST" },
+  "systim2" => { TARGET: 2, SRC: "simt_systim2",
+								DEFS: "-DHRT_CONFIG1 -DSIMTIM_TEST" },
+  "systim3" => { TARGET: 2, SRC: "simt_systim3",
+								DEFS: "-DHRT_CONFIG1 -DSIMTIM_TEST" },
+  "systim4" => { TARGET: 2, SRC: "simt_systim4",
+								DEFS: "-DHRT_CONFIG2 -DSIMTIM_TEST" },
+  "systim1_64hrt" => { TARGET: 2, SRC: "simt_systim1_64hrt",
+								DEFS: "-DHRT_CONFIG3 -DSIMTIM_TEST" },
+  "systim2_64hrt" => { TARGET: 2, SRC: "simt_systim2_64hrt",
+								DEFS: "-DHRT_CONFIG3 -DSIMTIM_TEST" },
+  "systim3_64hrt" => { TARGET: 2, SRC: "simt_systim3_64hrt",
+								DEFS: "-DHRT_CONFIG3 -DSIMTIM_TEST" },
+
+  # 性能評価プログラム（histogram モジュールのリンクが必要）
+  "perf0" => { TARGET: 1, CDL: "perf_pf", SYSOBJ: "histogram",
+								NK_DEFS: "-DHIST_INVALIDATE_CACHE" },
+  "perf1" => { TARGET: 1, CDL: "perf_pf", SYSOBJ: "histogram",
+								NK_DEFS: "-DHIST_INVALIDATE_CACHE" },
+  "perf2" => { TARGET: 1, CDL: "perf_pf", SYSOBJ: "histogram",
+								NK_DEFS: "-DHIST_INVALIDATE_CACHE" },
+  "perf3" => { TARGET: 1, CDL: "perf_pf", SYSOBJ: "histogram",
+								NK_DEFS: "-DHIST_INVALIDATE_CACHE" },
+  "perf4" => { TARGET: 1, CDL: "perf_pf", SYSOBJ: "histogram",
+								NK_DEFS: "-DHIST_INVALIDATE_CACHE" },
+  "perf5" => { TARGET: 1, CDL: "perf_pf", SYSOBJ: "histogram",
+								NK_DEFS: "-DHIST_INVALIDATE_CACHE" },
 
   # ARM向けテストプログラム
   "arm_cpuexc1" => { SRC: "arm_cpuexc1", SRCDIR: "arch/arm_gcc/test" },
@@ -373,9 +412,9 @@ File.open("TARGET_OPTIONS") do |file|
   file.each_line.with_index do |line, index|
     line.chomp!
     if line != ""
-    $targetOptions[index] = line
+      $targetOptions[index] = line
+    end
   end
-end
 end
 
 #
@@ -386,11 +425,11 @@ $exec_only = false
 $clean_flag = false
 $proc_flag = false
 
-  ARGV.each do |param|
-    case param
-    when "build"
+ARGV.each do |param|
+  case param
+  when "build"
     $build_only = true
-    when "exec"
+  when "exec"
     $exec_only = true
   when "clean"
     $clean_flag = true
@@ -414,7 +453,7 @@ $proc_flag = false
     end
     $proc_flag = true
 
-    when "all"
+  when "all"
     if ($clean_flag)
       CleanAllTest()
     else
@@ -423,20 +462,20 @@ $proc_flag = false
     end
     $proc_flag = true
 
-    else
-      if TEST_SPEC.has_key?(param)
+  else
+    if TEST_SPEC.has_key?(param)
       if ($clean_flag)
         CleanTest(param, TEST_SPEC[param])
       else
         BuildTest(param, TEST_SPEC[param], true) unless $exec_only
         ExecTest(param, TEST_SPEC[param]) unless $build_only
       end
-      else
-        puts("invalid parameter: #{param}")
-      end
+    else
+      puts("invalid parameter: #{param}")
+    end
     $proc_flag = true
   end
-    end
+end
 if !$proc_flag
   # デフォルトの処理対象（kernelとall）
   if ($clean_flag)

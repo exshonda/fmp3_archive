@@ -1,6 +1,7 @@
 PACKAGE fmp3
 
 MANIFEST
+run_hw_suite.sh
 perf0.c
 perf0.cfg
 perf0.h
@@ -134,3 +135,29 @@ test_tmevt1.c
 test_tmevt1.cfg
 test_tmevt1.h
 testexec.rb
+test_mpf1.c
+test_mpf1.cfg
+test_pdq1.c
+test_pdq1.cfg
+test_cyclic1.c
+test_cyclic1.cfg
+test_mstress1.c
+test_mstress1.cfg
+simt_simtimer1.c
+simt_simtimer1.cfg
+simt_simtimer2.c
+simt_simtimer2.cfg
+simt_systim1.c
+simt_systim1.cfg
+simt_systim1_64hrt.c
+simt_systim1_64hrt.cfg
+simt_systim2.c
+simt_systim2.cfg
+simt_systim2_64hrt.c
+simt_systim2_64hrt.cfg
+simt_systim3.c
+simt_systim3.cfg
+simt_systim3_64hrt.c
+simt_systim3_64hrt.cfg
+simt_systim4.c
+simt_systim4.cfg

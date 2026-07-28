@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: time_event.c 263 2021-01-08 06:08:59Z ertl-honda $
+ *  $Id: time_event.c 508 2026-06-16 06:29:17Z ertl-honda $
  */
 
 /*
@@ -89,21 +89,19 @@
 /*
  *  タイムイベントヒープ操作マクロ
  */
-#define PARENT(p_tmevtn, p_tmevt_heap)			/* 親ノードを求める */ \
-					((p_tmevt_heap) + (((p_tmevtn) - (p_tmevt_heap)) >> 1))
-#define LCHILD(p_tmevtn, p_tmevt_heap) 		/* 左の子ノードを求める */ \
-					((p_tmevt_heap) + (((p_tmevtn) - (p_tmevt_heap)) << 1))
+#define	ROOT_INDEX			(1)					/* ルートノードのインデックス */
+#define	PARENT(index)		((index) >> 1)		/* 親ノードを求める */
+#define	LCHILD(index)		((index) << 1)		/* 左の子ノードを求める */
+#define	LAST_INDEX(p_tmevt_heap) \
+							((p_tmevt_heap)->last_index)
+#define	HEAP_NODE(index, p_tmevt_heap) \
+							(((p_tmevt_heap) + (index))->p_tmevtb)
 
 /*
- *  タイムイベントヒープ中の先頭のノード
+ *  タイムイベントヒープ中の先頭のタイムイベントの発生時刻
  */
-#define p_top_tmevtn(p_tmevt_heap)	((p_tmevt_heap) + 1)
-#define top_evttim(p_tmevt_heap)	(((p_tmevt_heap) + 1)->p_tmevtb->evttim)
-										/* 先頭のタイムイベントの発生時刻 */
-/*
- *  タイムイベントヒープ中の最後のノード
- */
-#define p_last_tmevtn(p_tmevt_heap)	((p_tmevt_heap)->p_last)
+#define top_evttim(p_tmevt_heap)	(HEAP_NODE(ROOT_INDEX, p_tmevt_heap) \
+																->evttim)
 
 /*
  *  イベント時刻の前後関係の判定［ASPD1009］
@@ -164,7 +162,7 @@ initialize_tmevt(PCB *p_my_pcb)
 			systim_offset = 0U;								/*［ASPD1044］*/
 		}
 		p_my_pcb->p_tevtcb->in_signal_time = false;							/*［ASPD1033］*/
-		p_last_tmevtn(p_my_pcb->p_tevtcb->p_tmevt_heap) = p_my_pcb->p_tevtcb->p_tmevt_heap;
+		LAST_INDEX(p_my_pcb->p_tevtcb->p_tmevt_heap) = 0;
 	}
 	else {
 		p_my_pcb->p_tevtcb = NULL;
@@ -178,37 +176,37 @@ initialize_tmevt(PCB *p_my_pcb)
  *
  *  時刻evttimに発生するタイムイベントを挿入するノードを空けるために，
  *  ヒープの上に向かって空ノードを移動させる．移動前の空ノードの位置を
- *  p_tmevtnに渡すと，移動後の空ノードの位置（すなわち挿入位置）を返す．
+ *  indexに渡すと，移動後の空ノードの位置（すなわち挿入位置）を返す．
  */
 #ifdef TOPPERS_tmeup
 
-TMEVTN *
-tmevt_up(TMEVTN *p_tmevtn, EVTTIM evttim, TMEVTN *p_tmevt_heap)
+uint_t
+tmevt_up(uint_t index, EVTTIM evttim, TMEVTN *p_tmevt_heap)
 {
-	TMEVTN	*p_parent;
+	uint_t	parent;
 
-	while (p_tmevtn > p_top_tmevtn(p_tmevt_heap)) {
+	while (index > ROOT_INDEX) {
 		/*
 		 *  親ノードのイベント発生時刻の方が早い（または同じ）ならば，
-		 *  p_tmevtnが挿入位置なのでループを抜ける．
+		 *  indexが挿入位置なのでループを抜ける．
 		 */
-		p_parent = PARENT(p_tmevtn, p_tmevt_heap);
-		if (EVTTIM_LE(p_parent->p_tmevtb->evttim, evttim)) {
+		parent = PARENT(index);
+		if (EVTTIM_LE(HEAP_NODE(parent, p_tmevt_heap)->evttim, evttim)) {
 			break;
 		}
 
 		/*
-		 *  親ノードをp_tmevtnの位置に移動させる．
+		 *  親ノードをindexの位置に移動させる．
 		 */
-		*p_tmevtn = *p_parent;
-		p_tmevtn->p_tmevtb->p_tmevtn = p_tmevtn;
+		HEAP_NODE(index, p_tmevt_heap) = HEAP_NODE(parent, p_tmevt_heap);
+		HEAP_NODE(index, p_tmevt_heap)->index = index;
 
 		/*
-		 *  p_tmevtnを親ノードの位置に更新．
+		 *  indexを親ノードの位置に更新．
 		 */
-		p_tmevtn = p_parent;
+		index = parent;
 	}
-	return(p_tmevtn);
+	return(index);
 }
 
 #endif /* TOPPERS_tmeup */
@@ -218,48 +216,47 @@ tmevt_up(TMEVTN *p_tmevtn, EVTTIM evttim, TMEVTN *p_tmevt_heap)
  *
  *  時刻evttimに発生するタイムイベントを挿入するノードを空けるために，
  *  ヒープの下に向かって空ノードを移動させる．移動前の空ノードの位置を
- *  p_tmevtnに渡すと，移動後の空ノードの位置（すなわち挿入位置）を返す．
+ *  indexに渡すと，移動後の空ノードの位置（すなわち挿入位置）を返す．
  */
 #ifdef TOPPERS_tmedown
 
-TMEVTN *
-tmevt_down(TMEVTN *p_tmevtn, EVTTIM evttim, TMEVTN *p_tmevt_heap)
+uint_t
+tmevt_down(uint_t index, EVTTIM evttim, TMEVTN *p_tmevt_heap)
 {
-	TMEVTN	*p_child;
+	uint_t	child;
 
-	while ((p_child = LCHILD(p_tmevtn, p_tmevt_heap))
-										<= p_last_tmevtn(p_tmevt_heap)) {
+	while ((child = LCHILD(index)) <= LAST_INDEX(p_tmevt_heap)) {
 		/*
 		 *  左右の子ノードのイベント発生時刻を比較し，早い方の子ノード
-		 *  の位置をp_childに設定する．以下の子ノードは，ここで選ばれた
+		 *  の位置をchildに設定する．以下の子ノードは，ここで選ばれた
 		 *  方の子ノードのこと．
 		 */
-		if (p_child + 1 <= p_last_tmevtn(p_tmevt_heap)
-					&& EVTTIM_LT((p_child + 1)->p_tmevtb->evttim,
-											p_child->p_tmevtb->evttim)) {
-			p_child = p_child + 1;
+		if (child + 1 <= LAST_INDEX(p_tmevt_heap)
+					&& EVTTIM_LT(HEAP_NODE(child + 1, p_tmevt_heap)->evttim,
+									HEAP_NODE(child, p_tmevt_heap)->evttim)) {
+			child = child + 1;
 		}
 
 		/*
 		 *  子ノードのイベント発生時刻の方が遅い（または同じ）ならば，
-		 *  p_tmevtnが挿入位置なのでループを抜ける．
+		 *  indexが挿入位置なのでループを抜ける．
 		 */
-		if (EVTTIM_LE(evttim, p_child->p_tmevtb->evttim)) {
+		if (EVTTIM_LE(evttim, HEAP_NODE(child, p_tmevt_heap)->evttim)) {
 			break;
 		}
 
 		/*
-		 *  子ノードをp_tmevtnの位置に移動させる．
+		 *  子ノードをindexの位置に移動させる．
 		 */
-		*p_tmevtn = *p_child;
-		p_tmevtn->p_tmevtb->p_tmevtn = p_tmevtn;
+		HEAP_NODE(index, p_tmevt_heap) = HEAP_NODE(child, p_tmevt_heap);
+		HEAP_NODE(index, p_tmevt_heap)->index = index;
 
 		/*
-		 *  p_tmevtnを子ノードの位置に更新．
+		 *  indexを子ノードの位置に更新．
 		 */
-		p_tmevtn = p_child;
+		index = child;
 	}
-	return(p_tmevtn);
+	return(index);
 }
 
 #endif /* TOPPERS_tmedown */
@@ -273,19 +270,19 @@ tmevt_down(TMEVTN *p_tmevtn, EVTTIM evttim, TMEVTN *p_tmevt_heap)
 Inline void
 tmevtb_insert(TMEVTB *p_tmevtb, TMEVTN *p_tmevt_heap)
 {
-	TMEVTN	*p_tmevtn;
+	uint_t	index;
 
 	/*
-	 *  p_last_tmevtnをインクリメントし，そこから上に挿入位置を探す．
+	 *  last_indexをインクリメントし，そこから上に挿入位置を探す．
 	 */
-	p_tmevtn = tmevt_up(++p_last_tmevtn(p_tmevt_heap), p_tmevtb->evttim,
-															p_tmevt_heap);
+	index = tmevt_up(++LAST_INDEX(p_tmevt_heap), p_tmevtb->evttim,
+														p_tmevt_heap);
 
 	/*
-	 *  タイムイベントをp_tmevtnの位置に挿入する．
-	 */ 
-	p_tmevtn->p_tmevtb = p_tmevtb;
-	p_tmevtb->p_tmevtn = p_tmevtn;
+	 *  タイムイベントをindexの位置に挿入する．
+	 */
+	HEAP_NODE(index, p_tmevt_heap) = p_tmevtb;
+	p_tmevtb->index = index;
 }
 
 /*
@@ -294,56 +291,54 @@ tmevtb_insert(TMEVTB *p_tmevtb, TMEVTN *p_tmevt_heap)
 Inline void
 tmevtb_delete(TMEVTB *p_tmevtb, TMEVTN *p_tmevt_heap)
 {
-	TMEVTN	*p_tmevtn = p_tmevtb->p_tmevtn;
-	TMEVTN	*p_parent;
+	uint_t	index = p_tmevtb->index;
+	uint_t	last_index = LAST_INDEX(p_tmevt_heap);
+	uint_t	parent;
 	EVTTIM	event_evttim;
 
 	/*
 	 *  削除によりタイムイベントヒープが空になる場合は何もしない．
 	 */
-	if (--p_last_tmevtn(p_tmevt_heap) < p_top_tmevtn(p_tmevt_heap)) {
-		return;
-	}
-
-	/*
-	 *  削除したノードの位置に最後のノード（p_last_tmevtn + 1 の位置の
-	 *  ノード）を挿入し，それを適切な位置へ移動させる．実際には，最後
-	 *  のノードを実際に挿入するのではなく，削除したノードの位置が空ノー
-	 *  ドになるので，最後のノードを挿入すべき位置へ向けて空ノードを移
-	 *  動させる．
-	 *
-	 *  最後のノードのイベント発生時刻が，削除したノードの親ノードのイ
-	 *  ベント発生時刻より前の場合には，上に向かって挿入位置を探す．そ
-	 *  うでない場合には，下に向かって探す．
-	 */
-	event_evttim = (p_last_tmevtn(p_tmevt_heap) + 1)->p_tmevtb->evttim;
-	if (p_tmevtn > p_top_tmevtn(p_tmevt_heap)
-			&& EVTTIM_LT(event_evttim,
-							(p_parent = PARENT(p_tmevtn, p_tmevt_heap))
-													->p_tmevtb->evttim)) {
+	if (--LAST_INDEX(p_tmevt_heap) > 0) {
 		/*
-		 *  親ノードをp_tmevtnの位置に移動させる．
+		 *  削除したノードの位置に最後のノード（last_index の位置の
+		 *  ノード）を挿入し，それを適切な位置へ移動させる．実際には，
+		 *  最後のノードを実際に挿入するのではなく，削除したノードの位
+		 *  置が空ノードになるので，最後のノードを挿入すべき位置へ向け
+		 *  て空ノードを移動させる．
+		 *
+		 *  最後のノードのイベント発生時刻が，削除したノードの親ノード
+		 *  のイベント発生時刻より前の場合には，上に向かって挿入位置を
+		 *  探す．そうでない場合には，下に向かって探す．
 		 */
-		*p_tmevtn = *p_parent;
-		p_tmevtn->p_tmevtb->p_tmevtn = p_tmevtn;
+		event_evttim = HEAP_NODE(last_index, p_tmevt_heap)->evttim;
+		if (index > ROOT_INDEX
+				&& EVTTIM_LT(event_evttim,
+		 			HEAP_NODE(parent = PARENT(index), p_tmevt_heap)->evttim)) {
+			/*
+			 *  親ノードをindexの位置に移動させる．
+			 */
+			HEAP_NODE(index, p_tmevt_heap) = HEAP_NODE(parent, p_tmevt_heap);
+			HEAP_NODE(index, p_tmevt_heap)->index = index;
+
+			/*
+			 *  削除したノードの親ノードから上に向かって挿入位置を探す．
+			 */
+			index = tmevt_up(parent, event_evttim, p_tmevt_heap);
+		}
+		else {
+			/*
+			 *  削除したノードから下に向かって挿入位置を探す．
+			 */
+			index = tmevt_down(index, event_evttim, p_tmevt_heap);
+		}
 
 		/*
-		 *  削除したノードの親ノードから上に向かって挿入位置を探す．
+		 *  最後のノードをindexの位置に挿入する．
 		 */
-		p_tmevtn = tmevt_up(p_parent, event_evttim, p_tmevt_heap);
+		HEAP_NODE(index, p_tmevt_heap) = HEAP_NODE(last_index, p_tmevt_heap);
+		HEAP_NODE(index, p_tmevt_heap)->index = index;
 	}
-	else {
-		/*
-		 *  削除したノードから下に向かって挿入位置を探す．
-		 */
-		p_tmevtn = tmevt_down(p_tmevtn, event_evttim, p_tmevt_heap);
-	}
-
-	/*
-	 *  最後のノードをp_tmevtnの位置に挿入する．
-	 */ 
-	*p_tmevtn = *(p_last_tmevtn(p_tmevt_heap) + 1);
-	p_tmevtn->p_tmevtb->p_tmevtn = p_tmevtn;
 }
 
 /*
@@ -352,30 +347,30 @@ tmevtb_delete(TMEVTB *p_tmevtb, TMEVTN *p_tmevt_heap)
 Inline TMEVTB *
 tmevtb_delete_top(TMEVTN *p_tmevt_heap)
 {
-	TMEVTN	*p_tmevtn;
-	TMEVTB	*p_top_tmevtb = p_top_tmevtn(p_tmevt_heap)->p_tmevtb;
+	uint_t	index;
+	uint_t	last_index = LAST_INDEX(p_tmevt_heap);
+	TMEVTB	*p_top_tmevtb = HEAP_NODE(ROOT_INDEX, p_tmevt_heap);
 	EVTTIM	event_evttim;
 
 	/*
 	 *  削除によりタイムイベントヒープが空になる場合は何もしない．
 	 */
-	if (--p_last_tmevtn(p_tmevt_heap) >= p_top_tmevtn(p_tmevt_heap)) {
+	if (--LAST_INDEX(p_tmevt_heap) > 0) {
 		/*
-		 *  ルートノードに最後のノード（p_last_tmevtn + 1 の位置のノー
-		 *  ド）を挿入し，それを適切な位置へ移動させる．実際には，最後
-		 *  のノードを実際に挿入するのではなく，ルートノードが空ノード
-		 *  になるので，最後のノードを挿入すべき位置へ向けて空ノードを
-		 *  移動させる．
+		 *  ルートノードに最後のノード（last_index の位置のノード）を
+		 *  挿入し，それを適切な位置へ移動させる．実際には，最後のノー
+		 *  ドを実際に挿入するのではなく，ルートノードが空ノードになる
+		 *  ので，最後のノードを挿入すべき位置へ向けて空ノードを移動さ
+		 *  せる．
 		 */
-		event_evttim = (p_last_tmevtn(p_tmevt_heap) + 1)->p_tmevtb->evttim;
-		p_tmevtn = tmevt_down(p_top_tmevtn(p_tmevt_heap), event_evttim,
-															p_tmevt_heap);
+		event_evttim = HEAP_NODE(last_index, p_tmevt_heap)->evttim;
+		index = tmevt_down(ROOT_INDEX, event_evttim, p_tmevt_heap);
 
 		/*
-		 *  最後のノードをp_tmevtnの位置に挿入する．
-		 */ 
-		*p_tmevtn = *(p_last_tmevtn(p_tmevt_heap) + 1);
-		p_tmevtn->p_tmevtb->p_tmevtn = p_tmevtn;
+		 *  最後のノードをindexの位置に挿入する．
+		 */
+		HEAP_NODE(index, p_tmevt_heap) = HEAP_NODE(last_index, p_tmevt_heap);
+		HEAP_NODE(index, p_tmevt_heap)->index = index;
 	}
 	return(p_top_tmevtb);
 }
@@ -438,8 +433,8 @@ set_hrt_event(PCB *p_pcb)
 	}
 #endif /* TOPPERS_SUPPORT_CONTROL_OTHER_HRT */
 
-	if (p_last_tmevtn(p_pcb->p_tevtcb->p_tmevt_heap) < p_top_tmevtn(p_pcb->p_tevtcb->p_tmevt_heap)) {
-		/* 
+	if (LAST_INDEX(p_pcb->p_tevtcb->p_tmevt_heap) == 0) {
+		/*
 		 *  タイムイベントがない場合
 		 */
 #ifdef USE_64BIT_HRTCNT
@@ -469,7 +464,7 @@ set_hrt_event(PCB *p_pcb)
 	else {
 		hrtcnt = (HRTCNT)(top_evttim(p_pcb->p_tevtcb->p_tmevt_heap) - current_evttim);
 #ifdef USE_64BIT_HRTCNT
-		target_hrt_set_event(hrtcnt);
+		target_hrt_set_event(p_pcb->prcid, hrtcnt);
 #else /* USE_64BIT_HRTCNT */
 		if (hrtcnt > HRTCNT_BOUND) {
 			/*
@@ -562,7 +557,7 @@ tmevtb_enqueue(TMEVTB *p_tmevtb, PCB *p_pcb)
 	 *  高分解能タイマ割込みの発生タイミングを設定する．
 	 */
 	if (!(p_pcb->p_tevtcb->in_signal_time)
-				&& p_tmevtb->p_tmevtn == p_top_tmevtn(p_tmevt_heap)) {
+				&& p_tmevtb->index == ROOT_INDEX) {
 		set_hrt_event(p_pcb);
 	}
 }
@@ -606,7 +601,7 @@ tmevtb_enqueue_reltim(TMEVTB *p_tmevtb, RELTIM time, PCB *p_pcb)
 	 *  ［ASPD1034］．
 	 */
 	if (!(p_pcb->p_tevtcb->in_signal_time)
-				&& p_tmevtb->p_tmevtn == p_top_tmevtn(p_tmevt_heap)) {
+				&& p_tmevtb->index == ROOT_INDEX) {
 		set_hrt_event(p_pcb);
 	}
 }
@@ -621,9 +616,9 @@ tmevtb_enqueue_reltim(TMEVTB *p_tmevtb, RELTIM time, PCB *p_pcb)
 void
 tmevtb_dequeue(TMEVTB *p_tmevtb, PCB *p_pcb)
 {
-	TMEVTN	*p_tmevtn;
+	uint_t	index;
 	TMEVTN *p_tmevt_heap;
-	
+
 	/*
 	 *  タイムイベント処理プロセッサでない場合はタイムマスタプロセッサに
 	 *  依頼．
@@ -637,14 +632,14 @@ tmevtb_dequeue(TMEVTB *p_tmevtb, PCB *p_pcb)
 	/*
 	 *  タイムイベントブロックをヒープから削除する［ASPD1039］．
 	 */
-	p_tmevtn = p_tmevtb->p_tmevtn;
+	index = p_tmevtb->index;
 	tmevtb_delete(p_tmevtb, p_tmevt_heap);
 
 	/*
 	 *  高分解能タイマ割込みの発生タイミングを設定する［ASPD1040］．
 	 */
 	if (!(p_pcb->p_tevtcb->in_signal_time)
-				&& p_tmevtn == p_top_tmevtn(p_tmevt_heap)) {
+				&& index == ROOT_INDEX) {
 		update_current_evttim();
 		set_hrt_event(p_pcb);
 	}
@@ -661,7 +656,7 @@ bool_t
 check_adjtim(int32_t adjtim, PCB *p_pcb)
 {
 	if (adjtim > 0) {							/*［NGKI3588］*/
-		return(p_last_tmevtn(p_pcb->p_tevtcb->p_tmevt_heap) >= p_top_tmevtn(p_pcb->p_tevtcb->p_tmevt_heap)	/*［NGKI3588］*/
+		return(LAST_INDEX(p_pcb->p_tevtcb->p_tmevt_heap) > 0	/*［NGKI3588］*/
 					&& EVTTIM_LE(top_evttim(p_pcb->p_tevtcb->p_tmevt_heap) + TMAX_ADJTIM, current_evttim));
 	}
 	else if (adjtim < 0) {						/*［NGKI3589］*/
@@ -743,7 +738,7 @@ signal_time(void)
 		 *  ムイベントヒープから削除し，コールバック関数を呼び出す
 		 *  ［ASPD1018］［ASPD1019］．
 		 */
-		while (p_last_tmevtn(p_my_pcb->p_tevtcb->p_tmevt_heap) >= p_top_tmevtn(p_my_pcb->p_tevtcb->p_tmevt_heap)
+		while (LAST_INDEX(p_my_pcb->p_tevtcb->p_tmevt_heap) > 0
 							&& EVTTIM_LE(top_evttim(p_my_pcb->p_tevtcb->p_tmevt_heap), current_evttim)) {
 			p_tmevtb = tmevtb_delete_top(p_my_pcb->p_tevtcb->p_tmevt_heap);
 			(*(p_tmevtb->callback))(p_my_pcb, p_tmevtb->arg);

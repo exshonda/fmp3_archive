@@ -60,8 +60,10 @@ USE_TSPNCB,true,bool,defined(USE_TSPNCB),false
 OMIT_INITIALIZE_INTERRUPT,true,bool,defined(OMIT_INITIALIZE_INTERRUPT),false
 USE_INHINIB_TABLE,true,bool,defined(USE_INHINIB_TABLE),false
 USE_INTINIB_TABLE,true,bool,defined(USE_INTINIB_TABLE),false
+OMIT_MULTIPRC_INTERRUPT,true,bool,defined(OMIT_MULTIPRC_INTERRUPT),false
 OMIT_INITIALIZE_EXCEPTION,true,bool,defined(OMIT_INITIALIZE_EXCEPTION),false
 OMIT_ISTACK,true,bool,defined(OMIT_ISTACK),false
+OMIT_ISTK,true,bool,defined(OMIT_ISTK),false
 DEFAULT_ISTK,,intptr,defined(DEFAULT_ISTK)
 OMIT_IDSTACK,true,bool,defined(OMIT_IDSTACK),false
 TARGET_TSKATR,,,defined(TARGET_TSKATR),0

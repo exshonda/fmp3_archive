@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: task.h 335 2023-04-18 10:50:40Z ertl-honda $
+ *  $Id: task.h 479 2026-06-07 14:32:52Z ertl-honda $
  */
 
 /*
@@ -318,6 +318,16 @@ extern TCB *const	p_tcb_table[];
 extern void	initialize_task(PCB *p_my_pcb);
 
 /*
+ *  優先度ビットマップが空かのチェック
+ *
+ */
+Inline bool_t
+primap_empty(PCB *p_pcb)
+{
+	return(p_pcb->ready_primap == 0U);
+}
+
+/*
  *  最高優先順位タスクのサーチ
  *
  *  レディキュー中の最高優先順位のタスクをサーチし，そのTCBへのポインタ
@@ -378,7 +388,14 @@ set_dspflg(PCB *p_my_pcb)
 	 */
 	t_set_ipm(TIPM_ENAALL);
 	p_my_pcb->dspflg = true;
-	p_my_pcb->p_schedtsk = search_schedtsk(p_my_pcb);
+	/*
+	 *  ディスパッチ保留中はp_schedtskが更新されない（update_schedtsk_dspを参照）
+	 *  ため，保留中に他プロセッサからのsus_tskで自タスクが実行できる
+	 *  状態でなくなると（強制待ち状態［実行継続中］），保留解除の時点
+	 *  でレディキューが空となる可能性がある．
+	 */
+	p_my_pcb->p_schedtsk = primap_empty(p_my_pcb) ?
+								((TCB *) NULL) : search_schedtsk(p_my_pcb);
 }
 
 /*

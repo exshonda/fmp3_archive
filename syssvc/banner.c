@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: banner.c 335 2023-04-18 10:50:40Z ertl-honda $
+ *  $Id: banner.c 480 2026-06-10 12:36:23Z ertl-honda $
  */
 
 /*
@@ -65,7 +65,7 @@ static const char banner[] = "\n"
 " (" __DATE__ ", " __TIME__ ")\n"
 "Copyright (C) 2000-2003 by Embedded and Real-Time Systems Laboratory\n"
 "                            Toyohashi Univ. of Technology, JAPAN\n"
-"Copyright (C) 2004-2023 by Embedded and Real-Time Systems Laboratory\n"
+"Copyright (C) 2004-2026 by Embedded and Real-Time Systems Laboratory\n"
 "            Graduate School of Information Science, Nagoya Univ., JAPAN\n"
 "%s";
 

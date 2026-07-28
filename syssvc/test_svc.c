@@ -35,7 +35,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: test_svc.c 209 2020-01-30 09:59:08Z ertl-honda $
+ *  $Id: test_svc.c 508 2026-06-16 06:29:17Z ertl-honda $
  */
 
 /* 
@@ -62,6 +62,15 @@ static volatile uint_t	prc_phase[TNUM_PRCID];
 static volatile uint_t	sys_phase;
 
 /*
+ *  バリア同期に参加するプロセッサ数
+ *
+ *  デフォルトでは全プロセッサ（TNUM_PRCID）がバリア同期に参加する．
+ *  一部のプロセッサのみが参加する場合には，set_barrier_numprcで参加す
+ *  るプロセッサ数を設定する．
+ */
+static volatile uint_t	barrier_tnum_prcid = TNUM_PRCID;
+
+/*
  *  テストプログラムの開始
  */
 void
@@ -75,6 +84,7 @@ test_start(const char *progname)
 		prc_phase[i] = 0U;
 	}
 	sys_phase = 0U;
+	barrier_tnum_prcid = TNUM_PRCID;
 }
 
 /*
@@ -175,6 +185,11 @@ check_finish(uint_t count)
 	if (count > 0U) {
 		check_point_prc(count, 0);
 		syslog_0(LOG_NOTICE, "All check points passed.");
+		syslog_0(LOG_NOTICE, "TTSP_RESULT: PASS");
+	}
+	else {
+		/* チェックポイントを持たない完走（計測/情報系テスト等） */
+		syslog_0(LOG_NOTICE, "TTSP_RESULT: DONE");
 	}
 	test_finish();
 }
@@ -188,6 +203,11 @@ check_finish_prc(uint_t count, ID prcid)
 	if (count > 0U) {
 		check_point_prc(count, prcid);
 		syslog_0(LOG_NOTICE, "All check points passed.");
+		syslog_0(LOG_NOTICE, "TTSP_RESULT: PASS");
+	}
+	else {
+		/* チェックポイントを持たない完走（計測/情報系テスト等） */
+		syslog_0(LOG_NOTICE, "TTSP_RESULT: DONE");
 	}
 	test_finish();
 }
@@ -200,6 +220,7 @@ check_assert_error(const char *expr, const char *file, int_t line)
 {
 	syslog_3(LOG_ERROR, "## Assertion `%s' failed at %s:%u.\007",
 												expr, file, line);
+	syslog_0(LOG_NOTICE, "TTSP_RESULT: FAIL");
 	test_finish();
 }
 
@@ -211,6 +232,7 @@ check_ercd_error(ER ercd, const char *file, int_t line)
 {
 	syslog_3(LOG_ERROR, "## Unexpected error %s detected at %s:%u.\007",
 									itron_strerror(ercd), file, line);
+	syslog_0(LOG_NOTICE, "TTSP_RESULT: FAIL");
 	test_finish();
 }
 
@@ -242,7 +264,7 @@ test_barrier(uint_t phase)
 	if (prcid == TOPPERS_MASTER_PRCID) {
 		while (true) {
 			flag = false;
-			for (i = 0; i < TNUM_PRCID; i++){
+			for (i = 0; i < barrier_tnum_prcid; i++){
 				if (prc_phase[i] != phase) {
 					flag = true;
 					break;
@@ -266,5 +288,14 @@ test_barrier(uint_t phase)
 			prc_phase[prcid - 1] = phase;
 		}
 	}
+}
+
+/*
+ *  テストプログラム用のバリア同期のプロセッサ数の設定
+ */
+void
+set_barrier_numprc(uint_t numprc)
+{
+	barrier_tnum_prcid = numprc;
 }
 

@@ -5,7 +5,7 @@
  * 
  *  Copyright (C) 2000-2003 by Embedded and Real-Time Systems Laboratory
  *                              Toyohashi Univ. of Technology, JAPAN
- *  Copyright (C) 2005-2020 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2005-2025 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  * 
  *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: startup.c 376 2023-09-02 04:34:49Z ertl-honda $
+ *  $Id: startup.c 464 2026-05-27 11:42:34Z ertl-honda $
  */
 
 /*
@@ -161,9 +161,19 @@ sta_ker(void)
 	p_my_pcb->p_locspn = NULL;
 
 	/*
+	 *  ターゲット依存の初期開始のバリア同期
+	 */    
+	barrier_sync(1);
+
+	/*
 	 *  ターゲット依存の初期化
 	 */
 	target_initialize(p_my_pcb);
+
+	/*
+	 *  ターゲット依存の初期化待ちのバリア同期
+	 */
+	barrier_sync(2);
 
 	/*
 	 *  各モジュールの初期化
@@ -184,20 +194,20 @@ sta_ker(void)
 	/*
 	 *  初期化ルーチンの実行
 	 */
-	barrier_sync(1);
+	barrier_sync(3);
 
 	if (p_my_pcb->prcid == TOPPERS_MASTER_PRCID) {
 		call_inirtn(&(inirtnbb_table[0]));
 	}
 
-	barrier_sync(2);
+	barrier_sync(4);
 
 	call_inirtn(&(inirtnbb_table[p_my_pcb->prcid]));
 
 	/*
 	 *  オブジェクトの初期化待ちのバリア同期
 	 */
-	barrier_sync(3);
+	barrier_sync(5);
 
 	/*
 	 *  高分解能タイマの設定
@@ -206,16 +216,17 @@ sta_ker(void)
 		current_hrtcnt = target_hrt_get_current();		/*［ASPD1063］*/
 	}
 
-	barrier_sync(4);
+	barrier_sync(6);
 
 	if (p_my_pcb->p_tevtcb != NULL) {
 		/*
-		 *  ここでは，ジャイアントロックを取得せずにset_hrt_eventを呼
-		 *  び出す．そのため，高分解能タイマの一部の操作関数が，複数の
-		 *  プロセッサから並列に呼び出されるため，それらの関数の実装に
-		 *  注意が必要である．
+		 *  acquire_glockは，CPUロック状態を解除する場合があるが，ここ
+		 *  でCPUロック状態を解除してはならないため，try_glockを用いて
+		 *  ジャイアントロックを取得する．
 		 */
+		while (try_glock());
 		set_hrt_event(p_my_pcb);						/*［ASPD1064］*/
+		release_glock();
 	}
 
 	/*
@@ -266,7 +277,9 @@ ext_ker(void)
 	 *  他のプロセッサへ終了処理を要求する
 	 */
 	for (prcid = TMIN_PRCID; prcid <= TMAX_PRCID; prcid++) {
-		request_ext_ker(prcid);
+		if (prcid != p_my_pcb->prcid) {
+			request_ext_ker(prcid);
+		}
 	}
 
 	/*

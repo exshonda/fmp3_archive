@@ -35,7 +35,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: test_svc.h 209 2020-01-30 09:59:08Z ertl-honda $
+ *  $Id: test_svc.h 508 2026-06-16 06:29:17Z ertl-honda $
  */
 
 /* 
@@ -64,6 +64,7 @@ extern void	check_assert_error(const char *expr, const char *file, int_t line);
 extern void	check_ercd_error(ER ercd, const char *file, int_t line);
 extern ER	get_interrupt_priority_mask(PRI *p_ipm);
 extern void	test_barrier(uint_t phase);
+extern void	set_barrier_numprc(uint_t numprc);
 
 /*
  *	条件チェック

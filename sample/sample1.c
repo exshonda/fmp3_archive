@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: sample1.c 401 2024-04-23 08:08:01Z ertl-honda $
+ *  $Id: sample1.c 519 2026-06-18 11:32:39Z ertl-honda $
  */
 
 /* 
@@ -101,10 +101,18 @@
  *  '7' : クラス4に所属するタスクを指定する．
  *        対象周期ハンドラをCYCHDR4に切り替える．
  *        対象アラームハンドラをALMHDR4に切り替える．
+ *  'h' : クラス5に所属するタスクを指定する（TNUM_PRCID>=5）．
+ *        対象周期ハンドラをCYCHDR5に切り替える．
+ *        対象アラームハンドラをALMHDR5に切り替える．
+ *  'k' : クラス6に所属するタスクを指定する（TNUM_PRCID>=6）．
+ *        対象周期ハンドラをCYCHDR6に切り替える．
+ *        対象アラームハンドラをALMHDR6に切り替える．
  *  '8' : 対象プロセッサをPRC1とする（初期設定）
  *  '9' : 対象プロセッサをPRC2とする
  *  '0' : 対象プロセッサをPRC3とする
- *  '-' : 対象プロセッサをPRC4とする  
+ *  '-' : 対象プロセッサをPRC4とする
+ *  'n' : 対象プロセッサをPRC5とする（TNUM_PRCID>=5）
+ *  'o' : 対象プロセッサをPRC6とする（TNUM_PRCID>=6）
  *  'a' : 対象タスクをact_tskにより起動する．
  *  'A' : 対象タスクに対する起動要求をcan_actによりキャンセルする．
  *  'e' : 対象タスクにext_tskを呼び出させ，終了させる．
@@ -190,6 +198,12 @@ const ID server_dtqid[TNUM_PRCID] = {
 #if TNUM_PRCID >= 4
     SERVER_DTQ4,
 #endif /* TNUM_PRCID >= 4 */
+#if TNUM_PRCID >= 5
+    SERVER_DTQ5,
+#endif /* TNUM_PRCID >= 5 */
+#if TNUM_PRCID >= 6
+    SERVER_DTQ6,
+#endif /* TNUM_PRCID >= 6 */
 };
 
 /*
@@ -206,6 +220,12 @@ const uint_t task_id[TNUM_PRCID][3] = {
 #if TNUM_PRCID >= 4
     {TASK4_1,TASK4_2,TASK4_3},
 #endif /* TNUM_PRCID >= 4 */
+#if TNUM_PRCID >= 5
+    {TASK5_1,TASK5_2,TASK5_3},
+#endif /* TNUM_PRCID >= 5 */
+#if TNUM_PRCID >= 6
+    {TASK6_1,TASK6_2,TASK6_3},
+#endif /* TNUM_PRCID >= 6 */
 };
 
 /*
@@ -220,8 +240,14 @@ const char *task_name[TNUM_PRCID][3] = {
     {"TASK3_1", "TASK3_2", "TASK3_3"},
 #endif /* TNUM_PRCID >= 3 */
 #if TNUM_PRCID >= 4
-    {"TASK4_1", "TASK4_2", "TASK4_3"}
+    {"TASK4_1", "TASK4_2", "TASK4_3"},
 #endif /* TNUM_PRCID >= 4 */
+#if TNUM_PRCID >= 5
+    {"TASK5_1", "TASK5_2", "TASK5_3"},
+#endif /* TNUM_PRCID >= 5 */
+#if TNUM_PRCID >= 6
+    {"TASK6_1", "TASK6_2", "TASK6_3"}
+#endif /* TNUM_PRCID >= 6 */
 };
 
 #define TSKNO_TO_TSKID(tskno)  task_id[(tskno >> 4) - 1][(tskno & 0xf) -1]
@@ -238,8 +264,14 @@ const uint_t exctsk_tskid[TNUM_PRCID] = {
 	EXC_TASK3,
 #endif /* TNUM_PRCID >= 3 */
 #if TNUM_PRCID >= 4
-	EXC_TASK4
+	EXC_TASK4,
 #endif /* TNUM_PRCID >= 4 */
+#if TNUM_PRCID >= 5
+	EXC_TASK5,
+#endif /* TNUM_PRCID >= 5 */
+#if TNUM_PRCID >= 6
+	EXC_TASK6
+#endif /* TNUM_PRCID >= 6 */
 };
 
 /*
@@ -256,6 +288,12 @@ const uint_t cychd_id[TNUM_PRCID] = {
 #if TNUM_PRCID >= 4
     CYCHDR4_1,
 #endif /* TNUM_PRCID >= 4 */
+#if TNUM_PRCID >= 5
+    CYCHDR5_1,
+#endif /* TNUM_PRCID >= 5 */
+#if TNUM_PRCID >= 6
+    CYCHDR6_1,
+#endif /* TNUM_PRCID >= 6 */
 };
 
 /*
@@ -272,6 +310,12 @@ const uint_t almhd_id[TNUM_PRCID] = {
 #if TNUM_PRCID >= 4
     ALMHDR4_1,
 #endif /* TNUM_PRCID >= 4 */
+#if TNUM_PRCID >= 5
+    ALMHDR5_1,
+#endif /* TNUM_PRCID >= 5 */
+#if TNUM_PRCID >= 6
+    ALMHDR6_1,
+#endif /* TNUM_PRCID >= 6 */
 };
 
 #ifdef TOPPERS_SUPPORT_RAS_INT
@@ -289,6 +333,11 @@ const INTNO inthd_no[TNUM_PRCID] = {
 #if TNUM_PRCID >= 4
     INTNO4,
 #endif /* TNUM_PRCID >= 4 */
+    /*
+     *  テスト用割込みは INTNO1〜4 の4本のみ定義されている．PRC5/6 には対応する
+     *  テスト割込みが無いため inthd_no には追加しない（配列は TNUM_PRCID 個だが
+     *  [4]/[5] は 0 になり，class5/6 選択時の ras_int は対象なしとなる）．
+     */
 };
 #endif /* TOPPERS_SUPPORT_RAS_INT */
 
@@ -764,6 +813,16 @@ main_task(EXINF exinf)
 	SVC_PERROR(act_tsk(TASK4_2));
 	SVC_PERROR(act_tsk(TASK4_3));
 #endif /* TNUM_PRCID >= 4 */
+#if TNUM_PRCID >= 5
+	SVC_PERROR(act_tsk(TASK5_1));
+	SVC_PERROR(act_tsk(TASK5_2));
+	SVC_PERROR(act_tsk(TASK5_3));
+#endif /* TNUM_PRCID >= 5 */
+#if TNUM_PRCID >= 6
+	SVC_PERROR(act_tsk(TASK6_1));
+	SVC_PERROR(act_tsk(TASK6_2));
+	SVC_PERROR(act_tsk(TASK6_3));
+#endif /* TNUM_PRCID >= 6 */
 	/*
  	 *  メインループ
 	 */
@@ -852,6 +911,26 @@ main_task(EXINF exinf)
 			update_select = true;
 			break;
 #endif /* TNUM_PRCID >= 4 */
+#if TNUM_PRCID >= 5
+		case 'h':
+			tme_select = 5;
+			class_select = 5;
+#ifdef TOPPERS_SUPPORT_RAS_INT
+			int_select = 5;
+#endif /* TOPPERS_SUPPORT_RAS_INT */
+			update_select = true;
+			break;
+#endif /* TNUM_PRCID >= 5 */
+#if TNUM_PRCID >= 6
+		case 'k':
+			tme_select = 6;
+			class_select = 6;
+#ifdef TOPPERS_SUPPORT_RAS_INT
+			int_select = 6;
+#endif /* TOPPERS_SUPPORT_RAS_INT */
+			update_select = true;
+			break;
+#endif /* TNUM_PRCID >= 6 */
 		case '8':
 			prc_select = 1;
 			update_select = true;
@@ -874,6 +953,18 @@ main_task(EXINF exinf)
 			update_select = true;
 			break;
 #endif /* TNUM_PRCID >= 4 */
+#if TNUM_PRCID >= 5
+		case 'n':
+			prc_select = 5;
+			update_select = true;
+			break;
+#endif /* TNUM_PRCID >= 5 */
+#if TNUM_PRCID >= 6
+		case 'o':
+			prc_select = 6;
+			update_select = true;
+			break;
+#endif /* TNUM_PRCID >= 6 */
 		case 'a':
 			syslog(LOG_INFO, "#act_tsk(%s)", tskname);
 			SVC_PERROR(act_tsk(tskid));

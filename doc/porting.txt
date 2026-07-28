@@ -1625,6 +1625,11 @@ exit_and_migrate(PCB *p_my_pcb, TCB *p_selftsk)
 	migrate_activate_self(p_my_pcb, p_selftsk)
 }
 
+(6-x-3) void save_context(TCB *p_tcb)
+
+タスクのマイグレート（割付けプロセッサの変更）時に，ターゲット依存で必
+要になる処理を行うための関数．コプロセッサのコンテキストを遅延管理する
+場合などに，コンテキストを保存するために，必要となる場合がある．
 
 ７．コンフィギュレータ設定ファイルのターゲット依存部
 

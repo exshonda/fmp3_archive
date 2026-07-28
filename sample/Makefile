@@ -37,7 +37,7 @@
 #  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
 #  の責任を負わない．
 # 
-#  $Id: Makefile 335 2023-04-18 10:50:40Z ertl-honda $
+#  $Id: Makefile 511 2026-06-16 11:08:20Z ertl-honda $
 # 
 
 #
@@ -433,6 +433,13 @@ libkernel.a: $(OFFSET_H) $(KERNEL_LIB_OBJS)
 $(APPL_OBJS) $(SYSSVC_OBJS): | kernel_cfg.timestamp
 $(APPL_ASMOBJS) $(SYSSVC_ASMOBJS) $(KERNEL_ASMOBJS) $(CFG_ASMOBJS): \
 														| offset.timestamp
+#
+#  offset.h を C ソースから（kernel_impl.h 経由で）取り込むコア依存部
+#  （ARM-M 等）向けの追加依存関係．OFFSET_COBJS はコア依存部の
+#  Makefile.core が設定し，既存の他アーキでは未定義（空）のため無影響．
+#  順序専用依存（order-only）なので不要な再ビルドは発生しない．
+#
+$(OFFSET_COBJS): | offset.timestamp
 
 #
 #  特別な依存関係の定義

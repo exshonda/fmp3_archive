@@ -4,7 +4,7 @@
 #  TOPPERS Configurator by Ruby
 #
 #  Copyright (C) 2015 by FUJI SOFT INCORPORATED, JAPAN
-#  Copyright (C) 2015-2022 by Embedded and Real-Time Systems Laboratory
+#  Copyright (C) 2015-2024 by Embedded and Real-Time Systems Laboratory
 #              Graduate School of Information Science, Nagoya Univ., JAPAN
 #
 #  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -36,7 +36,7 @@
 #  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
 #  の責任を負わない．
 #
-#  $Id: cfg.rb 203 2023-03-14 04:25:39Z ertl-hiro $
+#  $Id: cfg.rb 205 2024-06-08 02:18:13Z ertl-hiro $
 #
 
 if $0 == __FILE__
@@ -55,7 +55,7 @@ require "SRecord.rb"
 #  定数定義
 #
 # 共通
-VERSION = "1.7.0"
+VERSION = "1.7.1"
 
 # cfg1_out関係
 CFG1_PREFIX         = "TOPPERS_cfg_"

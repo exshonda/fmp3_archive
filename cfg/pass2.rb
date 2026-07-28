@@ -3,7 +3,7 @@
 #  TOPPERS Configurator by Ruby
 #
 #  Copyright (C) 2015 by FUJI SOFT INCORPORATED, JAPAN
-#  Copyright (C) 2015-2022 by Embedded and Real-Time Systems Laboratory
+#  Copyright (C) 2015-2024 by Embedded and Real-Time Systems Laboratory
 #              Graduate School of Information Science, Nagoya Univ., JAPAN
 #
 #  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -35,7 +35,7 @@
 #  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
 #  の責任を負わない．
 #
-#  $Id: pass2.rb 197 2022-10-22 12:25:44Z ertl-hiro $
+#  $Id: pass2.rb 206 2024-06-08 03:19:54Z ertl-hiro $
 #
 
 #
@@ -249,27 +249,51 @@ module Cfg1Out
     #   @objidValues["semid"]["SEM1"] == 1
     #
 
-    # ID番号割り当ての前処理
+    # オブジェクト識別名の重複チェックのための変数の初期化
+    objectNames = $domainId.keys
+
+    # 有効な静的APIの抽出
     $cfgFileInfo.each do |cfgInfo|
-      # 静的API以外は読み飛ばす
+      cfgInfo[:VALID] = false
+
+      # 静的API以外は無効
       next unless cfgInfo.has_key?(:APINAME)
 
-      apiDef = $apiDefinition[cfgInfo[:APINAME]]
-      # 異なるフェーズの静的APIは読み飛ばす
-      next if apiDef[:PHASE] != phase
+      # 異なるフェーズの静的APIは無効
+      next if $apiDefinition[cfgInfo[:APINAME]][:PHASE] != phase
 
+      # シンボルファイルに静的APIのインデックスが存在しなければ無効
+      # （条件ディレクティブで消えた静的API）
       apiIndex = cfgInfo[:INDEX]
       if !apiIndex.nil?
-        # シンボルファイルに静的APIのインデックスが存在しなければ読み飛
-        # ばす（ifdef等で消えた静的API）
         symbol = "#{$cfg1_prefix}static_api_#{apiIndex}"
         next unless @symbolAddress.has_key?(symbol)
       end
 
+      # 残ったものが有効な静的API
+      cfgInfo[:VALID] = true
+    end
+
+    # ID番号割り当ての前処理
+    $cfgFileInfo.each do |cfgInfo|
+      # 有効な静的API以外は読み飛ばす
+      next unless cfgInfo[:VALID]
+
+      apiDef = $apiDefinition[cfgInfo[:APINAME]]
       apiDef[:PARAM].each do |apiParam|
         if apiParam.has_key?(:NAME) && apiParam.has_key?(:ID_DEF)
           objidParamName = apiParam[:NAME]
           objName = cfgInfo[objidParamName]
+
+          # オブジェクト識別名の重複チェック
+          if objectNames.include?(objName)
+            error("E_OBJ: #{apiDef[:KEYPAR]} `#{cfgInfo[apiParam[:NAME]]}' " \
+								"is duplicated in #{cfgInfo[:APINAME]}",
+								"#{cfgInfo[:_FILE_]}:#{cfgInfo[:_LINE_]}:")
+            cfgInfo[:VALID] = false
+          end
+          objectNames.push(objName)
+
           if $inputObjid.has_key?(objName)
             # ID番号入力ファイルに定義されていた場合
             @objidValues[objidParamName][objName] = $inputObjid[objName]
@@ -312,23 +336,13 @@ module Cfg1Out
     #  静的APIデータをコンフィギュレーションデータ（$cfgData）に格納
     #
     $cfgFileInfo.each do |cfgInfo|
-      # 静的API以外は読み飛ばす
-      next unless cfgInfo.has_key?(:APINAME)
-
-      apiDef = $apiDefinition[cfgInfo[:APINAME]]
-      # 異なるフェーズの静的APIは読み飛ばす
-      next if apiDef[:PHASE] != phase
-
-      apiSym = apiDef[:API].to_sym
-      apiIndex = cfgInfo[:INDEX]
-      if !apiIndex.nil?
-        # シンボルファイルに静的APIのインデックスが存在しなければ読み飛
-        # ばす（ifdef等で消えた静的API）
-        symbol = "#{$cfg1_prefix}static_api_#{apiIndex}"
-        next unless @symbolAddress.has_key?(symbol)
-      end
+      # 有効な静的API以外は読み飛ばす
+      next unless cfgInfo[:VALID]
 
       # パラメータの値をハッシュ形式に格納
+      apiDef = $apiDefinition[cfgInfo[:APINAME]]
+      apiSym = apiDef[:API].to_sym
+      apiIndex = cfgInfo[:INDEX]
       params = {}
       apiDef[:PARAM].each do |apiParam|
         next unless apiParam.has_key?(:NAME)

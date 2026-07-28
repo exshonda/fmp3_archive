@@ -3,7 +3,7 @@
  *      Toyohashi Open Platform for Embedded Real-Time Systems/
  *      Flexible MultiProcessor Kernel
  * 
- *  Copyright (C) 2007-2018 by Embedded and Real-Time Systems Laboratory
+ *  Copyright (C) 2007-2026 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  * 
  *  上記著作権者は，以下の(1)～(4)の条件を満たす場合に限り，本ソフトウェ
@@ -35,7 +35,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  @(#) $Id: trace_dump.c 311 2022-09-01 02:40:39Z ertl-honda $
+ *  @(#) $Id: trace_dump.c 531 2026-06-29 05:39:48Z ertl-honda $
  */
 
 /*
@@ -574,7 +574,7 @@ trace_print_flgleave(TRACE *trace, intptr_t *info)
 		tracemsg = "leave from ref_flg ercd=%d.";
 		break;
 	default:
-		tracemsg = "unknown servic call";
+		tracemsg = "unknown service call";
 		break;
 	}
 
@@ -1163,7 +1163,7 @@ trace_print_timleave(TRACE *trace, intptr_t *info)
 		tracemsg = "leave from fcht_hrt hrtcnt=%d.";
 		break;
 	default:
-		tracemsg = "unknown servic call";
+		tracemsg = "unknown service call";
 		break;
 	}
 
@@ -1237,7 +1237,7 @@ trace_print_cycleave(TRACE *trace, intptr_t *info)
 		tracemsg = "leave from ref_cyc ercd=%d.";
 		break;
 	default:
-		tracemsg = "unknown servic call";
+		tracemsg = "unknown service call";
 		break;
 	}
 
@@ -1312,7 +1312,7 @@ trace_print_almleave(TRACE *trace, intptr_t *info)
 		tracemsg = "leave from ref_alm ercd=%d.";
 		break;
 	default:
-		tracemsg = "unknown servic call";
+		tracemsg = "unknown service call";
 		break;
 	}
 
@@ -1400,7 +1400,7 @@ trace_print_sysenter(TRACE *trace, intptr_t *info)
 		tracemsg = "enter to sns_ker.";
 		break;
 	default:
-		tracemsg = "unknown servic call";
+		tracemsg = "unknown service call";
 		break;
 	}
 
@@ -1495,7 +1495,7 @@ trace_print_sysleave(TRACE *trace, intptr_t *info)
 		tracemsg = "leave from sns_ker state=%d.";
 		break;
 	default:
-		tracemsg = "unknown servic call";
+		tracemsg = "unknown service call";
 		break;
 	}
 
@@ -1592,7 +1592,7 @@ trace_print_intleave(TRACE *trace, intptr_t *info)
 		tracemsg = "leave from get_ipm ercd=%d. intpri=%d.";
 		break;
 	  default:
-		tracemsg = "unknown servic call";
+		tracemsg = "unknown service call";
 		break;
 	}
 
@@ -1640,7 +1640,7 @@ trace_print_dpnleave(TRACE *trace, intptr_t *info)
 		tracemsg = "leave from xsns_dpn state=%d.";
 		break;
 	  default:
-		tracemsg = "unknown servic call";
+		tracemsg = "unknown service call";
 		break;
 	}
 
@@ -2045,7 +2045,7 @@ trace_print_svcleave(TRACE *trace, intptr_t *info)
 		break;
 
 	  default:
-		tracemsg = "unknown LOG_TYPE_SVC|LEAVE servic call";
+		tracemsg = "unknown LOG_TYPE_SVC|LEAVE service call";
 		break;
 	}
 

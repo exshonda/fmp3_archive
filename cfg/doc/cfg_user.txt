@@ -2,8 +2,8 @@
 		TOPPERS第3世代カーネル向け Ruby版コンフィギュレータ
 		ユーザーズマニュアル
 
-		対応バージョン: Release 1.7.0
-		最終更新: 2022年12月6日
+		対応バージョン: Release 1.7.1
+		最終更新: 2026年5月8日
 
 このドキュメントは，TOPPERS第3世代カーネル向けRuby版コンフィギュレータ
 を，各種のカーネル／システムサービス／ターゲット向けに設定するために必
@@ -15,7 +15,7 @@
  TOPPERS Configurator by Ruby
 
  Copyright (C) 2015 by FUJI SOFT INCORPORATED, JAPAN
- Copyright (C) 2015-2022 by Embedded and Real-Time Systems Laboratory
+ Copyright (C) 2015-2026 by Embedded and Real-Time Systems Laboratory
              Graduate School of Information Science, Nagoya Univ., JAPAN
 
  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -47,7 +47,7 @@
  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  の責任を負わない．
  
- $Id: cfg_user.txt 203 2023-03-14 04:25:39Z ertl-hiro $
+ $Id: cfg_user.txt 208 2026-05-08 04:54:30Z ertl-hiro $
 ----------------------------------------------------------------------
 
 ○目次
@@ -926,5 +926,6 @@ $cfgFileInfo.push(cfgInfo)
 	2019年10月3日	Release	1.5.0		長期サポートバージョン
 	2020年12月20日	Release	1.6.0		ASP3 R3.6.0等に同梱してリリース
 	2023年3月14日	Release	1.7.0		ASP3 R3.7.0等に同梱してリリース
+	2026年5月8日	Release	1.7.1		ASP3 R3.7.2等に同梱してリリース
 
 以上

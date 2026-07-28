@@ -34,7 +34,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: test_common.h 265 2021-01-08 06:17:00Z ertl-honda $
+ *  $Id: test_common.h 508 2026-06-16 06:29:17Z ertl-honda $
  */
 
 /*
@@ -159,9 +159,11 @@ extern void	task51(EXINF exinf);
 extern void	task52(EXINF exinf);
 
 extern void	cyclic1_handler(EXINF exinf);
+extern void	cyclic2_handler(EXINF exinf);
 
 extern void	alarm1_handler(EXINF exinf);
 extern void	alarm2_handler(EXINF exinf);
+extern void	alarm3_handler(EXINF exinf);
 
 extern void	isr1(EXINF exinf);
 extern void	isr2(EXINF exinf);
@@ -178,5 +180,11 @@ extern ER_UINT extsvc2_routine(intptr_t par1, intptr_t par2, intptr_t par3,
 									intptr_t par4, intptr_t par5, ID cdmid);
 extern ER_UINT extsvc3_routine(intptr_t par1, intptr_t par2, intptr_t par3,
 									intptr_t par4, intptr_t par5, ID cdmid);
+
+/*
+ *  メモリ領域の宣言
+ */
+extern MPF_T	mpf_MPF1[];
+extern MPF_T	mpf_MPF2[];
 
 #endif /* TOPPERS_MACRO_ONLY */

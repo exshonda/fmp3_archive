@@ -37,7 +37,7 @@
 #   アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
 #   の責任を負わない．
 # 
-#   $Id: interrupt.trb 335 2023-04-18 10:50:40Z ertl-honda $
+#   $Id: interrupt.trb 464 2026-05-27 11:42:34Z ertl-honda $
 # 
 
 #
@@ -128,9 +128,42 @@ $cfgData[:CFG_INT].each do |_, params|
     params[:class] = $TCLS_ERROR
   end
 
+  # 割込み要求を受け付けるプロセッサの設定［NGKI0676］［NGKI0656］
+  if !$OMIT_MULTIPRC_INTERRUPT
+    params[:affinityPrcBitmap] = $clsData[params[:class]][:affinityPrcBitmap]
+  else
+    # 割付け可能プロセッサが複数あるクラスの囲み内にCFG_INTを記述した
+    # 場合には，警告メッセージを出し，初期割付けプロセッサのみで割込み
+    # 要求を受け付けるように設定する．
+    initPrcBitmap = (1 << ($clsData[params[:class]][:initPrc] - 1))
+    if ($clsData[params[:class]][:affinityPrcBitmap] != initPrcBitmap)
+      warning_api(params, "%%intno configured within the class " \
+							"#{$clsData[params[:class]][:clsid]} " \
+							"is configured to be accepted by the processor " \
+							"#{$clsData[params[:class]][:initPrc]} only.")
+    end
+    params[:affinityPrcBitmap] = initPrcBitmap
+  end
+
   # intnoが有効範囲外の場合（E_PAR）［NGKI2972］
   if !$INTNO_VALID_ALL.include?(params[:intno])
     error_illegal("E_PAR", params, :intno)
+  else
+    # クラスIDがエラーの場合は，エラーチェックをスキップする
+    if params[:class].str != ""
+      # クラスの割付け可能プロッサが，intnoで指定した割込み要求ライン
+      # が接続されたプロセッサの集合に含まれていない場合（E_RSATR）
+      # ［NGKI5257］
+      $clsData[params[:class]][:affinityPrcList].each do |prcid|
+        if !$INTNO_CREISR_VALID[prcid].include?(params[:intno])
+          error_ercd("E_RSATR", params, "the assignable processors " \
+				"of the class in which %apiname of `%intno' is described " \
+				"must be included in the set of processors " \
+				"to which the interrupt is requested")
+          break
+        end
+      end
+    end
   end
 
   # intatrが無効の場合（E_RSATR）［NGKI2969］［NGKI2944］［NGKI2945］
@@ -180,18 +213,18 @@ $cfgData[:DEF_INH].each do |_, params|
     # 以降のエラーの抑止
     params[:class] = $TCLS_ERROR
   end
-  prcid = $clsData[params[:class]][:initPrc]
+  params[:prcid] = $clsData[params[:class]][:initPrc]
 
   # inhnoが有効範囲外の場合（E_PAR）［NGKI3055］
   if !$INHNO_VALID_ALL.include?(params[:inhno])
     error_illegal("E_PAR", params, :inhno)
   else
-    # クラスの初期割付けプロセッサが，割込みが要求されるプロセッサでな
-    # い場合（E_RSATR）［NGKI3073］
-    if !$INHNO_VALID[prcid].include?(params[:inhno])
+    # クラスの初期割付けプロセッサが，割込みハンドラ番号に対応するプロ
+    # セッサでない場合（E_RSATR）［NGKI3073］
+    if !$INHNO_VALID[params[:prcid]].include?(params[:inhno])
       error_ercd("E_RSATR", params, "the initial assignment processor " \
 				"of the class in which %apiname of `%inhno' is described " \
-				"must be the processor to which the interrupt is requested")
+				"must be the processor corresponding to `%inhno'")
     end
   end
 
@@ -225,9 +258,9 @@ $cfgData[:DEF_INH].each do |_, params|
     end
   end
 
-  if $INHNO_CREISR_VALID[prcid].include?(params[:inhno])
+  if $INHNO_CREISR_VALID[params[:prcid]].include?(params[:inhno])
     # 割込みハンドラ番号に対応する割込み番号がある場合
-    intnoVal = $toIntnoVal[prcid][params[:inhno].val]
+    intnoVal = $toIntnoVal[params[:prcid]][params[:inhno].val]
 
     # inhnoに対応するintnoに対するCFG_INTがない場合（E_OBJ）［NGKI3062］
     if !$cfgData[:CFG_INT].has_key?(intnoVal)
@@ -235,14 +268,24 @@ $cfgData[:DEF_INH].each do |_, params|
 					"%%inhno in %apiname is not configured with CFG_INT")
     else
       intnoParams = $cfgData[:CFG_INT][intnoVal]
-      intnoParams[:affinity] = (1 << ($clsData[params[:class]][:initPrc] - 1))
 
-      # CFG_INTとDEF_INHが異なるクラスの囲みの中にある場合（E_RSATR）
-      # ［NGKI5141］
-      if params[:class] != intnoParams[:class]
-        error_ercd("E_RSATR", params, "intno `#{intnoVal}' corresponding to " \
-								"%%inhno in %apiname does not belong to " \
-								"the same class with CFG_INT")
+      # 割込みハンドラ番号に対応するプロセッサが，割込みハンドラ番号に
+      # 対応する割込み要求ラインが属するクラスの割付け可能プロセッサに
+      # 含まれていない場合（E_RSATR）［NGKI5141］
+      if !$clsData[intnoParams[:class]][:affinityPrcList]. \
+												include?(params[:prcid])
+          error_ercd("E_RSATR", params, "the processor corresponding to " \
+					"`%inhno' must be included in the set of processors " \
+					"which can accept the interrupt")
+      else
+        # 割込みハンドラ番号に対応するプロセッサが，対象割込みハンドラ
+        # 番号に対応する割込み要求ラインが属するクラスの初期割付けプロ
+        # セッサと一致しない場合（警告）
+        if $OMIT_MULTIPRC_INTERRUPT \
+				&& $clsData[intnoParams[:class]][:initPrc] != params[:prcid]
+          warning_api(params, "the processor corresponding to `%inhno' " \
+					"is not the processor which accepts the interrupt")
+        end
       end
 
       if intnoParams[:intpri] < $TMIN_INTPRI
@@ -280,6 +323,19 @@ $cfgData[:CRE_ISR].sort.each do |_, params|
     error_ercd("E_RSATR", params, "%apiname must be within a class")
     # 以降のエラーの抑止
     params[:class] = $TCLS_ERROR
+  end
+
+  # 割込みサービスルーチンを実行するプロセッサに関するチェック［NGKI0656］
+  if $OMIT_MULTIPRC_INTERRUPT
+    # 割付け可能プロセッサが複数あるクラスの囲み内にCRE_ISRを記述した
+    # 場合には，警告メッセージを出す．
+    initPrcBitmap = (1 << ($clsData[params[:class]][:initPrc] - 1))
+    if ($clsData[params[:class]][:affinityPrcBitmap] != initPrcBitmap)
+      warning_api(params, "`%isrid' created within the class " \
+							"#{$clsData[params[:class]][:clsid]} " \
+							"is configured to be executed by the processor " \
+							"#{$clsData[params[:class]][:initPrc]} only.")
+    end
   end
 
   # isratrが無効の場合（E_RSATR）［NGKI2998］［NGKI2952］［NGKI5176］
@@ -330,7 +386,6 @@ $cfgData[:CRE_ISR].sort.each do |_, params|
 									"is not configured with CFG_INT")
   else
     intnoParams = $cfgData[:CFG_INT][params[:intno]]
-    intnoParams[:affinity] = $clsData[params[:class]][:affinityPrcBitmap]
 
     # CFG_INTとCRE_ISRが異なるクラスの囲みの中にある場合（E_RSATR）［NGKI5142］
     if params[:class] != intnoParams[:class]
@@ -350,21 +405,6 @@ $cfgData[:CRE_ISR].sort.each do |_, params|
   # ターゲット依存のエラーチェック［NGKI3019］
   if defined? TargetCheckCreIsr()
     TargetCheckCreIsr(params)
-  end
-end
-
-#
-#  割込み要求ラインに関するエラーチェック（2回目）
-#
-$cfgData[:CFG_INT].each do |_, params|
-  # CFG_INTに対応するDEF_INH／CRE_ISRがない場合
-  if !params.has_key?(:affinity)
-    params[:affinity] = $clsData[params[:class]][:affinityPrcBitmap]
-  end
-
-  # ターゲット依存のエラーチェック［NGKI5184］
-  if defined? TargetCheckCfgInt2()
-    TargetCheckCfgInt2(params)
   end
 end
 
@@ -507,7 +547,7 @@ EOS
 				"(#{params[:intatr]}), " \
 				"(#{params[:intpri]}), " \
 				"#{$clsData[params[:class]][:initPrc]}, " \
-				"0x#{params[:affinity].to_s(16)}U }")
+				"0x#{params[:affinityPrcBitmap].to_s(16)}U }")
     end
     $kernelCfgC.add
     $kernelCfgC.add2("};")

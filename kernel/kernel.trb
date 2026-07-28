@@ -37,7 +37,7 @@
 #   アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
 #   の責任を負わない．
 # 
-#   $Id: kernel.trb 436 2024-10-05 01:47:00Z ertl-honda $
+#   $Id: kernel.trb 464 2026-05-27 11:42:34Z ertl-honda $
 # 
 
 #
@@ -492,13 +492,15 @@ if !$OMIT_ISTACK
   $kernelCfgC.add
   $kernelCfgC.add2("};")
 
-  $kernelCfgC.add("STK_T *const _kernel_istk_table[TNUM_PRCID] = {")
-  1.upto($TNUM_PRCID).each_with_index do |prcid, index|
-    $kernelCfgC.add(",") if index > 0
-    $kernelCfgC.append("\t#{$icsData[prcid][:istk]}")
+  if !$OMIT_ISTK
+    $kernelCfgC.add("STK_T *const _kernel_istk_table[TNUM_PRCID] = {")
+    1.upto($TNUM_PRCID).each_with_index do |prcid, index|
+      $kernelCfgC.add(",") if index > 0
+      $kernelCfgC.append("\t#{$icsData[prcid][:istk]}")
+    end
+    $kernelCfgC.add
+    $kernelCfgC.add2("};")
   end
-  $kernelCfgC.add
-  $kernelCfgC.add2("};")
 
   $kernelCfgC.add("#ifdef TOPPERS_ISTKPT")
   $kernelCfgC.add("STK_T *const _kernel_istkpt_table[TNUM_PRCID] = {")

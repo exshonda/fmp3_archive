@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: time_event.h 263 2021-01-08 06:08:59Z ertl-honda $
+ *  $Id: time_event.h 464 2026-05-27 11:42:34Z ertl-honda $
  */
 
 /*
@@ -100,9 +100,9 @@ extern void		initialize_tmevt(PCB *p_my_pcb);
 /*
  *  タイムイベントの挿入位置の探索
  */
-extern TMEVTN	*tmevt_up(TMEVTN *p_tmevtn, EVTTIM evttim,
+extern uint_t	tmevt_up(uint_t index, EVTTIM evttim,
 												TMEVTN *p_tmevt_heap);
-extern TMEVTN	*tmevt_down(TMEVTN *p_tmevtn, EVTTIM evttim,
+extern uint_t	tmevt_down(uint_t index, EVTTIM evttim,
 												TMEVTN *p_tmevt_heap);
 
 /*

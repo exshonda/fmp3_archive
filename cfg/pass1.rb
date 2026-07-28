@@ -3,7 +3,7 @@
 #  TOPPERS Configurator by Ruby
 #
 #  Copyright (C) 2015 by FUJI SOFT INCORPORATED, JAPAN
-#  Copyright (C) 2015-2022 by Embedded and Real-Time Systems Laboratory
+#  Copyright (C) 2015-2024 by Embedded and Real-Time Systems Laboratory
 #              Graduate School of Information Science, Nagoya Univ., JAPAN
 #
 #  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
@@ -35,7 +35,7 @@
 #  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
 #  の責任を負わない．
 #
-#  $Id: pass1.rb 200 2022-12-05 14:42:41Z ertl-hiro $
+#  $Id: pass1.rb 205 2024-06-08 02:18:13Z ertl-hiro $
 #
 
 #
@@ -930,27 +930,6 @@ def Pass1
         error_exit("too large number of user domains")
       end
       nextDomainId += 1
-    end
-  end
-
-  #
-  #  オブジェクト識別名の重複のチェック
-  #
-  objectNames = $domainId.keys
-  $cfgFileInfo.each do |cfgInfo|
-    if cfgInfo.has_key?(:APINAME)
-      apiDef = $apiDefinition[cfgInfo[:APINAME]]
-      apiDef[:PARAM].each do |apiParam|
-        if apiParam.has_key?(:ID_DEF)
-          if objectNames.include?(cfgInfo[apiParam[:NAME]])
-            # keyParam = params[apiDef[:KEYPAR].to_sym]
-            error("E_OBJ: #{apiDef[:KEYPAR]} `#{cfgInfo[apiParam[:NAME]]}' " \
-								"is duplicated in #{cfgInfo[:APINAME]}",
-								"#{cfgInfo[:_FILE_]}:#{cfgInfo[:_LINE_]}:")
-          end
-          objectNames.push(cfgInfo[apiParam[:NAME]])
-        end
-      end
     end
   end
 

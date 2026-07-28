@@ -37,7 +37,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  $Id: task.c 376 2023-09-02 04:34:49Z ertl-honda $
+ *  $Id: task.c 541 2026-06-30 13:07:32Z ertl-honda $
  */
 
 /*
@@ -123,7 +123,6 @@ bitmap_search(uint16_t bitmap)
 {
 	uint_t	n = 0U;
 
-	assert(bitmap != 0U);
 	if ((bitmap & 0x00ffU) == 0U) {
 		bitmap >>= 8;
 		n += 8;
@@ -138,13 +137,9 @@ bitmap_search(uint16_t bitmap)
 #endif /* OMIT_BITMAP_SEARCH */
 
 /*
- *  優先度ビットマップが空かのチェック
+ *  優先度ビットマップが空かのチェック（primap_empty）は，set_dspflgから
+ *  参照するため，task.hに移動した（2026-06-07改変）．
  */
-Inline bool_t
-primap_empty(PCB *p_pcb)
-{
-	return(p_pcb->ready_primap == 0U);
-}
 
 /*
  *  優先度ビットマップのサーチ
@@ -183,6 +178,7 @@ search_schedtsk(PCB *p_pcb)
 {
 	uint_t	schedpri;
 
+	assert(!primap_empty(p_pcb));
 	schedpri = primap_search(p_pcb);
 	return((TCB *)(p_pcb->ready_queue[schedpri].p_next));
 }
@@ -501,6 +497,7 @@ task_terminate(PCB *p_my_pcb, TCB *p_tcb)
 		wait_dequeue_wobj(p_my_pcb, p_tcb);
 		wait_dequeue_tmevtb(p_tcb);
 	}
+	release_context(p_tcb);    
 	make_dormant(p_tcb);
 	if (p_tcb->actque) {
 		p_tcb->actque = false;
