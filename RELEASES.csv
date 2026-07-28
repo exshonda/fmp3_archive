@@ -37,7 +37,6 @@ date,type,version,target,tool,package,sha256,branch,tag
 20241113,simple,,zybo_z7,gcc,packages/fmp3_zybo_z7_gcc-20241113.tar.gz,c4587d6f27429ff23092e6c70792ed6f178cac9e65c75e29fd9f71921074a4d4,release/3.3,zybo_z7_gcc-20241113
 20241116,indep,3.3.3,,,packages/fmp3-3.3.3.tar.gz,b414548df9092aa3951934dfc2974a7e8bd80c4092df351ee51f2ab5799c19c1,release/3.3,v3.3.3
 20241224,simple,,polarfire_soc_kit,gcc,packages/fmp3_polafire_soc_kit_gcc-20241224.tar.gz,630016029b25ab28e3c45daed6950b17c168ebeb7e9df8bde6ce439a85829faf,release/3.3,polarfire_soc_kit_gcc-20241224
-20260718,indep,3.4.0,,,packages/fmp3-3.4.0.tar.gz,0255e17794818764da4bd2abdd295c38f3e4ebe2187391ffb96187f0f79f7d5f,release/3.4,v3.4.0
 20260718,simple,,kria_arm64,gcc,packages/fmp3_kria_arm64_gcc-20260718.tar.gz,febe3567905c100e4cc7d22aec6103fe64d6ec22b048c7a852d5710e10e26f96,release/3.4,kria_arm64_gcc-20260718
 20260718,simple,,kria_r5,gcc,packages/fmp3_kria_r5_gcc-20260718.tar.gz,35079736fe48fd1cb23b8e1244d9ffb1872046cdd72b049d2142a71d74942d71,release/3.4,kria_r5_gcc-20260718
 20260718,simple,,m5stamp_esp32p4,gcc,packages/fmp3_m5stamp_esp32p4_gcc-20260718.tar.gz,8deb0b51d91283838e64798f8c435e42c45af699bd083924bb5254c16312a0b2,release/3.4,m5stamp_esp32p4_gcc-20260718
@@ -46,6 +45,11 @@ date,type,version,target,tool,package,sha256,branch,tag
 20260718,simple,,stm32mp257f_dk_arm64,gcc,packages/fmp3_stm32mp257f_dk_arm64_gcc-20260718.tar.gz,30614187eef8480e209106411f9dea6fb39f755e86ef1c288a281c53a836f71f,release/3.4,stm32mp257f_dk_arm64_gcc-20260718
 20260719,simple,,musca_b1,gcc,packages/fmp3_musca_b1_gcc-20260719.tar.gz,f4a2389b3cfcd397b17f60338c92e0ca258c97159709998a7f5965844079ceed,release/3.4,musca_b1_gcc-20260719
 20260719,simple,,rp2350_pico2,gcc,packages/fmp3_rp2350_pico2_gcc-20260719.tar.gz,0bb15b947ae72e59e1ee6744a567a25012097228d05a9f25aa997715e6d260af,release/3.4,rp2350_pico2_gcc-20260719
+# v3.4.0 は当初20260718付の内部snapshotで登録したが、実際の公開版で共通部（test/, utils/gdb_os_aware/ 等）が
+# 更新されたため、実際に公開された内容・日付(20260729)で置き換え。旧v3.4.0タグは削除・再作成。
+20260729,indep,3.4.0,,,packages/fmp3-3.4.0.tar.gz,0987a15c88d81e26fc987ad3237878e5175844aa34edab564d0bb1126b0d6223,release/3.4,v3.4.0
+20260729,simple,,m5stamp_esp32p4,gcc,packages/fmp3_m5stamp_esp32p4_gcc-20260729.tar.gz,75b9351ace9d243364d00497e15a142eb10f1696ca94c573be983185d61d7c98,release/3.4,m5stamp_esp32p4_gcc-20260729
+20260729,simple,,polarfire_soc_kit,gcc,packages/fmp3_polarfire_soc_kit_gcc-20260729.tar.gz,c849092940598e7d3db2baf2634cf02919d21d01573e5f8c1777340256b90c56,release/3.4,polarfire_soc_kit_gcc-20260729
 #
 # --- 記入例（実データに置き換えること。行頭の # を外すと有効化）---
 # 20240701,indep,3.1.0,,,pkg_fmp3-3.1.0.tar.gz,,release/3.1,v3.1.0
