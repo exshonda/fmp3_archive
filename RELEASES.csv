@@ -46,6 +46,8 @@ date,type,version,target,tool,package,sha256,branch,tag
 20260718,simple,,stm32mp257f_dk_arm64,gcc,packages/fmp3_stm32mp257f_dk_arm64_gcc-20260718.tar.gz,30614187eef8480e209106411f9dea6fb39f755e86ef1c288a281c53a836f71f,release/3.4,stm32mp257f_dk_arm64_gcc-20260718
 20260719,simple,,musca_b1,gcc,packages/fmp3_musca_b1_gcc-20260719.tar.gz,f4a2389b3cfcd397b17f60338c92e0ca258c97159709998a7f5965844079ceed,release/3.4,musca_b1_gcc-20260719
 20260719,simple,,rp2350_pico2,gcc,packages/fmp3_rp2350_pico2_gcc-20260719.tar.gz,0bb15b947ae72e59e1ee6744a567a25012097228d05a9f25aa997715e6d260af,release/3.4,rp2350_pico2_gcc-20260719
+20260729,simple,,m5stamp_esp32p4,gcc,packages/fmp3_m5stamp_esp32p4_gcc-20260729.tar.gz,75b9351ace9d243364d00497e15a142eb10f1696ca94c573be983185d61d7c98,release/3.4,m5stamp_esp32p4_gcc-20260729
+20260729,simple,,polarfire_soc_kit,gcc,packages/fmp3_polarfire_soc_kit_gcc-20260729.tar.gz,c849092940598e7d3db2baf2634cf02919d21d01573e5f8c1777340256b90c56,release/3.4,polarfire_soc_kit_gcc-20260729
 #
 # --- 記入例（実データに置き換えること。行頭の # を外すと有効化）---
 # 20240701,indep,3.1.0,,,pkg_fmp3-3.1.0.tar.gz,,release/3.1,v3.1.0
